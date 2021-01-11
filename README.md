@@ -13,10 +13,10 @@ TODO:
 
 
 ## Features
-Flexible nav-mesh, it can be generated using a single command or use an existing one from the repo.
-Current support for up to 32 bots. (and this will increase as the mod becomes more optimized)
-AI Vehicle Interaction.
-Agnostic combat, AI see each other as normal players and will attack enemies regardless of whether they are human or bot.
+- Flexible nav-mesh, it can be generated using a single command or use an existing one from the repo.
+- Current support for up to 32 bots. (and this will increase as the mod becomes more optimized)
+- AI Vehicle Interaction.
+- Agnostic combat, AI see each other as normal players and will attack enemies regardless of whether they are human or bot.
 
 
 ## Future
