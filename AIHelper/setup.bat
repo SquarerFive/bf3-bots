@@ -1,0 +1,1 @@
+set "MOD_WSGI_APACHE_ROOTDIR=C:\xampp\apache"

@@ -1,0 +1,12 @@
+LoadModule wsgi_module "c:/users/aiden/.conda/envs/battlefield/lib/site-packages/mod_wsgi/server/mod_wsgi.cp38-win_amd64.pyd"
+
+WSGIScriptAlias / "C:/Users/aiden/Documents/Battlefield 3/Server/AIHelper/AIHelper/wsgi.py"
+WSGIPythonHome "C:/Users/aiden/.conda/envs/battlefield"
+WSGIPythonPath "C:/Users/aiden/Documents/Battlefield 3/Server/AIHelper"
+
+
+<Directory "C:/Users/aiden/Documents/Battlefield 3/Server/AIHelper/AIHelper">
+<Files wsgi.py>
+Require all granted
+</Files>
+</Directory>
