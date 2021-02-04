@@ -9,11 +9,14 @@ class Objective(models.Model):
     transform = models.JSONField()
     name = models.CharField(max_length=24)
     controlled = models.BooleanField(default=False)
+    capturable = models.BooleanField(default=True)
 
 class Level(models.Model):
     raw_data = models.BinaryField(blank=True, null=True)
     cost_data = models.BinaryField(blank=True, null=True)
     elevation_data = models.BinaryField(blank=True, null=True)
+
+    relative_path = models.TextField(default="./models/Project/{0}/Level/{1}/")
 
     name = models.TextField(default="no-map-name")
     transform = models.JSONField()
@@ -23,6 +26,8 @@ class Level(models.Model):
     date_modified = models.DateTimeField(auto_created=True, null=True)
 
     level_id = models.IntegerField(default= 0)
+
+    roads = models.JSONField(default = dict)
 
 class Project(models.Model):
     project_id = models.IntegerField(default = 0)

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from navigation import models as navigation_models
+from . import models
 
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -17,3 +18,13 @@ class LevelSerializer(serializers.ModelSerializer):
     class Meta:
         model = navigation_models.Level
         exclude = ['raw_data', 'cost_data', 'elevation_data']
+
+class ProjectTaskJSONSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.ProjectTaskJSON
+        exclude = ['data']
+
+class GameAssetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.GameAsset
+        fields = '__all__'

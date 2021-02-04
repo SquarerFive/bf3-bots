@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     "navigation",
     "bots",
+    "manager",
     'corsheaders',
     'oauth2_provider',
     'rest_framework',

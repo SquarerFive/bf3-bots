@@ -1,7 +1,7 @@
 # safe remap: https://stackoverflow.com/questions/929103/convert-a-number-range-to-another-range-maintaining-ratio
 
 import math
-
+from numba import njit
 #def remap( x, oMin, oMax, nMin, nMax ):
 #
 #    #range check
@@ -37,6 +37,7 @@ import math
 #
 #    return result
 
+@njit()
 def remap(value, old_min, old_max, new_min, new_max):
     old_range = (old_max - old_min)
     new_range = (new_max - new_min)
@@ -102,3 +103,15 @@ def from_dict(data : dict) -> GridTransform:
         data['min_point'], data['max_point'], data['width'], data['height']
     )
     return transformation
+
+@njit()
+def transform_to_world(xy : tuple, min_point: tuple, max_point : tuple, width: float, height: float) -> tuple:
+    nx = remap(xy[0], 0, width, 0.0, 1.0)
+    ny = remap(xy[1], 0, height, 0.0, 1.0)
+    # nx = 1.0 - nx
+    # ny = 1.0 - ny
+    # first, 0 to width = min_point.x to max_point.x 
+    wx = remap(nx, 0, 1.0, min_point[0], max_point[0])
+    # 0 to height, min_point.y to max_point.y
+    wy = remap(ny, 0, 1.0, min_point[1], max_point[1])
+    return (wy, wx)

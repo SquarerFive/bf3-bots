@@ -12,6 +12,7 @@ urlpatterns = [
     path("import/", views.import_data, name="import"),
     path("modify/", views.modify_cost_surface, name="modify"),
     path("emit/", views.emit_action, name="emit"),
+    
     path("close-faststream/", views.close_faststream, name="close faststream gate"),
 
     path('<str:level_name>/render/', views.render_level, name="render level"),

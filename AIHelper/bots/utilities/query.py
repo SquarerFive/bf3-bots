@@ -31,7 +31,7 @@ def create_or_update_bot(bot : dict):
         # print("reqa", bot['requested_action'])
         b.bot_index = bot['bot_index']
         b.alive = bot['alive']
-        b.squad = 1
+        b.squad = bot['squad']
         b.save()
 
 def create_or_update_player(player : dict):
@@ -112,7 +112,7 @@ def emit_and_propagate_action(instigator : int, order : int, action : int) -> bo
     instigator : models.BasePlayer = models.Player.objects.filter(player_id=instigator).first() or models.Bot.objects.filter(player_id=instigator).first()
     print(instigator)
     friends : List[models.Bot] = list(models.Bot.objects.filter(squad=instigator.squad, team=instigator.team))
-    print("friends", friends)
+    print("friends", friends, 'action', action)
     for friend in friends:
         friend.order = order
         friend.action = action

@@ -1,5 +1,6 @@
 from . import transformations
 from . import scorecard
+from .. import models
 
 import numpy as np
 from matplotlib import pyplot
@@ -23,7 +24,7 @@ import pyastar
 import datetime
 
 class Level:
-    def __init__(self, name, transform : Union[tuple, None] = None, data: list = []):
+    def __init__(self, name, transform : Union[tuple, None] = None, data: list = [], model : Union[None, models.Level] = None):
         self.raw_data = data
         if transform:
             self.transform = transformations.GridTransform(transform[0], transform[1], transform[2], transform[3])
@@ -37,17 +38,19 @@ class Level:
 
         self.project_id = 0
 
+        self.model = model
+
     def classify_costs(self):
-        scorecard.Scorecard.score(self.data, self.elevation, self.costs)
+        scorecard.Scorecard.score(self.model, self.transform, self.data, self.elevation, self.costs)
 
     # Call this after initialising Level
     def pre_process_data(self):
         _width = self.transform.width+1
         _height = self.transform.height + 1
-        self.data = np.zeros((_width, _height))
-        self.elevation = np.zeros((_width, _height))
-        self.costs = np.zeros((_width, _height))
-        self.costs_canvas = np.zeros((_width, _height))
+        self.data = np.zeros((10, _width, _height))
+        self.elevation = np.zeros((10, _width, _height))
+        self.costs = np.zeros((10, _width, _height))
+        self.costs_canvas = np.zeros((10, _width, _height))
 
     def process_data(self):
         print("Processing data")
@@ -58,7 +61,7 @@ class Level:
             for y in range(_height):
                 self.data[y][x] = self.raw_data[x][y][0]
                 self.elevation[y][x] = self.raw_data[x][y][1]
-        scorecard.Scorecard.score(self.data, self.elevation, self.costs)
+        scorecard.Scorecard.score(self.model, self.transform, self.data, self.elevation, self.costs)
 
         fig = pyplot.figure(frameon=False)
         img = pyplot.imshow(self.costs)
@@ -67,18 +70,18 @@ class Level:
         pyplot.savefig("./wake_island_cstf.png", bbox_inches='tight')
         self.post_process_data()
 
-    def set_elevation_at(self, value : float, index_x : int, index_y : int):
+    def set_elevation_at(self, value : float, index_x : int, index_y : int, level : int = 0):
         try:
-            self.elevation[index_y-1][index_x-1] = value
+            self.elevation[level][index_y-1][index_x-1] = value
         except Exception as e:
             print(index_x-1, index_y-1)
             raise(e)
 
     def set_data_at(self, value : int, index_x : int, index_y : int, level : int = 0):
         try:
-            self.data[index_y-1][index_x-1] = value
+            self.data[level][index_y-1][index_x-1] = value
         except Exception as e:
-            print(index_x-1, index_y-1)
+            print(level, index_x-1, index_y-1)
             raise(e)
 
     def post_process_data(self):
@@ -89,7 +92,7 @@ class Level:
             self.transform.height = self.costs.shape[1]
 
     def get_valid_point_in_radius(self, arr : np.ndarray, x: int, y : int, radius: float = 10.0) -> list:
-        if arr[x][y] == 1.0:
+        if arr[0][x][y] == 1.0:
             return (x,y)
         offsets = [(-1, 0), (1, 0), (-1, -1), (1, -1), (-1, 1), (1, 1), (0, -1), (0, 1)]
         found = False
@@ -100,7 +103,7 @@ class Level:
                 i = y+(offset[1]*g)
                 j = x+(offset[0]*g)
                 
-                if arr[j][i] != np.inf:
+                if arr[0][j][i] != np.inf:
                     found = True
                     final_pos = [j, i]
                     break
@@ -133,8 +136,8 @@ class Level:
         # print(self.costs[start[0]][[start[1]]])
         # print(self.costs[end[0]][[end[1]]])
         #path = astar.astar(self.costs, start, end)
-        
-        path = pyastar.astar_path(self.costs, start, end, allow_diagonal=True)
+        #print('astar: ', start, end)
+        path = pyastar.astar_path(self.costs[0], start, end, allow_diagonal=True)
         #print(path)
         # path = [(p[1], p[0]) for p in path]
         # grid.__del
@@ -147,10 +150,12 @@ class Level:
         #if not safe:
         #    path = self.find_path(start, self.get_valid_point_in_radius(self.costs, end[0], end[1], 10))
         #else:
+        # return []
+        #print('finding path', start, end)
         path = self.find_path_safe(
             self.get_valid_point_in_radius(self.costs, start[0], start[1], 90), 
             self.get_valid_point_in_radius(self.costs, end[0], end[1], 90))
-
+        #print('got path')
         #path = astar(self.costs, start, end)
         # path_and_cost = [(p[0], p[1], self.costs[p[0]][p[1]] ) for p in path]
         world_paths = []
@@ -160,7 +165,7 @@ class Level:
                 wxy = self.transform.transform_to_world(p)
                 world_paths.append({
                     "x": wxy[0],
-                    "y": self.elevation[p[0]][p[1]]+1,
+                    "y": self.elevation[0][p[0]][p[1]]+1,
                     "z": wxy[1]
                 })
         else:
@@ -207,7 +212,10 @@ class Level:
                 #self.data = np.load(f)
                 scorecard.flip_scorecard(np.load(f), self.data)
             elif data_type == "elevation":
-                self.elevation = np.load(f)
+                try:
+                    self.elevation = np.load(f)
+                except Exception as e:
+                    print("Failed to load elevation!! ", e)
                 #scorecard.flip_scorecard(np.load(f), self.elevation)
 
     def modify(self, grid_position : tuple, recording_mode: float, elevation: float, radius : float):

@@ -12,6 +12,28 @@ from navigation import models as navigation_models
 from navigation.utilities import query as navigation_query
 from navigation.utilities import level
 
+from typing import Union
+
+# Globals [to avoid poo memory, cache it here until the level changes]
+class GlobalCache:
+    def __init__(self):
+        self.level_model : Union[level.models.Level, None] = None
+        self.level_object : Union[level.Level, None] = None
+    
+    def get_object(self, project_id : int, level_id : int):
+        if self.level_object:
+            if self.level_object.model.project_id == project_id:
+                return self.level_object
+        self.level_model = level.models.Level.objects.filter(project_id= project_id, level_id=level_id).first()
+        self.level_object = navigation_query.decode_level(self.level_model)
+        return self.level_object
+
+    def save_object(self):
+        if self.level_object:
+            navigation_query.encode_level(self.level_object)
+
+global_cache = GlobalCache()
+
 @app.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):
     # print("setup tasks")

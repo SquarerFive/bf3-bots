@@ -43,8 +43,9 @@ def get_target_objectives(team : int, ObjectiveModels : navigation_models.Object
     targets = []
     objectives : List[navigation_models.Objective] = ObjectiveModels.objects.all()
     for obj in objectives:
-        if obj.team != team or (obj.team==team and obj.controlled == False):
-            targets.append(obj)
+        if obj.capturable:
+            if obj.team != team or (obj.team==team and obj.controlled == False):
+                targets.append(obj)
     return targets
 
 # returns Tuple[BasePlayer, float]
