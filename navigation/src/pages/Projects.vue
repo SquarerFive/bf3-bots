@@ -3,7 +3,7 @@
       <div class="bg-grey-4 text-center flex-center" style="height:200px;">
           <div class="flex-center text-center column no-wrap" style="padding:10px;">
               <h2>Projects</h2>
-              <p class="text-grey-9">Manage your classified levels within a project.</p>
+              <p class="text-grey-9">Create your projects here, open them to add a level or modify the bot loadouts.</p>
             </div>
       </div>
       <div class="q-pa-md q-gutter-md">
