@@ -7,13 +7,13 @@ from matplotlib import pyplot
 from skimage.graph import route_through_array, shortest_path
 import math
 
-from pathfinding.core.diagonal_movement import DiagonalMovement
-from pathfinding.core.grid import Grid
-from pathfinding.finder.a_star import AStarFinder
-from pathfinding.finder.dijkstra import DijkstraFinder
-from pathfinding.finder.best_first import BestFirst
-from pathfinding.finder.ida_star import IDAStarFinder
-from pathfinding.finder.bi_a_star import BiAStarFinder
+# from pathfinding.core.diagonal_movement import DiagonalMovement
+# from pathfinding.core.grid import Grid
+# from pathfinding.finder.a_star import AStarFinder
+# from pathfinding.finder.dijkstra import DijkstraFinder
+# from pathfinding.finder.best_first import BestFirst
+# from pathfinding.finder.ida_star import IDAStarFinder
+# from pathfinding.finder.bi_a_star import BiAStarFinder
 
 from . import astar
 
@@ -112,15 +112,15 @@ class Level:
         return final_pos
 
 
-    def find_path(self, start: tuple, end : tuple) -> list:
-        
-        self.grid.cleanup()
-        start = self.grid.node(start[0], start[1])
-        end = self.grid.node(end[0], end[1])
-        finder = AStarFinder(diagonal_movement=DiagonalMovement.always)
-        path, runs = finder.find_path(start, end, self.grid)
-        path = [(p[1], p[0]) for p in path]
-        return path
+    # def find_path(self, start: tuple, end : tuple) -> list:
+    #     
+    #     self.grid.cleanup()
+    #     start = self.grid.node(start[0], start[1])
+    #     end = self.grid.node(end[0], end[1])
+    #     finder = AStarFinder(diagonal_movement=DiagonalMovement.always)
+    #     path, runs = finder.find_path(start, end, self.grid)
+    #     path = [(p[1], p[0]) for p in path]
+    #     return path
 
     def find_path_safe(self, start: tuple, end: tuple) -> list:
         #print(self.costs)
