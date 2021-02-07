@@ -1,0 +1,10 @@
+{
+	"Name": "squarerfive_bot_mod",
+	"Authors": ["SquarerFive"],
+	"Description": "Scorecard",
+	"URL": "",
+	"Version": "0",
+	"HasWebUI": true,
+	"HasVeniceEXT": true,
+	"Tags": ["bots"]
+}

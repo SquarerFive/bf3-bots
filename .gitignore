@@ -132,3 +132,5 @@ dmypy.json
 AIHelper/bots/migrations/
 AIHelper/manager/migrations/
 AIHelper/navigation/migrations/
+
+ScorecardServerSettings.lua
