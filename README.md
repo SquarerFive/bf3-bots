@@ -14,6 +14,7 @@ This mod is currently in early development. Feel free to contribute but there is
 - Basic bot accuracy modifiers, aiming offsets and randomization can be set during runtime.
 
 ## Requirements
+- Git (https://git-scm.com/download/win)
 - Anaconda 3 (https://www.anaconda.com/products/individual)
 - Battlefield 3 and Venice Unleashed
 
