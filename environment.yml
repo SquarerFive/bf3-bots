@@ -142,5 +142,4 @@ dependencies:
     - pathfinding==0.0.4
     - pipreqs==0.4.10
     - git+git://github.com/hjweide/pyastar.git@master#egg=pyastar
-    - redis==3.5.3
     - yarg==0.1.9
