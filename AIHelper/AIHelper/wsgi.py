@@ -36,7 +36,7 @@ from bots.utilities import behaviour
 #site.addsitedir("C:/Users/aiden/.conda/envs/battlefield/Lib/site-packages")
 
 
-from cheroot import wsgi
+# from cheroot import wsgi
 
 
 class GlobalCache:
