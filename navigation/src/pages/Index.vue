@@ -1,20 +1,16 @@
 <template>
   <q-page class="row items-center justify-evenly">
-    <q-card :class="activeNavToolClass" style="left:25px; position:absolute; max-width:500px;">
+    <q-card :class="activeBotConfigClass" style="left:25px; position:absolute; max-width:500px;">
       <q-card-section>
-        <div class="text-h6">Navigation Tools <span class="key transparent" style="float: right">F1</span></div>
+        <div class="text-h6">Bot Configuration <span class="key transparent" style="float: right">F2</span></div>
         <div class="text-subtitle2"></div>
       </q-card-section>
-
-      <q-tabs v-model="tab" class="">
-        <q-tab label="Modify" name="one" />
-        <q-tab label="Create" name="two" />
-      </q-tabs>
 
       <q-separator />
 
       <q-tab-panels v-model="tab" animated>
         <q-tab-panel name="one">
+          <!--
           <div class="text-h6">Hotkeys</div>
           <div class="text-h7" style="padding:10px;margin-bottom:10px;">
             <span :class="recordingClass" style="padding:5px;margin-right:5px;">F2</span>Record
@@ -22,16 +18,60 @@
             <span :class="unnavigableClass" style="padding:5px;margin-right:2px;">F4</span> Mark as Unnavigable
           </div>
           <q-separator  />
-          <div style="margin-top:10px;margin-bottom:10px;">
-            <q-badge color="secondary">
-              Sample Radius: {{ sampleRadius }}px
-            </q-badge>
-            <q-slider v-model="sampleRadius" :min="1" :max="16" @click="setSampleRadius()" @change="setSampleRadius"/>
-          </div>
-          <q-separator  />
-          <div class="text-h6" style="margin-top:5px;">Nav Surface</div>
-          <embed id="cost-map" style="padding:2px;border-radius:10px;" src="http://localhost:8000/pathfinding/render/" type="image/png" width="450" height='450'>
+          -->
+          <q-badge color="secondary">
+            Accuracy: {{ firingAccuracy }}
+          </q-badge>
+          <q-slider v-model="firingAccuracy" :min="0.0001" :max="1" :step="0.001" @change="updateFiringAccuracy"/>
 
+          <div class="row inline" style="width: 100%">
+            <div style="margin-top:10px;margin-bottom:10px; padding:2px; margin-right: 1vh;" class="col">
+              <q-badge color="secondary">
+                Aim Offset X: {{ firingOffsetX.toFixed(4) }}
+              </q-badge>
+              <q-slider v-model="firingOffsetX" :min="0.0001" :max="2" :step="0.001" />
+            </div>
+            <div style="margin-top:10px;margin-bottom:10px; padding:2px;  margin-right: 1vh;" class="col">
+              <q-badge color="secondary">
+                Aim Offset Y: {{ firingOffsetY.toFixed(4) }}
+              </q-badge>
+              <q-slider v-model="firingOffsetY" :min="0.0001" :max="2" :step="0.001" />
+            </div>
+            <div style="margin-top:10px;margin-bottom:10px; padding:2px;" class="col">
+              <q-badge color="secondary">
+                Aim Offset Z: {{ firingOffsetZ.toFixed(4) }}
+              </q-badge>
+              <q-slider v-model="firingOffsetZ" :min="0.0001" :max="2" :step="0.001" />
+            </div>
+          </div>
+          <div class="row inline" style="width: 100%">
+            <div style="margin-top:10px;margin-bottom:10px; padding:2px; margin-right: 1vh;" class="col">
+              <q-badge color="secondary">
+                Aim Base Offset X: {{ firingBaseOffsetX.toFixed(4) }}
+              </q-badge>
+              <q-slider v-model="firingBaseOffsetX" :min="-2" :max="2" :step="0.001" />
+            </div>
+            <div style="margin-top:10px;margin-bottom:10px; padding:2px;  margin-right: 1vh;" class="col">
+              <q-badge color="secondary">
+                Aim Base Offset Y: {{ firingBaseOffsetY.toFixed(4) }}
+              </q-badge>
+              <q-slider v-model="firingBaseOffsetY" :min="-2" :max="2" :step="0.001" />
+            </div>
+            <div style="margin-top:10px;margin-bottom:10px; padding:2px;" class="col">
+              <q-badge color="secondary">
+                Aim Base Offset Z: {{ firingBaseOffsetZ.toFixed(4) }}
+              </q-badge>
+              <q-slider v-model="firingBaseOffsetZ" :min="-2" :max="2" :step="0.001" />
+            </div>
+          </div>
+          <div class="row">
+          <q-checkbox label="Aim when Firing" v-model="aimWhenFiring" />
+          </div>
+          <div class="row">
+            <q-space />
+            <q-btn color="warning" text-color="dark" label="Apply Settings" @click="applyBotAimSettings"/>
+            <q-btn color="warning" text-color="dark" label="Close" style="margin-left: 1vh;" @click="closeBotSettings"/>
+          </div>
         </q-tab-panel>
 
         <q-tab-panel name="two">
@@ -52,6 +92,7 @@ import { Component } from 'vue-property-decorator'
 import MapEditor from 'components/MapEditor.vue'
 import { Manager } from '../store/models'
 import Vue from 'vue'
+import { ManagerStore } from 'src/store/ManagerStoreModule'
 
 @Component({
   components: { ExampleComponent, MapEditor }
@@ -100,7 +141,39 @@ export default class PageIndex extends Vue {
   // update
   // eslint:disable-next-line
   updateInterval : ReturnType<typeof setInterval> | null = null;
-  sampleRadius = 1.0;
+  firingOffsetX = 0.0001
+  firingOffsetY = 0.02
+  firingOffsetZ = 0.001
+
+  firingBaseOffsetX = 0.001
+  firingBaseOffsetY = 0.02
+  firingBaseOffsetZ = 0.01
+  aimWhenFiring = false
+  firingAccuracy = 0.1
+
+  updateFiringAccuracy (newValue : number) {
+    const alpha = 1.0 - newValue
+    this.firingOffsetX = 1.4 * alpha
+    this.firingOffsetY = 1.0 * alpha
+    this.firingOffsetZ = 1.6 * alpha
+  }
+
+  applyBotAimSettings () {
+    const data = JSON.stringify({
+      firingOffsetX: this.firingOffsetX,
+      firingOffsetY: this.firingOffsetY,
+      firingOffsetZ: this.firingOffsetZ,
+      firingBaseOffsetX: this.firingBaseOffsetX,
+      firingBaseOffsetY: this.firingBaseOffsetY,
+      firingBaseOffsetZ: this.firingBaseOffsetZ,
+      aimWhenFiring: this.aimWhenFiring
+    })
+    window.GameSyncManager.dispatchVext('OnUpdateBotSettings', [data])
+  }
+
+  closeBotSettings () {
+    ManagerStore.setShouldShowBotSettings(false)
+  }
 
   setShowNavtools (state: boolean) {
     this.showNavtools = state
@@ -113,7 +186,7 @@ export default class PageIndex extends Vue {
     // this.$vext.DispatchEventLocal('OnSetSampleRadius', this.sample_radius);
     /* eslint:disable-next-line */
     // eslint-disable-next-line no-eval
-    eval('WebUI.Call(\'DispatchEvent\', \'OnSetSampleRadius\',' + String((this.sampleRadius).toString()) + ');')
+    // eval('WebUI.Call(\'DispatchEvent\', \'OnSetSampleRadius\',' + String((this.sampleRadius).toString()) + ');')
   }
 
   setRecording (state: boolean) {
@@ -147,6 +220,18 @@ export default class PageIndex extends Vue {
 
   setToolbarMessage (newMessage : string) {
     this.$store.commit('player/updatePlayerPosition', newMessage)
+  }
+
+  get shouldShowBotSettings () {
+    if (window.GameSyncManager) {
+      console.log('window')
+      return window.GameSyncManager.shouldShowGameSettings
+    }
+    return false
+  }
+
+  get activeBotConfigClass () {
+    return ManagerStore.shouldShowBotSettings ? 'navtools-card' : 'navtools-card-xtoggled'
   }
 
   mounted () {

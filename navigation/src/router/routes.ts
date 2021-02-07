@@ -25,7 +25,7 @@ const routes: RouteConfig[] = [
       { path: 'dashboard/', component: () => import('pages/project/Dashboard.vue') },
       { path: 'level/:level_id', component: () => import('pages/project/Map.vue') },
       { path: 'tools/add-level', component: () => import('pages/project/tools/AddLevel.vue') },
-      { path: 'tools/loadout-manager', component: () => import('pages/project/tools/LoadoutManager.vue') }
+      { path: 'level/:level_id/loadout-manager', component: () => import('pages/project/tools/LoadoutManager.vue') }
     ]
   },
 

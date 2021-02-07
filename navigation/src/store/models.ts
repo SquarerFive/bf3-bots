@@ -31,13 +31,17 @@ export interface LevelTransform {
 }
 
 export interface Level {
-    name: string;
-    transform: LevelTransform; // make interface
-    project_id: number;
-    date_created: Date;
-    date_modified: Date;
+    name: string
+    transform: LevelTransform // make interface
+    project_id: number
+    date_created: Date
+    date_modified: Date
 
-    level_id: number;
+    level_id: number
+    friendly_kit: SoldierKitCollection
+    enemy_kit: SoldierKitCollection
+
+    id : number
 }
 
 export interface Levels {
@@ -49,18 +53,18 @@ export interface Projects {
 }
 
 export interface Vector {
-  x: number,
-  y: number,
+  x: number
+  y: number
   z: number
 }
 
 export interface LevelBuildSettings {
-  level_name: string,
-  start: Vector,
-  end: Vector,
-  voxel_step_size: number,
-  voxel_size: number,
-  iterations_x : number,
+  level_name: string
+  start: Vector
+  end: Vector
+  voxel_step_size: number
+  voxel_size: number
+  iterations_x : number
   iterations_y : number
 }
 
@@ -86,21 +90,52 @@ export interface ProjectTask {
 }
 
 export interface GameAsset {
-  id: number,
-  name: string,
-  path: string,
-  asset_type: string,
+  id: number
+  name: string
+  path: string
+  asset_type: string
   asset_team : string
 }
 
 export interface SoldierKit {
-  primary_weapon: GameAsset[],
-  secondary_weapon: GameAsset[],
-  primary_gadget: GameAsset[],
-  secondary_gadget: GameAsset[],
+  primary_weapon: GameAsset[]
+  secondary_weapon: GameAsset[]
+  primary_gadget: GameAsset[]
+  secondary_gadget: GameAsset[]
   melee: GameAsset[]
 
+  collection_id : number
+  collection_slot: number
+
+  kit_asset: GameAsset
+  // the first item from this array will be used for kit_asset
+  kit_assets: GameAsset[]
+  appearance: GameAsset[]
+}
+
+export interface SoldierKitCollection {
+  assault: SoldierKit
+  engineer: SoldierKit
+  support: SoldierKit
+  recon: SoldierKit
+
   faction: number
+  project_id: number
+  level_id: number
+
+  id : number
+}
+
+export interface TreeNode {
+  label: string
+  icon: string
+  type: string
+  children: TreeNode[],
+  selectable: boolean | undefined,
+  handler: CallableFunction | undefined,
+  expandable: boolean,
+  owner_id : number,
+  id : number
 }
 
 export const defaultGameAsset: GameAsset = {
@@ -111,13 +146,36 @@ export const defaultGameAsset: GameAsset = {
   asset_team: 'US'
 }
 
+export const defaultGameAsset_second: GameAsset = {
+  id: 2,
+  name: 'default game asset second',
+  path: 'path to asset',
+  asset_type: 'weapon_primary',
+  asset_team: 'US'
+}
+
 export const defaultSoldierKit: SoldierKit = {
-  primary_weapon: [defaultGameAsset],
-  secondary_weapon: [defaultGameAsset],
-  primary_gadget: [defaultGameAsset],
-  secondary_gadget: [defaultGameAsset],
-  melee: [defaultGameAsset],
-  faction: 0
+  primary_weapon: [],
+  secondary_weapon: [],
+  primary_gadget: [],
+  secondary_gadget: [],
+  melee: [],
+  collection_id: 0,
+  collection_slot: 0,
+  kit_asset: defaultGameAsset,
+  appearance: [defaultGameAsset],
+  kit_assets: [defaultGameAsset]
+}
+
+export const defaultSoldierKitCollection: SoldierKitCollection = {
+  assault: defaultSoldierKit,
+  engineer: defaultSoldierKit,
+  support: defaultSoldierKit,
+  recon: defaultSoldierKit,
+  faction: 0,
+  level_id: 0,
+  project_id: 0,
+  id: 0
 }
 
 export const defaultProfile: Profile = {
@@ -145,7 +203,10 @@ export const defaultLevel: Level = {
   project_id: 0,
   date_created: new Date(0),
   date_modified: new Date(123456789),
-  level_id: 0
+  level_id: 0,
+  friendly_kit: defaultSoldierKitCollection,
+  enemy_kit: defaultSoldierKitCollection,
+  id: 0
 }
 
 export class Manager {
@@ -153,6 +214,8 @@ export class Manager {
   api_url: string;
   currentPosition : Vector = { x: 0, y: 0, z: 0 };
   currentFBLevelName = '';
+  currentAssetSelection : GameAsset[] = []
+  shouldShowGameSettings = false
   // build
   // buildProgress = 0.0
 
@@ -207,17 +270,49 @@ export class Manager {
     levels.forEach(e => {
       e.date_created = new Date(e.date_created)
       e.date_modified = new Date(e.date_modified)
+      if (e.friendly_kit == null) {
+        e.friendly_kit = <SoldierKitCollection>deepCopy<SoldierKitCollection>(defaultSoldierKitCollection)
+      }
+      if (e.enemy_kit == null) {
+        e.enemy_kit = <SoldierKitCollection>deepCopy<SoldierKitCollection>(defaultSoldierKitCollection)
+      }
+      e.friendly_kit.assault.kit_assets = [e.friendly_kit.assault.kit_asset ? e.friendly_kit.assault.kit_asset : defaultGameAsset]
+      e.friendly_kit.engineer.kit_assets = [e.friendly_kit.engineer.kit_asset ? e.friendly_kit.engineer.kit_asset : defaultGameAsset]
+      e.friendly_kit.support.kit_assets = [e.friendly_kit.support.kit_asset ? e.friendly_kit.support.kit_asset : defaultGameAsset]
+      e.friendly_kit.recon.kit_assets = [e.friendly_kit.recon.kit_asset ? e.friendly_kit.recon.kit_asset : defaultGameAsset]
+      e.enemy_kit.assault.kit_assets = [e.enemy_kit.assault.kit_asset ? e.enemy_kit.assault.kit_asset : defaultGameAsset]
+      e.enemy_kit.engineer.kit_assets = [e.enemy_kit.engineer.kit_asset ? e.enemy_kit.engineer.kit_asset : defaultGameAsset]
+      e.enemy_kit.support.kit_assets = [e.enemy_kit.support.kit_asset ? e.enemy_kit.support.kit_asset : defaultGameAsset]
+      e.enemy_kit.recon.kit_assets = [e.enemy_kit.recon.kit_asset ? e.enemy_kit.recon.kit_asset : defaultGameAsset]
     })
+    levels[1].enemy_kit.level_id = 100
+    console.log('get levels')
+    console.log(defaultSoldierKitCollection)
+    ManagerStore.setAvailableLevels(levels)
     return levels
   }
 
   async get_level (project_id : string, level_id: string): Promise<Level> {
     const response = await this.get(`/v1/project/${project_id}/level/${level_id}/`)
     const data : unknown = response.data
+    console.log('get-level: ', response)
     const level : Level = <Level>data
     level.date_created = new Date(level.date_created)
     level.date_modified = new Date(level.date_modified)
-
+    if (level.friendly_kit == null) {
+      level.friendly_kit = <SoldierKitCollection>deepCopy<SoldierKitCollection>(defaultSoldierKitCollection)
+    }
+    if (level.enemy_kit == null) {
+      level.enemy_kit = <SoldierKitCollection>deepCopy<SoldierKitCollection>(defaultSoldierKitCollection)
+    }
+    level.friendly_kit.assault.kit_assets = [level.friendly_kit.assault.kit_asset ? level.friendly_kit.assault.kit_asset : defaultGameAsset]
+    level.friendly_kit.engineer.kit_assets = [level.friendly_kit.engineer.kit_asset ? level.friendly_kit.engineer.kit_asset : defaultGameAsset]
+    level.friendly_kit.support.kit_assets = [level.friendly_kit.support.kit_asset ? level.friendly_kit.support.kit_asset : defaultGameAsset]
+    level.friendly_kit.recon.kit_assets = [level.friendly_kit.recon.kit_asset ? level.friendly_kit.recon.kit_asset : defaultGameAsset]
+    level.enemy_kit.assault.kit_assets = [level.enemy_kit.assault.kit_asset ? level.enemy_kit.assault.kit_asset : defaultGameAsset]
+    level.enemy_kit.engineer.kit_assets = [level.enemy_kit.engineer.kit_asset ? level.enemy_kit.engineer.kit_asset : defaultGameAsset]
+    level.enemy_kit.support.kit_assets = [level.enemy_kit.support.kit_asset ? level.enemy_kit.support.kit_asset : defaultGameAsset]
+    level.enemy_kit.recon.kit_assets = [level.enemy_kit.recon.kit_asset ? level.enemy_kit.recon.kit_asset : defaultGameAsset]
     return level
   }
 
@@ -387,5 +482,71 @@ export class Manager {
     return response
   }
 
-  
+  async updateKits (project_id : string, level_id : string, friendly_kit_collection : SoldierKitCollection, enemy_kit_collection : SoldierKitCollection) {
+    if (friendly_kit_collection.assault.kit_assets.length > 0) {
+      friendly_kit_collection.assault.kit_asset = friendly_kit_collection.assault.kit_assets[0]
+    }
+    if (friendly_kit_collection.engineer.kit_assets.length > 0) {
+      friendly_kit_collection.engineer.kit_asset = friendly_kit_collection.engineer.kit_assets[0]
+    }
+    if (friendly_kit_collection.support.kit_assets.length > 0) {
+      friendly_kit_collection.support.kit_asset = friendly_kit_collection.support.kit_assets[0]
+    }
+    if (friendly_kit_collection.recon.kit_assets.length > 0) {
+      friendly_kit_collection.recon.kit_asset = friendly_kit_collection.recon.kit_assets[0]
+    }
+    if (enemy_kit_collection.assault.kit_assets.length > 0) {
+      enemy_kit_collection.assault.kit_asset = enemy_kit_collection.assault.kit_assets[0]
+    }
+    if (enemy_kit_collection.engineer.kit_assets.length > 0) {
+      enemy_kit_collection.engineer.kit_asset = enemy_kit_collection.engineer.kit_assets[0]
+    }
+    if (enemy_kit_collection.support.kit_assets.length > 0) {
+      enemy_kit_collection.support.kit_asset = enemy_kit_collection.support.kit_assets[0]
+    }
+    if (enemy_kit_collection.recon.kit_assets.length > 0) {
+      enemy_kit_collection.recon.kit_asset = enemy_kit_collection.recon.kit_assets[0]
+    }
+    const response = await this.post(`/v1/project/${project_id}/level/${level_id}/kits/`, {
+      friendly: friendly_kit_collection,
+      enemy: enemy_kit_collection
+    })
+    return response
+  }
+}
+
+/**
+ * Deep copy function for TypeScript.
+ * @param T Generic type of target/copied value.
+ * @param target Target value to be copied.
+ * @see Source project, ts-deepcopy https://github.com/ykdr2017/ts-deepcopy
+ * @see Code pen https://codepen.io/erikvullings/pen/ejyBYg
+ */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+export const deepCopy = <T>(target: T): T | any => {
+  if (target === null) {
+    return target
+  }
+  if (target instanceof Date) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
+    return new Date(target.getTime()) as any
+  }
+  if (target instanceof Array) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const cp = [] as any[];
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
+    (target as any[]).forEach((v) => { cp.push(v) })
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
+    return cp.map((n: any) => deepCopy<any>(n)) as any
+  }
+  if (typeof target === 'object' && target !== {}) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+    const cp = { ...(target as { [key: string]: any }) } as { [key: string]: any }
+    Object.keys(cp).forEach(k => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+      cp[k] = deepCopy<any>(cp[k])
+    })
+    return cp as T
+  }
+  return target
 }

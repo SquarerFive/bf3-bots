@@ -1,7 +1,7 @@
 import { storeInstance } from './index'
 import { Action, getModule, Module, Mutation, VuexModule } from 'vuex-module-decorators'
 
-import { Profile, Project } from './models'
+import { Level, Profile, Project } from './models'
 
 @Module({
   dynamic: true,
@@ -28,6 +28,9 @@ export class ManagerStoreModule extends VuexModule {
     loginOpened = false
     createProjectOpened = false
     levelBuildProgress = 0.0
+
+    availableLevels: Level[] = []
+    shouldShowBotSettings = false
 
     @Mutation
     SET_LOGGEDIN (newLoggedIn: boolean) {
@@ -88,6 +91,26 @@ export class ManagerStoreModule extends VuexModule {
     @Action
     setLevelBuildProgress (newProgress : number) {
       this.SET_LEVEL_BUILD_PROGRESS(newProgress)
+    }
+
+    @Mutation
+    SET_AVAILABLE_LEVELS (newAvailableLevels : Level[]) {
+      this.availableLevels = newAvailableLevels
+    }
+
+    @Action
+    setAvailableLevels (newAvailableLevels : Level[]) {
+      this.SET_AVAILABLE_LEVELS(newAvailableLevels)
+    }
+
+    @Mutation
+    SET_SHOULD_SHOW_BOT_SETTINGS (newShouldShowBotSettings : boolean) {
+      this.shouldShowBotSettings = newShouldShowBotSettings
+    }
+
+    @Action
+    setShouldShowBotSettings (newShouldShowBotSettings : boolean) {
+      this.SET_SHOULD_SHOW_BOT_SETTINGS(newShouldShowBotSettings)
     }
 }
 

@@ -14,7 +14,7 @@
           icon="menu"
           aria-label="Menu"
           style="font-size: 12px; margin-top: -18px"
-          @click="leftDrawerOpen = !leftDrawerOpen; drawerClick()"
+          @click="drawerClick()"
         />
 
         <q-toolbar-title
@@ -28,6 +28,8 @@
           style="font-size: 12px; margin-top: -18px"
         >
         </q-toolbar-title>
+        <q-btn dense color="warning" text-color="dark" label="Show bot configuration" style="font-size: 11px; margin-top: -18px; padding: 0px; margin-right: 5px;" @click="toggleBotConfiguration"/>
+        <q-btn dense color="warning" text-color="dark" label="Switch input to game." style="font-size: 11px; margin-top: -18px; padding: 0px; margin-right: 5px;" @click="switchInputToGame"/>
         <p style="font-size: 11px" v-if="managerStore">
           Project: {{managerStore.currentProject.name}}
         </p>
@@ -35,7 +37,7 @@
           flat
           label="LOGIN"
           class="bg-primary"
-          style="font-size: 11px; margin-top: -18px; padding: 0px"
+          style="font-size: 11px; margin-top: -18px; padding: 0px; margin-left: 5px"
           @click="openLogin()"
           v-if="!isLoggedIn"
         />
@@ -109,7 +111,18 @@ export default class MainLayout extends Vue {
   }
 
   drawerClick () {
+    this.leftDrawerOpen = !this.leftDrawerOpen
     console.log('Drawer icon clicked')
+  }
+
+  switchInputToGame () {
+    if (window.GameSyncManager) {
+      window.GameSyncManager.resetFocus()
+    }
+  }
+
+  toggleBotConfiguration () {
+    ManagerStore.setShouldShowBotSettings(true)
   }
 
   get loginOpened () {

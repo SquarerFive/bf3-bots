@@ -86,7 +86,7 @@
     <q-footer bordered class="bg-grey-10 text-white">
       <q-toolbar>
         <p style='margin-bottom: 0; font-size:12px;'>
-          BF3 Navigation Project &nbsp; <span style="color: #888888 "> 0.0.1:21012021 </span> <br> SquarerFive
+          BF3 Navigation Project &nbsp; <span style="color: #888888 "> 0.0.4:06022021 </span> <br> SquarerFive
           </p>
         <q-toolbar-title>
         </q-toolbar-title>

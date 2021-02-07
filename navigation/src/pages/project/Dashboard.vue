@@ -4,7 +4,9 @@
         <h5> Tools </h5>
         <div class="row items-start" v-if="loaded && managerStore != null">
           <tool-widget-component :toolName="'add level'" :to="`/project/${managerStore.currentProject.project_id}/tools/add-level`" style="margin-right:5px;"/>
+          <!--
           <tool-widget-component :toolName="'loadout manager'" :to="`/project/${managerStore.currentProject.project_id}/tools/loadout-manager`" style="margin-right:5px;"/>
+          -->
         </div>
       </div>
       <q-separator dark />
