@@ -1,4 +1,4 @@
-name: battlefield3_
+name: battlefield
 channels:
   - conda-forge
   - https://conda.anaconda.org/conda-forge
