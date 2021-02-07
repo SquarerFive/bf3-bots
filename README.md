@@ -1,5 +1,5 @@
 # bf3-bots
-AI mod for BF3, reviving the Battlefield 2 experience
+AI mod for BF3, reviving the Battlefield 2 experience.
 
 This mod is currently in early development. Feel free to contribute but there is no guaruntee that the mod will be stable if you plan on using it (I will only be providing support for those who wish to contribute at the moment).
 
@@ -24,6 +24,14 @@ This mod is currently in early development. Feel free to contribute but there is
 4. Activate the conda environment: `conda activate battlefield`
 5. CD into the AI server folder: `cd AIHelper`
 6. Start the AI server: `python manage.py runserver`
+
+## System Requirements
+- CPU: Intel/AMD @3.5GHz - 4 cores 8 threads minimum
+- RAM: 8GB RAM, nav-mesh on large maps are at-least 512MB
+- HDD: 20GB Free
+- Display: 1280x720. Lower resolutions may work but it's not supported.
+- Typically most mid-range hardware after 2014 should be able to run the mod.
+
 
 ## UI
 ### Notes
