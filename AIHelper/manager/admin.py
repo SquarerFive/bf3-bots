@@ -12,4 +12,8 @@ class GameAssetAdmin(admin.ModelAdmin):
 
 @admin.register(models.SoldierKit)
 class SoldierKitAdmin(admin.ModelAdmin):
-    fields = ('primary_weapon', 'secondary_weapon', 'primary_gadget', 'secondary_gadget', 'melee', 'faction')
+    fields = ('primary_weapon', 'secondary_weapon', 'primary_gadget', 'secondary_gadget', 'melee', 'kit_asset', 'appearance')
+
+@admin.register(models.SoldierKitCollection)
+class SoldierKitCollectionAdmin(admin.ModelAdmin):
+    fields = ('assault', 'engineer', 'support', 'recon', 'faction')

@@ -1,5 +1,7 @@
 from django.db import models
 import django.contrib.auth.models as django_models
+from manager.models import SoldierKitCollection
+
 # Create your models here. 
 
 class Objective(models.Model):
@@ -12,14 +14,14 @@ class Objective(models.Model):
     capturable = models.BooleanField(default=True)
 
 class Level(models.Model):
-    raw_data = models.BinaryField(blank=True, null=True)
-    cost_data = models.BinaryField(blank=True, null=True)
-    elevation_data = models.BinaryField(blank=True, null=True)
+    # raw_data = models.BinaryField(blank=True, null=True)
+    # cost_data = models.BinaryField(blank=True, null=True)
+    # elevation_data = models.BinaryField(blank=True, null=True)
 
     relative_path = models.TextField(default="./models/Project/{0}/Level/{1}/")
 
     name = models.TextField(default="no-map-name")
-    transform = models.JSONField()
+    transform = models.JSONField(default=dict, null=True)
 
     project_id = models.IntegerField(default=0)
     date_created = models.DateTimeField(auto_created=True, null=True)
@@ -28,6 +30,9 @@ class Level(models.Model):
     level_id = models.IntegerField(default= 0)
 
     roads = models.JSONField(default = dict)
+
+    friendly_kit = models.ForeignKey(SoldierKitCollection, on_delete=models.CASCADE, related_name='friendly_kit', null=True)
+    enemy_kit = models.ForeignKey(SoldierKitCollection, on_delete=models.CASCADE, related_name='enemy_kit', null=True)
 
 class Project(models.Model):
     project_id = models.IntegerField(default = 0)

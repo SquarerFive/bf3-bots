@@ -17,7 +17,8 @@ class ProjectSerializer(serializers.ModelSerializer):
 class LevelSerializer(serializers.ModelSerializer):
     class Meta:
         model = navigation_models.Level
-        exclude = ['raw_data', 'cost_data', 'elevation_data']
+        fields = '__all__'
+        # exclude = ['raw_data', 'cost_data', 'elevation_data']
 
 class ProjectTaskJSONSerializer(serializers.ModelSerializer):
     class Meta:
@@ -27,4 +28,14 @@ class ProjectTaskJSONSerializer(serializers.ModelSerializer):
 class GameAssetSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.GameAsset
+        fields = '__all__'
+
+class SoldierKitCollectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.SoldierKitCollection
+        fields = '__all__'
+
+class SoldierKitSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.SoldierKit
         fields = '__all__'

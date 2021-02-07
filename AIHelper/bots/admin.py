@@ -4,8 +4,8 @@ from .models import Player, Bot, BasePlayer
 
 @admin.register(Bot)
 class BotAdmin(admin.ModelAdmin):
-    fields = ("name", "player_id", "team", "action", "order", "health", "transform", "in_vehicle", "path", "bot_index", "target", "squad")
-
+    fields = ("name", "player_id", "team", "action", "order", "health", "transform", "in_vehicle", "path", "bot_index", "target", "squad", "selected_kit")
+    list_display = ("name", "player_id", "action", "order", "team", "in_vehicle")
 @admin.register(Player)
 class PlayerAdmin(admin.ModelAdmin):
     fields = ("name", "player_id", "team", "health", "transform", "in_vehicle",  "has_soldier", "squad")

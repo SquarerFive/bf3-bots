@@ -1,7 +1,18 @@
+from django.conf.urls import url
+from manager.viewsets import LevelViewset, ProjectViewset, SoldierKitCollectionViewset
 from django.urls import path, include
+from rest_framework import routers
 from . import views
 from django.conf import settings
 
+import manager
+
+from rest_framework.routers import DefaultRouter
+
+router = DefaultRouter()
+router.register('levels', LevelViewset, basename='level')
+router.register('projects', ProjectViewset, basename='project')
+router.register('soldierkitcollections', SoldierKitCollectionViewset, basename='soldierkitcollection')
 
 
 urlpatterns = [
@@ -12,7 +23,8 @@ urlpatterns = [
     path("clear-tasks/", views.manager_clear_tasks, name="manager-clear-tasks"),
     path("project/", views.manager_get_projects, name = 'manager-get-projects'),
     path('assets/', views.manager_get_assets, name='manager-get-assets'),
-    
+    # path('levels/', views.manager_get_level_internal, name='manager-get-level-internal'),
+
     path("project/<int:project_id>/", views.manager_get_project, name='manager-get-project'),
     path("project/<int:project_id>/level/", views.manager_get_levels, name='manager-get-levels'),
     path("project/<int:project_id>/level/<int:level_id>/", views.manager_get_level, name='manager-get-level'),
@@ -26,7 +38,12 @@ urlpatterns = [
     path("project/<int:project_id>/tasks/start/", views.manager_start_all_tasks, name='manager-start-tasks-all'),
     path("project/<int:project_id>/level/update/", views.manager_update_level, name='manager-update-level'),
     path("project/<int:project_id>/level/<int:level_id>/reset/", views.manager_reset_level_data, name='manager-reset-level-data'),
+    path("project/<int:project_id>/level/<int:level_id>/on-level-loaded/", views.manager_on_level_loaded, name='manager-on-level-loaded'),
     path("project/<int:project_id>/level/<int:level_id>/recalculate/", views.manager_recalculate_costs, name='manager-recalculate-costs'),
+    path("project/<int:project_id>/level/<int:level_id>/kits/", views.manager_push_soldier_kit_data, name="manager-push-kit-data"),
+    path("project/<int:project_id>/get-level-id/", views.manager_get_level_id, name="manager-get-level-id"),
 
     path("utils/assets/import-from-csv/", views.manager_import_asset_from_csv, name="manager-import-asset-from-csv"),
 ]
+
+urlpatterns += router.urls

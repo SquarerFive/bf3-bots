@@ -152,9 +152,13 @@ class Level:
         #else:
         # return []
         #print('finding path', start, end)
-        path = self.find_path_safe(
-            self.get_valid_point_in_radius(self.costs, start[0], start[1], 90), 
-            self.get_valid_point_in_radius(self.costs, end[0], end[1], 90))
+        if (start[0] > 0 and start[0] < self.costs.shape[1] and start[1] > 0 and start[1] < self.costs.shape[2]
+            and end[0] > 0 and end[0] < self.costs.shape[1] and end[1] > 0 and end[1] < self.costs.shape[2]):
+                path = self.find_path_safe(
+                    self.get_valid_point_in_radius(self.costs, start[0], start[1], 90), 
+                    self.get_valid_point_in_radius(self.costs, end[0], end[1], 90))
+        else:
+            return []
         #print('got path')
         #path = astar(self.costs, start, end)
         # path_and_cost = [(p[0], p[1], self.costs[p[0]][p[1]] ) for p in path]

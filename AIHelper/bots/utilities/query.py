@@ -5,7 +5,7 @@ from typing import List, Tuple, Union
 bot_step = 0
 
 def create_or_update_bot(bot : dict):
-    b = models.Bot.objects.filter(player_id = bot['player_id']).first()
+    b : models.Bot = models.Bot.objects.filter(player_id = bot['player_id']).first()
     if not b:
         name = f"ImABot{bot['bot_index']}"
         b = models.Bot.objects.create(
@@ -18,7 +18,8 @@ def create_or_update_bot(bot : dict):
             in_vehicle=bot['in_vehicle'], 
             transform=bot['transform'], 
             bot_index=bot['bot_index'],
-            alive=bot['alive'])
+            alive=bot['alive'],
+            selected_kit = bot['kit'])
     else:
         b.transform = bot['transform']
         b.health = bot['health']
@@ -32,6 +33,8 @@ def create_or_update_bot(bot : dict):
         b.bot_index = bot['bot_index']
         b.alive = bot['alive']
         b.squad = bot['squad']
+        if int(bot['requested_target_id']) != -2:
+            b.target = int(bot['requested_target_id'])
         b.save()
 
 def create_or_update_player(player : dict):
@@ -91,7 +94,8 @@ def get_bots_as_dict():
             "path": bot.path,
             "player_id": bot.player_id,
             "bot_index": bot.bot_index,
-            "target": bot.target
+            "target": bot.target,
+            "selected_kit": bot.selected_kit
         }
         all_data.append(d)
         # print(group_index)

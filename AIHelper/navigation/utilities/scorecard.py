@@ -19,6 +19,8 @@ def score_fast(input_arr:np.ndarray, elevation_arr : np.ndarray, target:np.ndarr
                     target[level][x][y] = 256
                 if input_arr[level][x][y] == 500: # else:
                     target[level][x][y] = 500
+                if input_arr[level][x][y] == 700:
+                    target[level][x][y] = 700
 
 @njit(parallel=True)
 def get_world_array_fast(x_arr: np.ndarray, y_arr : np.ndarray, min_point : tuple, max_point : tuple, width: float, height: float):
@@ -39,7 +41,12 @@ def get_world_array(transform : transformations.GridTransform, input_arr : np.nd
     return (x_arr, y_arr)
 
 def score(model: models.Level, transform : transformations.GridTransform,  input_arr : np.ndarray, elevation_arr : np.ndarray, target : np.ndarray, layer : int = 0):
-    if 'features' in list(model.roads[layer].keys()):
+    valid = False
+    if model.roads:
+        if layer in model.roads.keys():
+            if 'features' in list(model.roads[layer].keys()):
+                valid = True
+    if valid:
         roads_data = model.roads[layer]['features']
         roads = GeometryCollection([shape(feature['geometry']).buffer(0.0) for feature in roads_data]).buffer(0.0)
         x_arr, y_arr = get_world_array(transform, input_arr)

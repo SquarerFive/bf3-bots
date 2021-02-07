@@ -30,6 +30,8 @@ from typing import List, Union
 
 from manager import models
 
+import random
+
 # Globals [to avoid poo memory, cache it here until the level changes]
 class GlobalCache:
     def __init__(self):
@@ -38,7 +40,7 @@ class GlobalCache:
     
     def get_object(self, project_id : int, level_id : int):
         if self.level_object:
-            if self.level_object.model.project_id == project_id:
+            if self.level_object.model.project_id == project_id and self.level_model.level_id == level_id:
                 return self.level_object
         self.level_model = level.models.Level.objects.filter(project_id= project_id, level_id=level_id).first()
         self.level_object = navigation_query.decode_level(self.level_model)
@@ -118,6 +120,39 @@ def manager_get_levels(request: Request, project_id: int, format=None) -> Respon
             serializers.LevelSerializer(j).data
         )) for j in query.navigation_models.Level.objects.filter(project_id=project_id)]
     }
+    for idx, level in enumerate(data['levels']):
+        if data['levels'][idx]['friendly_kit']:
+            data['levels'][idx]['friendly_kit'] = json.loads(JSONRenderer().render(
+                serializers.SoldierKitCollectionSerializer(models.SoldierKitCollection.objects.filter(id=data['levels'][idx]['friendly_kit'], faction=0).first()).data
+            ).decode('utf-8'))
+            data['levels'][idx]['friendly_kit']['assault'] = json.loads(JSONRenderer().render(
+                serializers.SoldierKitSerializer(models.SoldierKit.objects.filter(collection_id=data['levels'][idx]['friendly_kit']['id'], collection_slot=0).first()).data
+            ).decode('utf-8'))
+            data['levels'][idx]['friendly_kit']['engineer'] = json.loads(JSONRenderer().render(
+                serializers.SoldierKitSerializer(models.SoldierKit.objects.filter(collection_id=data['levels'][idx]['friendly_kit']['id'], collection_slot=1).first()).data
+            ).decode('utf-8'))
+            data['levels'][idx]['friendly_kit']['support'] = json.loads(JSONRenderer().render(
+                serializers.SoldierKitSerializer(models.SoldierKit.objects.filter(collection_id=data['levels'][idx]['friendly_kit']['id'], collection_slot=2).first()).data
+            ).decode('utf-8'))
+            data['levels'][idx]['friendly_kit']['recon'] = json.loads(JSONRenderer().render(
+                serializers.SoldierKitSerializer(models.SoldierKit.objects.filter(collection_id=data['levels'][idx]['friendly_kit']['id'], collection_slot=3).first()).data
+            ).decode('utf-8'))
+        if data['levels'][idx]['enemy_kit']:
+            data['levels'][idx]['enemy_kit'] = json.loads(JSONRenderer().render(
+                serializers.SoldierKitCollectionSerializer(models.SoldierKitCollection.objects.filter(id=data['levels'][idx]['enemy_kit'], faction=1).first()).data
+            ).decode('utf-8'))
+            data['levels'][idx]['enemy_kit']['assault'] = json.loads(JSONRenderer().render(
+                serializers.SoldierKitSerializer(models.SoldierKit.objects.filter(collection_id=data['levels'][idx]['enemy_kit']['id'], collection_slot=0).first()).data
+            ).decode('utf-8'))
+            data['levels'][idx]['enemy_kit']['engineer'] = json.loads(JSONRenderer().render(
+                serializers.SoldierKitSerializer(models.SoldierKit.objects.filter(collection_id=data['levels'][idx]['enemy_kit']['id'], collection_slot=1).first()).data
+            ).decode('utf-8'))
+            data['levels'][idx]['enemy_kit']['support'] = json.loads(JSONRenderer().render(
+                serializers.SoldierKitSerializer(models.SoldierKit.objects.filter(collection_id=data['levels'][idx]['enemy_kit']['id'], collection_slot=2).first()).data
+            ).decode('utf-8'))
+            data['levels'][idx]['enemy_kit']['recon'] = json.loads(JSONRenderer().render(
+                serializers.SoldierKitSerializer(models.SoldierKit.objects.filter(collection_id=data['levels'][idx]['enemy_kit']['id'], collection_slot=3).first()).data
+            ).decode('utf-8'))
     return Response(data)
 
 
@@ -125,11 +160,42 @@ def manager_get_levels(request: Request, project_id: int, format=None) -> Respon
 @authentication_classes([TokenAuthentication, SessionAuthentication])
 @permission_classes([IsAuthenticated])
 def manager_get_level(request: Request, project_id: int, level_id: int):
-    return Response(
-        json.loads(JSONRenderer().render(serializers.LevelSerializer(
+    level_dict = json.loads(JSONRenderer().render(serializers.LevelSerializer(
             query.navigation_models.Level.objects.filter(
-                project_id=project_id, level_id=level_id).first()
-        ).data)), content_type='application/json')
+                project_id=project_id, level_id=level_id).first()).data))
+    if level_dict['friendly_kit']:
+        level_dict['friendly_kit'] = json.loads(JSONRenderer().render(
+            serializers.SoldierKitCollectionSerializer(models.SoldierKitCollection.objects.filter(id=level_dict['friendly_kit'], faction=0).first()).data
+        ).decode('utf-8'))
+        level_dict['friendly_kit']['assault'] = json.loads(JSONRenderer().render(
+            serializers.SoldierKitSerializer(models.SoldierKit.objects.filter(collection_id=level_dict['friendly_kit']['id'], collection_slot=0).first()).data
+        ).decode('utf-8'))
+        level_dict['friendly_kit']['engineer'] = json.loads(JSONRenderer().render(
+            serializers.SoldierKitSerializer(models.SoldierKit.objects.filter(collection_id=level_dict['friendly_kit']['id'], collection_slot=1).first()).data
+        ).decode('utf-8'))
+        level_dict['friendly_kit']['support'] = json.loads(JSONRenderer().render(
+            serializers.SoldierKitSerializer(models.SoldierKit.objects.filter(collection_id=level_dict['friendly_kit']['id'], collection_slot=2).first()).data
+        ).decode('utf-8'))
+        level_dict['friendly_kit']['recon'] = json.loads(JSONRenderer().render(
+            serializers.SoldierKitSerializer(models.SoldierKit.objects.filter(collection_id=level_dict['friendly_kit']['id'], collection_slot=3).first()).data
+        ).decode('utf-8'))
+    if level_dict['enemy_kit']:
+        level_dict['enemy_kit'] = json.loads(JSONRenderer().render(
+            serializers.SoldierKitCollectionSerializer(models.SoldierKitCollection.objects.filter(id=level_dict['enemy_kit'], faction=1).first()).data
+        ).decode('utf-8'))
+        level_dict['enemy_kit']['assault'] = json.loads(JSONRenderer().render(
+            serializers.SoldierKitSerializer(models.SoldierKit.objects.filter(collection_id=level_dict['enemy_kit']['id'], collection_slot=0).first()).data
+        ).decode('utf-8'))
+        level_dict['enemy_kit']['engineer'] = json.loads(JSONRenderer().render(
+            serializers.SoldierKitSerializer(models.SoldierKit.objects.filter(collection_id=level_dict['enemy_kit']['id'], collection_slot=1).first()).data
+        ).decode('utf-8'))
+        level_dict['enemy_kit']['support'] = json.loads(JSONRenderer().render(
+            serializers.SoldierKitSerializer(models.SoldierKit.objects.filter(collection_id=level_dict['enemy_kit']['id'], collection_slot=2).first()).data
+        ).decode('utf-8'))
+        level_dict['enemy_kit']['recon'] = json.loads(JSONRenderer().render(
+            serializers.SoldierKitSerializer(models.SoldierKit.objects.filter(collection_id=level_dict['enemy_kit']['id'], collection_slot=3).first()).data
+        ).decode('utf-8'))
+    return Response(level_dict)
 
 
 @api_view(['GET'])
@@ -302,8 +368,33 @@ def manager_reset_level_data(request : Request, project_id : int, level_id : int
     if level_object:
         level_object.pre_process_data()
         global_cache.save_object()
+        for objective in navigation_models.Objective.objects.all():
+            objective.delete()
         return Response("Level reset successful")
     return Response("Level not found.", status=404)
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def manager_on_level_loaded(request : Request, project_id : int, level_id : int) -> Response:
+    global global_cache
+    level_object = global_cache.get_object(project_id, level_id)
+    if level_object:
+        for objective in navigation_models.Objective.objects.all():
+            objective.delete()
+        return Response("Old level cleared successfully")
+    return Response("LEvel not found", status=404)
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def manager_get_level_id(request : Request, project_id : int) -> Response:
+    data = request.data
+    level = navigation_models.Level.objects.filter(project_id = project_id, name=data['level_name']).first()
+    if level:
+        return Response(level.level_id)
+    else:
+        return Response('error')
 
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication, SessionAuthentication])
@@ -350,8 +441,8 @@ def manager_start_all_tasks(request: Request, project_id : int) -> Response:
     # navigation_query.encode_level(levelObject)
     global_cache.save_object()
     print('done')
-    # for task in models.ProjectTaskJSON.objects.all():
-    #     task.delete()
+    for task in models.ProjectTaskJSON.objects.all():
+        task.delete()
     return Response('Success')
 
 @api_view(['POST'])
@@ -378,16 +469,36 @@ def manager_update_level(request: Request, project_id : int) -> Response:
     global global_cache
     data = json.loads(request.body.decode('utf-8'))
     level_name = str(request.headers['Level'])
-    level_model = level.models.Level.objects.filter(name=level_name, project_id=project_id).first()
+    level_model : navigation_models.Level = level.models.Level.objects.filter(name=level_name, project_id=project_id).first()
     if level_model:
         level_object = global_cache.get_object(project_id, level_model.level_id)
+        friendly_faction_kit_collection : models.SoldierKitCollection = models.SoldierKitCollection.objects.filter(project_id=project_id, level_id=level_model.level_id, faction=0).first()
+        enemy_faction_kit_collection : models.SoldierKitCollection = models.SoldierKitCollection.objects.filter(project_id=project_id, level_id=level_model.level_id, faction=1).first()
         for objective in data['objectives']:
             navigation_query.add_objective(objective)
-        for bot in data['bots']:
-            bots_query.create_or_update_bot(bot)
-            behaviour.compute(bot['bot_index'], level_object, bots_models.Bot, bots_models.Player, navigation_models.Objective)
         for player in data['players']:
             bots_query.create_or_update_player(player)
+        for bot in data['bots']:
+            active_collection = friendly_faction_kit_collection if bot['team'] == 0 else enemy_faction_kit_collection
+            kits = [
+                models.SoldierKit.objects.filter(collection_id=active_collection.id, collection_slot=0).first(),
+                models.SoldierKit.objects.filter(collection_id=active_collection.id, collection_slot=1).first(),
+                models.SoldierKit.objects.filter(collection_id=active_collection.id, collection_slot=2).first(),
+                models.SoldierKit.objects.filter(collection_id=active_collection.id, collection_slot=3).first(),
+            ]
+            kit = kits[random.randint(0,3)]
+            bot['kit'] = {
+                'primary_weapon': kit.primary_weapon[random.randint(0, len(kit.primary_weapon))-1] if len(kit.primary_weapon) > 0 else None,
+                'secondary_weapon': kit.secondary_weapon[random.randint(0, len(kit.secondary_weapon))-1] if len(kit.secondary_weapon) > 0 else None,
+                'primary_gadget': kit.primary_gadget[random.randint(0, len(kit.primary_gadget))-1] if len(kit.primary_gadget) > 0 else None,
+                'secondary_gadget': kit.secondary_gadget[random.randint(0, len(kit.secondary_gadget))-1] if len(kit.secondary_gadget) > 0 else None,
+                'melee': kit.melee[random.randint(0, len(kit.melee))-1] if len(kit.melee) > 0 else None,
+                'unlocks': kit.appearance[random.randint(0, len(kit.melee))-1] if len(kit.appearance) > 0 else None,
+                'kit_asset': kit.kit_asset
+            }
+            bots_query.create_or_update_bot(bot)
+            behaviour.compute(bot['bot_index'], level_object, bots_models.Bot, bots_models.Player, navigation_models.Objective, int(bot['requested_target_id'])!=-2, int(bot['requested_target_id']))
+        
         data = {
             "bots" : bots_query.get_bots_as_dict()
         }
@@ -471,6 +582,8 @@ def manager_import_asset_from_csv(request : Request) -> Response:
 @permission_classes([IsAuthenticated])
 def manager_get_assets(request : Request) -> Response:
     assets = []
+    for task in models.ProjectTaskJSON.objects.all():
+        task.delete()
     for asset in models.GameAsset.objects.all():
         assets.append(
             json.loads(
@@ -479,3 +592,255 @@ def manager_get_assets(request : Request) -> Response:
                 ).data).decode('utf-8')
         ))
     return Response(assets)# content_type='application/json')
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication, SessionAuthentication])
+@permission_classes([IsAuthenticated])
+def manager_get_soldier_kits(request : Request, project_id : int, level_id : int) -> Response:
+    level : navigation_models.Level = navigation_models.Level.objects.filter(level_id=level_id, project_id = project_id).first()
+    # level.friendly_kit.
+    return Response('inev')
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def manager_push_soldier_kit_data(request : Request, project_id : int, level_id : int) -> Response:
+    global_cache.get_object(project_id, level_id)
+    print(project_id, level_id)
+    data = request.data
+    
+    # enemy_kit = models.SoldierKitCollection.objects.create()
+    friendly_kit : models.SoldierKitCollection = models.SoldierKitCollection.objects.filter(level_id = level_id, project_id = project_id, faction = 0).first()
+    if not friendly_kit:
+        friendly_kit : models.SoldierKitCollection = models.SoldierKitCollection.objects.create()
+    friendly_kit.faction = 0
+    friendly_kit.project_id = project_id
+    friendly_kit.level_id = level_id
+    
+    if not friendly_kit.assault:
+        assault : models.SoldierKit = models.SoldierKit.objects.create()
+        assault.primary_weapon = data['friendly']['assault']['primary_weapon']
+        assault.secondary_weapon = data['friendly']['assault']['secondary_weapon']
+        assault.primary_gadget = data['friendly']['assault']['primary_gadget']
+        assault.secondary_gadget = data['friendly']['assault']['secondary_gadget']
+        assault.melee = data['friendly']['assault']['melee']
+        assault.collection_slot = 0
+        assault.collection_id = friendly_kit.id
+        assault.appearance = data['friendly']['assault']['appearance']
+        assault.kit_asset = data['friendly']['assault']['kit_asset']
+        assault.save()
+        friendly_kit.assault = assault
+    else:
+        assault : models.SoldierKit = models.SoldierKit.objects.filter(collection_slot = 0, collection_id = friendly_kit.id).first()
+        assault.primary_weapon = data['friendly']['assault']['primary_weapon']
+        assault.secondary_weapon = data['friendly']['assault']['secondary_weapon']
+        assault.primary_gadget = data['friendly']['assault']['primary_gadget']
+        assault.secondary_gadget = data['friendly']['assault']['secondary_gadget']
+        assault.melee = data['friendly']['assault']['melee']
+        assault.collection_slot = 0
+        assault.collection_id = friendly_kit.id
+        assault.appearance = data['friendly']['assault']['appearance']
+        assault.kit_asset = data['friendly']['assault']['kit_asset']
+        assault.save()
+
+    if not friendly_kit.engineer:
+        engineer : models.SoldierKit = models.SoldierKit.objects.create()
+        engineer.primary_weapon = data['friendly']['engineer']['primary_weapon']
+        engineer.secondary_weapon = data['friendly']['engineer']['secondary_weapon']
+        engineer.primary_gadget = data['friendly']['engineer']['primary_gadget']
+        engineer.secondary_gadget = data['friendly']['engineer']['secondary_gadget']
+        engineer.melee = data['friendly']['engineer']['melee']
+        engineer.collection_slot = 1
+        engineer.collection_id = friendly_kit.id
+        engineer.appearance = data['friendly']['engineer']['appearance']
+        engineer.kit_asset = data['friendly']['engineer']['kit_asset']
+        engineer.save()
+        friendly_kit.engineer = engineer
+    else:
+        engineer : models.SoldierKit = models.SoldierKit.objects.filter(collection_slot = 1, collection_id = friendly_kit.id).first()
+        engineer.primary_weapon = data['friendly']['engineer']['primary_weapon']
+        engineer.secondary_weapon = data['friendly']['engineer']['secondary_weapon']
+        engineer.primary_gadget = data['friendly']['engineer']['primary_gadget']
+        engineer.secondary_gadget = data['friendly']['engineer']['secondary_gadget']
+        engineer.melee = data['friendly']['engineer']['melee']
+        engineer.collection_slot = 1
+        engineer.collection_id = friendly_kit.id
+        engineer.appearance = data['friendly']['engineer']['appearance']
+        engineer.kit_asset = data['friendly']['engineer']['kit_asset']
+        engineer.save()
+
+    if not friendly_kit.support:
+        support : models.SoldierKit = models.SoldierKit.objects.create()
+        support.primary_weapon = data['friendly']['support']['primary_weapon']
+        support.secondary_weapon = data['friendly']['support']['secondary_weapon']
+        support.primary_gadget = data['friendly']['support']['primary_gadget']
+        support.secondary_gadget = data['friendly']['support']['secondary_gadget']
+        support.melee = data['friendly']['support']['melee']
+        support.collection_slot = 2
+        support.collection_id = friendly_kit.id
+        support.appearance = data['friendly']['support']['appearance']
+        support.kit_asset = data['friendly']['support']['kit_asset']
+        support.save()
+        friendly_kit.support = support
+    else:
+        support : models.SoldierKit = models.SoldierKit.objects.filter(collection_slot = 2, collection_id = friendly_kit.id).first()
+        support.primary_weapon = data['friendly']['support']['primary_weapon']
+        support.secondary_weapon = data['friendly']['support']['secondary_weapon']
+        support.primary_gadget = data['friendly']['support']['primary_gadget']
+        support.secondary_gadget = data['friendly']['support']['secondary_gadget']
+        support.melee = data['friendly']['support']['melee']
+        support.collection_slot = 2
+        support.collection_id = friendly_kit.id
+        support.appearance = data['friendly']['support']['appearance']
+        support.kit_asset = data['friendly']['support']['kit_asset']
+        support.save()
+    
+    if not friendly_kit.recon:
+        recon : models.SoldierKit = models.SoldierKit.objects.create()
+        recon.primary_weapon = data['friendly']['recon']['primary_weapon']
+        recon.secondary_weapon = data['friendly']['recon']['secondary_weapon']
+        recon.primary_gadget = data['friendly']['recon']['primary_gadget']
+        recon.secondary_gadget = data['friendly']['recon']['secondary_gadget']
+        recon.melee = data['friendly']['recon']['melee']
+        recon.collection_slot = 3
+        recon.collection_id = friendly_kit.id
+        recon.appearance = data['friendly']['recon']['appearance']
+        recon.kit_asset = data['friendly']['recon']['kit_asset']
+        recon.save()
+        friendly_kit.recon = recon
+    else:
+        recon : models.SoldierKit = models.SoldierKit.objects.filter(collection_slot = 3, collection_id = friendly_kit.id).first()
+        recon.primary_weapon = data['friendly']['recon']['primary_weapon']
+        recon.secondary_weapon = data['friendly']['recon']['secondary_weapon']
+        recon.primary_gadget = data['friendly']['recon']['primary_gadget']
+        recon.secondary_gadget = data['friendly']['recon']['secondary_gadget']
+        recon.melee = data['friendly']['recon']['melee']
+        recon.collection_slot = 3
+        recon.collection_id = friendly_kit.id
+        recon.appearance = data['friendly']['recon']['appearance']
+        recon.kit_asset = data['friendly']['recon']['kit_asset']
+        recon.save()
+
+    friendly_kit.save()
+
+
+
+    enemy_kit : models.SoldierKitCollection = models.SoldierKitCollection.objects.filter(level_id = level_id, project_id = project_id, faction = 1).first()
+    if not enemy_kit:
+        enemy_kit : models.SoldierKitCollection = models.SoldierKitCollection.objects.create()
+    enemy_kit.faction = 1
+    enemy_kit.project_id = project_id
+    enemy_kit.level_id = level_id
+    
+    if not enemy_kit.assault:
+        assault : models.SoldierKit = models.SoldierKit.objects.create()
+        assault.primary_weapon = data['enemy']['assault']['primary_weapon']
+        assault.secondary_weapon = data['enemy']['assault']['secondary_weapon']
+        assault.primary_gadget = data['enemy']['assault']['primary_gadget']
+        assault.secondary_gadget = data['enemy']['assault']['secondary_gadget']
+        assault.melee = data['enemy']['assault']['melee']
+        assault.collection_slot = 0
+        assault.collection_id = enemy_kit.id
+        assault.appearance = data['enemy']['assault']['appearance']
+        assault.kit_asset = data['enemy']['assault']['kit_asset']
+        assault.save()
+        enemy_kit.assault = assault
+    else:
+        assault : models.SoldierKit = models.SoldierKit.objects.filter(collection_slot = 0, collection_id = enemy_kit.id).first()
+        assault.primary_weapon = data['enemy']['assault']['primary_weapon']
+        assault.secondary_weapon = data['enemy']['assault']['secondary_weapon']
+        assault.primary_gadget = data['enemy']['assault']['primary_gadget']
+        assault.secondary_gadget = data['enemy']['assault']['secondary_gadget']
+        assault.melee = data['enemy']['assault']['melee']
+        assault.collection_slot = 0
+        assault.collection_id = enemy_kit.id
+        assault.appearance = data['enemy']['assault']['appearance']
+        assault.kit_asset = data['enemy']['assault']['kit_asset']
+        assault.save()
+
+    if not enemy_kit.engineer:
+        engineer : models.SoldierKit = models.SoldierKit.objects.create()
+        engineer.primary_weapon = data['enemy']['engineer']['primary_weapon']
+        engineer.secondary_weapon = data['enemy']['engineer']['secondary_weapon']
+        engineer.primary_gadget = data['enemy']['engineer']['primary_gadget']
+        engineer.secondary_gadget = data['enemy']['engineer']['secondary_gadget']
+        engineer.melee = data['enemy']['engineer']['melee']
+        engineer.collection_slot = 1
+        engineer.collection_id = enemy_kit.id
+        engineer.appearance = data['enemy']['engineer']['appearance']
+        engineer.kit_asset = data['enemy']['engineer']['kit_asset']
+        engineer.save()
+        enemy_kit.engineer = engineer
+    else:
+        engineer : models.SoldierKit = models.SoldierKit.objects.filter(collection_slot = 1, collection_id = enemy_kit.id).first()
+        engineer.primary_weapon = data['enemy']['engineer']['primary_weapon']
+        engineer.secondary_weapon = data['enemy']['engineer']['secondary_weapon']
+        engineer.primary_gadget = data['enemy']['engineer']['primary_gadget']
+        engineer.secondary_gadget = data['enemy']['engineer']['secondary_gadget']
+        engineer.melee = data['enemy']['engineer']['melee']
+        engineer.collection_slot = 1
+        engineer.collection_id = enemy_kit.id
+        engineer.appearance = data['enemy']['engineer']['appearance']
+        engineer.kit_asset = data['enemy']['engineer']['kit_asset']
+        engineer.save()
+
+    if not enemy_kit.support:
+        support : models.SoldierKit = models.SoldierKit.objects.create()
+        support.primary_weapon = data['enemy']['support']['primary_weapon']
+        support.secondary_weapon = data['enemy']['support']['secondary_weapon']
+        support.primary_gadget = data['enemy']['support']['primary_gadget']
+        support.secondary_gadget = data['enemy']['support']['secondary_gadget']
+        support.melee = data['enemy']['support']['melee']
+        support.collection_slot = 2
+        support.collection_id = enemy_kit.id
+        support.appearance = data['enemy']['support']['appearance']
+        support.kit_asset = data['enemy']['support']['kit_asset']
+        support.save()
+        enemy_kit.support = support
+    else:
+        support : models.SoldierKit = models.SoldierKit.objects.filter(collection_slot = 2, collection_id = enemy_kit.id).first()
+        support.primary_weapon = data['enemy']['support']['primary_weapon']
+        support.secondary_weapon = data['enemy']['support']['secondary_weapon']
+        support.primary_gadget = data['enemy']['support']['primary_gadget']
+        support.secondary_gadget = data['enemy']['support']['secondary_gadget']
+        support.melee = data['enemy']['support']['melee']
+        support.collection_slot = 2
+        support.collection_id = enemy_kit.id
+        support.appearance = data['enemy']['support']['appearance']
+        support.kit_asset = data['enemy']['support']['kit_asset']
+        support.save()
+    
+    if not enemy_kit.recon:
+        recon : models.SoldierKit = models.SoldierKit.objects.create()
+        recon.primary_weapon = data['enemy']['recon']['primary_weapon']
+        recon.secondary_weapon = data['enemy']['recon']['secondary_weapon']
+        recon.primary_gadget = data['enemy']['recon']['primary_gadget']
+        recon.secondary_gadget = data['enemy']['recon']['secondary_gadget']
+        recon.melee = data['enemy']['recon']['melee']
+        recon.collection_slot = 3
+        recon.collection_id = enemy_kit.id
+        recon.appearance = data['enemy']['recon']['appearance']
+        recon.kit_asset = data['enemy']['recon']['kit_asset']
+        recon.save()
+        enemy_kit.recon = recon
+    else:
+        recon : models.SoldierKit = models.SoldierKit.objects.filter(collection_slot = 3, collection_id = enemy_kit.id).first()
+        recon.primary_weapon = data['enemy']['recon']['primary_weapon']
+        recon.secondary_weapon = data['enemy']['recon']['secondary_weapon']
+        recon.primary_gadget = data['enemy']['recon']['primary_gadget']
+        recon.secondary_gadget = data['enemy']['recon']['secondary_gadget']
+        recon.melee = data['enemy']['recon']['melee']
+        recon.collection_slot = 3
+        recon.collection_id = enemy_kit.id
+        recon.appearance = data['enemy']['recon']['appearance']
+        recon.kit_asset = data['enemy']['recon']['kit_asset']
+        recon.save()
+
+    enemy_kit.save()
+
+    global_cache.level_model.friendly_kit = friendly_kit
+    global_cache.level_model.enemy_kit = enemy_kit
+    global_cache.level_model.save()
+    
+    return Response("Success")
+

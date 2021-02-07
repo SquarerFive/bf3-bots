@@ -128,3 +128,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 *.key
+
+AIHelper/bots/migrations/
+AIHelper/manager/migrations/
+AIHelper/navigation/migrations/

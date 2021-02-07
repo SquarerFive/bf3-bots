@@ -30,6 +30,10 @@ class Bot(BasePlayer):
     order  = models.IntegerField(default=1)
     path = models.JSONField(default=dict, blank=True, null=True)
     target = models.IntegerField(default = -1)
+
+    selected_kit = models.JSONField(default = dict)
+
+
     
 class Player(BasePlayer):
     pass
