@@ -15,5 +15,5 @@ more-itertools==8.6.0
 numpy==1.18.4
 oauthlib==3.1.0
 pipreqs==0.4.10
-git+git://github.com/hjweide/pyastar.git@master#egg=pyastar
+pyastar @ git+git://github.com/hjweide/pyastar.git@master#egg=pyastar
 yarg==0.1.9
