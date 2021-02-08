@@ -22,7 +22,10 @@ function BotsManager:__init()
     self.data_step = 1
     self.bot_update_step = 1
     self.should_step_through_bots = false
-    self.bot_update_interval = 30
+    --
+    self.bot_update_interval = 1
+    self.bot_update_tickrate = 0.01
+    --
     self.last_bot_update_time = 0.0
 
     self.players = {}
@@ -656,7 +659,7 @@ function BotsManager:Tick(deltaTime, pass)
     --     self.last_bot_update_time = SharedUtils:GetTime()
     -- end
     
-    if self.should_update == true or (SharedUtils:GetTime() - self.last_update_time) > 2 then
+    if self.should_update == true or (SharedUtils:GetTime() - self.last_update_time) > self.bot_update_interval then
         self.last_update_time = SharedUtils:GetTime()
         -- print("Update")
         self.should_update = false
