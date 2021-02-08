@@ -304,6 +304,11 @@ function BotsManager:OnLevelLoaded(levelName, gameMode, round, roundsPerMap)
             self:PostManager('/project/'..self.project_id..'/level/'..tostring(level_id)..'/on-level-loaded/', '{}')
         end
     end
+    if #self.bots > 0 then
+        for _, bot in pairs(self.bots) do
+            bot:Kill()
+        end
+    end
     self.objectives = {}
     EntityManager:TraverseAllEntities(function(entity)
         -- Do something with entity.

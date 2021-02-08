@@ -667,6 +667,7 @@ end
 function Bot:Destroy()
     self.__input = nil
     self.soldier = nil
+    self:Reset()
     PlayerManager:DeletePlayer(self.player_controller)
 end
 
@@ -908,6 +909,15 @@ function Bot:Reset()
     self.stopMoving = false
     self.action = Actions.ATTACK
     self.order = Orders.ENEMY
+end
+
+function Bot:Kill()
+    if self.player_controller.soldier ~= nil then
+        self.player_controller.soldier:Kill()        
+        self.soldier =  nil
+        self.alive = false
+        self:Reset()
+    end
 end
 
 
