@@ -65,9 +65,9 @@ def manager_base(request: Request, format=None) -> Response:
 @permission_classes([AllowAny])
 def manager_login(request: Request, format=None) -> Response:
     data = json.loads(request.body.decode('utf-8'))
-    print("logging in", data)
+    print("logging in")
     success, token = query.login_user(data['username'], data['password'])
-
+    # print(success, token)
     if success:
         data = {
             'username': data['username'],

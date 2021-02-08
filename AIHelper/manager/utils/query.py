@@ -11,7 +11,9 @@ from datetime import datetime
 def login_user(username: str, password: str) -> Tuple[bool, str]:
     profile = navigation_models.Profile.objects.filter(username=username).first()
     if profile:
+        # print("Got profile: ", profile)
         user = authenticate(username=username, password=password)
+        # print(user)
         if user != None:
             token = Token.objects.filter(user=user).first()
             if token:

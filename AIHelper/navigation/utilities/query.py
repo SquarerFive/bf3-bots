@@ -111,9 +111,12 @@ def register_user(
     description: str,):
     # ensure unique
     if models.Profile.objects.filter(username=username).first() == None:
+        userObj : User = User.objects.create(username=username, password=password, email=email)
+        userObj.set_password(password)
+        userObj.save()
         models.Profile.objects.create(
             user_level = 0, 
             profile_id = models.Profile.objects.count()+1,
             username = username,
-            user = User.objects.create(username=username, password=password, email=email),
+            user = userObj,
             description = description)
