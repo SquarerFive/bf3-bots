@@ -81,7 +81,7 @@ def compute(bot_id : int, current_level : Level, BotModels : models.Bot, PlayerM
     # print("Compute", bot.action, int(orders.BotActionEnum.ATTACK), closest_objective, closest_enemy, objectives)
     if bot.alive:
         if bot.action == int(orders.BotActionEnum.ATTACK):
-            if (closest_enemy and distance_to_enemy < 60 or override_target) and not bot.in_vehicle: # TODO: change this to x within viewing angle of y 
+            if (closest_enemy and distance_to_enemy < 120 or override_target) and not bot.in_vehicle: # TODO: change this to x within viewing angle of y 
                 # print(bot.in_vehicle)
                 # print("attack enemy")
                 # print('test')
