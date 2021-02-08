@@ -15,8 +15,8 @@ end
 
 function BotVehicleController:Update(newYaw, newMomentum, deltaTime)
     self.deltaTime = deltaTime
-    self.yaw = VecLib:CosineInterpolation(self.yaw, newYaw, math.pow(self.deltaTime, self.power)*self.intensity)
-    self.momentum = VecLib:CosineInterpolation(self.momentum, newMomentum, math.pow(self.deltaTime)*self.intensity)
+    self.yaw = VecLib:CosineInterpolation(self.yaw, newYaw, (self.deltaTime^ self.power)*self.intensity)
+    self.momentum = VecLib:CosineInterpolation(self.momentum, newMomentum, (self.deltaTime^ self.power)*self.intensity)
 end
 
 function BotVehicleController.Create()
