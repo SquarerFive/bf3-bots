@@ -342,7 +342,7 @@ function Bot:StepPathVehicle()
                 --self.player_controller.input:SetLevel(EntryInputActionEnum.EIAYaw, 0)
                 yaw = 0
             else
-                self.player_controller.input:SetLevel(forwardLevelEnum, momentum)
+                -- self.player_controller.input:SetLevel(forwardLevelEnum, momentum)
                 if invert_steer then
                     -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIAYaw, (nearest_point_distance/steer_momentum))
                     yaw = nearest_point_distance/steer_momentum
