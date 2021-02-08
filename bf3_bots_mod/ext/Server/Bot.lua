@@ -835,13 +835,7 @@ function Bot:SpawnBot(transform, pose, soldierBP, kit, unlocks, spawnEntity)
 
     end 
 
-    self.requested_action = 2
-    self.requested_order = 2
-    self.lock_path = false
-    self.target = -1
-    self.action = 2
-    self.order = 2
-    self.in_vehicle = false
+    self:Reset()
 
    -- print("Creating soldier")
     local soldier = self.player_controller:CreateSoldier(soldierBP, transform)
@@ -897,6 +891,23 @@ function Bot:SpawnBot(transform, pose, soldierBP, kit, unlocks, spawnEntity)
     -- end
     
     return self.soldier
+end
+
+function Bot:Reset()
+    self.target = nil
+    self.sprinting = false
+    self.jumping = false
+    self.firing = false
+    self.aiming = false
+    self.crouching = false
+    self.knifing = false
+    self.path = {}
+    self.requested_action = Actions.ATTACK
+    self.requested_order = Orders.ENEMY
+    self.in_vehicle = false
+    self.stopMoving = false
+    self.action = Actions.ATTACK
+    self.order = Orders.ENEMY
 end
 
 
