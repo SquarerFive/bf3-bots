@@ -155,8 +155,8 @@ class Level:
         if (start[0] > 0 and start[0] < self.costs.shape[1] and start[1] > 0 and start[1] < self.costs.shape[2]
             and end[0] > 0 and end[0] < self.costs.shape[1] and end[1] > 0 and end[1] < self.costs.shape[2]):
                 path = self.find_path_safe(
-                    self.get_valid_point_in_radius(self.costs, start[0], start[1], 90), 
-                    self.get_valid_point_in_radius(self.costs, end[0], end[1], 90))
+                    self.get_valid_point_in_radius(self.costs, start[0], start[1], 5), 
+                    self.get_valid_point_in_radius(self.costs, end[0], end[1], 5))
         else:
             return []
         #print('got path')
@@ -172,7 +172,7 @@ class Level:
                     "y": self.elevation[0][p[0]][p[1]]+1,
                     "z": wxy[1]
                 })
-                if idx > 100:
+                if idx > 50:
                     break
         else:
             None
