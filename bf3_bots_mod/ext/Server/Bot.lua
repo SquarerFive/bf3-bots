@@ -669,6 +669,7 @@ function Bot:Destroy()
     self.__input = nil
     self.soldier = nil
     self:Reset()
+    self:Kill()
     PlayerManager:DeletePlayer(self.player_controller)
 end
 
