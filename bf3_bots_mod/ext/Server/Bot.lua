@@ -1,9 +1,13 @@
 
-class("Bot")
+
 local VecLib = require('__shared/VecLib')
 local NavGrid = require('__shared/NavGrid')
 local Orders = require("BotOrders")
 local Actions = require("BotActions")
+local BotVehicleController = require('BotVehicleController')
+
+
+class("Bot")
 
 function Bot:__init()
     self.player_controller = nil
@@ -78,6 +82,8 @@ function Bot:__init()
     self.provides_ammo_slot = -1
     --
     self.delta_time = 0.0
+    --
+    self.botVehicleController = BotVehicleController.Create()
     -- Events:Subscribe("UpdateManager:Update", self, self.InternalTick)
 end
 
@@ -287,6 +293,9 @@ end
 
 function Bot:StepPathVehicle()
     local front_probe_entity = self.player_controller.controlledControllable
+    local reverse = false
+    local yaw = 0.0
+    local momentum = 0.7
     if (front_probe_entity ~= nil) then
         local front_probe = front_probe_entity.transform.trans + (front_probe_entity.transform.forward * 4)
         local back_probe = front_probe_entity.transform.trans + (front_probe_entity.transform.forward * -3)
@@ -295,50 +304,79 @@ function Bot:StepPathVehicle()
         local nearest_point, nearest_point_distance = self:GetClosestPathPoint(front_probe)
         local nearest_point_left, nearest_point_left_distance = self:GetClosestPathPoint(front_probe_left)
         local nearest_point_back, nearest_point_back_distance = self:GetClosestPathPoint(back_probe)
-        local momentum = 0.7
+        
         local steady_momentum = 0.2
         local steer_momentum = 2
         local invert_steer = false
-        local reverse = false
+        
         local forwardLevelEnum = EntryInputActionEnum.EIAThrottle
+        
         if (nearest_point ~= nil and nearest_point_left ~= nil) then
+            self.botVehicleController.moving = true
             -- print('nearest point valid. '..nearest_point_distance..' '..nearest_point_left_distance..' '..nearest_point_back_distance)
             if nearest_point_back_distance  < nearest_point_distance and nearest_point_distance > 10 then
                 -- momentum = -1.0
                 -- steady_momentum = -0.8
                 reverse = true
                 invert_steer = true
-                self.player_controller.input:SetLevel(EntryInputActionEnum.EIAThrottle, 0)
+                -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIAThrottle, 0)
                 forwardLevelEnum = EntryInputActionEnum.EIABrake
+                self.botVehicleController.reversing = true
             else
-                self.player_controller.input:SetLevel(EntryInputActionEnum.EIABrake, 0)
+                -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIABrake, 0)
+                self.botVehicleController.reversing = false
             end
             if nearest_point_distance < nearest_point_left_distance then
-                self.player_controller.input:SetLevel(forwardLevelEnum, momentum)
+                -- self.player_controller.input:SetLevel(forwardLevelEnum, momentum)
+                
                 if invert_steer then
-                    self.player_controller.input:SetLevel(EntryInputActionEnum.EIAYaw, (nearest_point_distance/-steer_momentum))
+                    -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIAYaw, (nearest_point_distance/-steer_momentum))
+                    yaw = nearest_point_distance/-steer_momentum
                 else
-                    self.player_controller.input:SetLevel(EntryInputActionEnum.EIAYaw, (nearest_point_distance/steer_momentum))
+                    -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIAYaw, (nearest_point_distance/steer_momentum))
+                    yaw = nearest_point_distance/steer_momentum
                 end
             elseif nearest_point_distance < 0.6 then
-                self.player_controller.input:SetLevel(forwardLevelEnum, steady_momentum)
-                self.player_controller.input:SetLevel(EntryInputActionEnum.EIAYaw, 0)
+                -- self.player_controller.input:SetLevel(forwardLevelEnum, steady_momentum)
+                momentum = steady_momentum
+                --self.player_controller.input:SetLevel(EntryInputActionEnum.EIAYaw, 0)
+                yaw = 0
             else
                 self.player_controller.input:SetLevel(forwardLevelEnum, momentum)
                 if invert_steer then
-                    self.player_controller.input:SetLevel(EntryInputActionEnum.EIAYaw, (nearest_point_distance/steer_momentum))
+                    -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIAYaw, (nearest_point_distance/steer_momentum))
+                    yaw = nearest_point_distance/steer_momentum
                 else
-                    self.player_controller.input:SetLevel(EntryInputActionEnum.EIAYaw, (nearest_point_distance/-steer_momentum))
+                    -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIAYaw, (nearest_point_distance/-steer_momentum))
+                    yaw = nearest_point_distance/-steer_momentum
                 end
             end
             
         else
-            self.player_controller.input:SetLevel(EntryInputActionEnum.EIAThrottle, 0)
-            self.player_controller.input:SetLevel(EntryInputActionEnum.EIAYaw, 0)
-            self.player_controller.input:SetLevel(EntryInputActionEnum.EIABrake, 0)
+            self.botVehicleController.moving = false
+            -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIAThrottle, 0)
+            -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIAYaw, 0)
+            -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIABrake, 0)
         end
 
     end
+
+    if self.botVehicleController.moving == false then
+        self.player_controller.input:SetLevel(EntryInputActionEnum.EIAThrottle, 0)
+        self.player_controller.input:SetLevel(EntryInputActionEnum.EIAYaw, 0)
+        self.player_controller.input:SetLevel(EntryInputActionEnum.EIABrake, 0)
+    else
+        if self.botVehicleController.reversing then
+            self.player_controller.input:SetLevel(EntryInputActionEnum.EIABrake, self.botVehicleController.momentum)
+            self.player_controller.input:SetLevel(EntryInputActionEnum.EIAThrottle, 0)
+        else
+            self.player_controller.input:SetLevel(EntryInputActionEnum.EIAThrottle, self.botVehicleController.momentum)
+            self.player_controller.input:SetLevel(EntryInputActionEnum.EIABrake, 0)
+        end
+    end
+
+    self.botVehicleController:Update(yaw, momentum, self.delta_time)
+
 end
 
 function Bot:GetAvailableSlotsForVehicle(_VehicleEntity) 
@@ -729,7 +767,7 @@ function Bot:SpawnBot(transform, pose, soldierBP, kit, unlocks, spawnEntity)
         if self.selected_kit ~= nil then
             local primaryWeapon = nil
             if self.selected_kit.primary_weapon ~= nil then
-                print('adding primary weapon: '..self.selected_kit.primary_weapon.path)
+                -- print('adding primary weapon: '..self.selected_kit.primary_weapon.path)
                 primaryWeapon = ResourceManager:SearchForDataContainer(self.selected_kit.primary_weapon.path)
             end
             local secondaryWeapon = nil
@@ -864,21 +902,21 @@ function Bot:SpawnBot(transform, pose, soldierBP, kit, unlocks, spawnEntity)
         self.player_controller.soldier.detailedCollisionEnabled = true
         self.player_controller.soldier.physicsEnabled = true
         local data = SoldierEntityData(self.player_controller.soldier.data)
-        if (data.humanPlayerControlled) then
-            print("Is Soldier Human Controlled? ", data.humanPlayerControlled)
-        end
-        if (data.collisionEnabled) then
-            print("Is Soldier Collision Enabled? ", data.collisionEnabled)
-        end
-        if (data.physicsControlled) then
-            print("Is Soldier PhysicsControlled? ", data.physicsControlled)
-        end
+        -- if (data.humanPlayerControlled) then
+        --     print("Is Soldier Human Controlled? ", data.humanPlayerControlled)
+        -- end
+        -- if (data.collisionEnabled) then
+        --     print("Is Soldier Collision Enabled? ", data.collisionEnabled)
+        -- end
+        -- if (data.physicsControlled) then
+        --     print("Is Soldier PhysicsControlled? ", data.physicsControlled)
+        -- end
         data:MakeWritable()
         data.humanPlayerControlled = false
         data.collisionEnabled = true
         data.physicsControlled = true
 
-        Events:Dispatch('Player:Respawn', self.player_controller.soldier)
+        -- Events:Dispatch('Player:Respawn', self.player_controller.soldier)
     end
     
     

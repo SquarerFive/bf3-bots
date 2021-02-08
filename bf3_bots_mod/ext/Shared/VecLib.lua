@@ -19,6 +19,18 @@ function VecLib:RandomPointInRadius(Target, Radius)
     )
 end
 
+function VecLib:CosineInterpolation(x, y, alpha)
+    local beta = (1 - math.cos(alpha * math.pi)) / 2
+    return (x * (1 - beta) + y * beta)
+end
+
+function VecLib:InterpTo(x, y, alpha)
+    local newX = self:CosineInterpolation(x.x, y.x, alpha)
+    local newY = self:CosineInterpolation(x.y, y.y, alpha)
+    local newZ = self:CosineInterpolation(x.z, y.z, alpha)
+    return Vec3(newX, newY, newZ)
+end
+
 if not g_VecLib then
     g_VecLib = VecLib()
 end
