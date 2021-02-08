@@ -76,6 +76,8 @@ function Bot:__init()
     --
     self.provides_ammo = false
     self.provides_ammo_slot = -1
+    --
+    self.delta_time = 0.0
     -- Events:Subscribe("UpdateManager:Update", self, self.InternalTick)
 end
 
@@ -356,6 +358,7 @@ function Bot:InternalTick(deltaTime, pass)
     if pass ~= UpdatePass.UpdatePass_PostFrame then
 		return
 	end
+    self.delta_time = deltaTime
     if self.player_controller ~= nil then
         if self.alive and self.player_controller.soldier ~= nil then
             self.player_controller.soldier:SingleStepEntry(self.player_controller.controlledEntryId)
@@ -498,20 +501,13 @@ function Bot:Tick(delta_time, pass)
 	-- 	return
 	-- end
     if self.player_controller ~= nil then
-        -- print("ticking for "..self.player_controller.name)
-        -- print(self.yaw)
-        -- self.player_controller.input.authoritativeAimingYaw = self.yaw
-        -- self.player_controller.input.authoritativeAimingPitch = self.pitch
-        -- Events:Dispatch("Player:Update", self.player_controller, delta_time)
-        
         if self.alive and self.player_controller.soldier then
             if (self.player_controller.id == 2) then
                 if (self.in_vehicle) then
-                    -- print("player 2 in vehicle")
+                    -- do something here
                 end
             end
             self.requested_respawn = false
-            -- self.player_controller.soldier:SingleStepEntry(self.player_controller.controlledEntryId)
             if self.action == Actions.NONE then
 
             elseif self.action == Actions.GET_IN and not self.in_vehicle then
@@ -549,10 +545,11 @@ function Bot:Tick(delta_time, pass)
             elseif self.action == Actions.GET_OUT then
                 self.player_controller:ExitVehicle(true, true)
                 -- self.requested_action = Actions.ATTACK
-                self.target=  nil
+                self.target = nil
                 self.in_vehicle = false
                 self.requested_action = 2
                 self.requested_order = 2
+
             elseif self.action == Actions.ATTACK and not self.in_vehicle then
                 if not self.stopMoving then
                     local isAtLocation = self:StepPath()
@@ -560,9 +557,11 @@ function Bot:Tick(delta_time, pass)
                 if (self.player_controller.id == 2) then
                    -- print("bot moving")
                 end
+
             elseif self.action == Actions.ATTACK and self.in_vehicle then
                 self:StepPathVehicle()
             end
+
             if self.target ~= nil and not self.in_vehicle then
                 if self.target.alive and self.action == Actions.ATTACK then
                     if self.target.soldier.transform.trans:Distance(self.target.soldier.transform.trans:Clone()) > 30 then
@@ -574,12 +573,14 @@ function Bot:Tick(delta_time, pass)
                     local shouldStop = self.player_controller.soldier.transform.trans:Distance(self.target.soldier.transform.trans:Clone()) > 3 and math.random(0, 100) > 75
 
                     self:SetFocusOn(focus.trans)
+
                     if self.player_controller.soldier.transform.trans:Distance(self.target.soldier.transform.trans:Clone()) < 15 and not shouldStop then
                         self.firing = true
                         self.crouching = false
                         self.stopMoving = false
                         -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIAFire, 1)
                         self:SetFocusOn(focus.trans)
+
                     elseif self.player_controller.soldier.transform.trans:Distance(self.target.soldier.transform.trans:Clone()) < 15 and shouldStop then
                         self.firing = true
                         self.throttle = false

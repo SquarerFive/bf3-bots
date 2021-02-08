@@ -5,6 +5,7 @@ from shapely.geometry import shape, GeometryCollection, Point
 from . import transformations
 from .. import models
 from shapely.vectorized import contains
+import math
 
 @njit
 def score_fast(input_arr:np.ndarray, elevation_arr : np.ndarray, target:np.ndarray, roads_mask : np.ndarray, level : int):
@@ -13,14 +14,17 @@ def score_fast(input_arr:np.ndarray, elevation_arr : np.ndarray, target:np.ndarr
             if roads_mask[x][y]:
                 target[level][x][y] = 1.0 + ((elevation_arr[level][x][y])/2)
             else:
-                if input_arr[level][x][y] == 0.0:# or roads_mask[x][y]:
-                    target[level][x][y] = 1.0 + (elevation_arr[level][x][y])
-                if input_arr[level][x][y] == 256:
-                    target[level][x][y] = 256
-                if input_arr[level][x][y] == 500: # else:
-                    target[level][x][y] = 500
-                if input_arr[level][x][y] == 700:
-                    target[level][x][y] = 700
+                if level == 0:
+                    if input_arr[level][x][y] == 0.0:# or roads_mask[x][y]:
+                        target[level][x][y] = 1.0 + (elevation_arr[level][x][y])
+                    if input_arr[level][x][y] == 256:
+                        target[level][x][y] = 256
+                    if input_arr[level][x][y] == 500: # else:
+                        target[level][x][y] = 500
+                    if input_arr[level][x][y] == 700:
+                        target[level][x][y] = 700
+                elif level == 1:
+                    target[level][x][y] = math.pow((math.pow(elevation_arr[level][x][y], 3.696115)*1.159)/2, 3.141)
 
 @njit(parallel=True)
 def get_world_array_fast(x_arr: np.ndarray, y_arr : np.ndarray, min_point : tuple, max_point : tuple, width: float, height: float):
