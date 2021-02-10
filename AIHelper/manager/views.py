@@ -1,11 +1,10 @@
-from django.shortcuts import render
-
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.authentication import TokenAuthentication, SessionAuthentication, BasicAuthentication
 from rest_framework.renderers import JSONRenderer
+from rest_framework.views import get_view_description
 
 from . import serializers
 
@@ -844,3 +843,79 @@ def manager_push_soldier_kit_data(request : Request, project_id : int, level_id 
     
     return Response("Success")
 
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def manager_export_level(request : Request, project_id : int, level_id : int) -> Response:
+    global global_cache
+    level_object : navigation_models.Level = navigation_models.Level.objects.filter(project_id=project_id, level_id=level_id).first()
+    level_data : dict = json.loads(JSONRenderer().render(serializers.LevelSerializer(level_object).data))
+    with open(f'./models/Project/{level_object.project_id}/Level/{level_object.level_id}/level.json', 'w') as f:
+        json.dump(level_data, f)
+    return Response("Export")
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication, SessionAuthentication])
+@permission_classes([AllowAny])
+def manager_export_project(request : Request, project_id : int) -> Response:
+    data = json.loads(JSONRenderer().render(serializers.ProjectSerializer(navigation_models.Project.objects.filter(project_id=project_id).first()).data))
+    data['levels']= [json.loads(JSONRenderer().render(
+            serializers.LevelSerializer(j).data
+        )) for j in query.navigation_models.Level.objects.filter(project_id=project_id)]
+
+    for idx, _ in enumerate(data['levels']):
+        if data['levels'][idx]['friendly_kit']:
+            data['levels'][idx]['friendly_kit'] = json.loads(JSONRenderer().render(
+                serializers.SoldierKitCollectionSerializer(models.SoldierKitCollection.objects.filter(id=data['levels'][idx]['friendly_kit'], faction=0).first()).data
+            ).decode('utf-8'))
+            data['levels'][idx]['friendly_kit']['assault'] = json.loads(JSONRenderer().render(
+                serializers.SoldierKitSerializer(models.SoldierKit.objects.filter(collection_id=data['levels'][idx]['friendly_kit']['id'], collection_slot=0).first()).data
+            ).decode('utf-8'))
+            data['levels'][idx]['friendly_kit']['engineer'] = json.loads(JSONRenderer().render(
+                serializers.SoldierKitSerializer(models.SoldierKit.objects.filter(collection_id=data['levels'][idx]['friendly_kit']['id'], collection_slot=1).first()).data
+            ).decode('utf-8'))
+            data['levels'][idx]['friendly_kit']['support'] = json.loads(JSONRenderer().render(
+                serializers.SoldierKitSerializer(models.SoldierKit.objects.filter(collection_id=data['levels'][idx]['friendly_kit']['id'], collection_slot=2).first()).data
+            ).decode('utf-8'))
+            data['levels'][idx]['friendly_kit']['recon'] = json.loads(JSONRenderer().render(
+                serializers.SoldierKitSerializer(models.SoldierKit.objects.filter(collection_id=data['levels'][idx]['friendly_kit']['id'], collection_slot=3).first()).data
+            ).decode('utf-8'))
+        if data['levels'][idx]['enemy_kit']:
+            data['levels'][idx]['enemy_kit'] = json.loads(JSONRenderer().render(
+                serializers.SoldierKitCollectionSerializer(models.SoldierKitCollection.objects.filter(id=data['levels'][idx]['enemy_kit'], faction=1).first()).data
+            ).decode('utf-8'))
+            data['levels'][idx]['enemy_kit']['assault'] = json.loads(JSONRenderer().render(
+                serializers.SoldierKitSerializer(models.SoldierKit.objects.filter(collection_id=data['levels'][idx]['enemy_kit']['id'], collection_slot=0).first()).data
+            ).decode('utf-8'))
+            data['levels'][idx]['enemy_kit']['engineer'] = json.loads(JSONRenderer().render(
+                serializers.SoldierKitSerializer(models.SoldierKit.objects.filter(collection_id=data['levels'][idx]['enemy_kit']['id'], collection_slot=1).first()).data
+            ).decode('utf-8'))
+            data['levels'][idx]['enemy_kit']['support'] = json.loads(JSONRenderer().render(
+                serializers.SoldierKitSerializer(models.SoldierKit.objects.filter(collection_id=data['levels'][idx]['enemy_kit']['id'], collection_slot=2).first()).data
+            ).decode('utf-8'))
+            data['levels'][idx]['enemy_kit']['recon'] = json.loads(JSONRenderer().render(
+                serializers.SoldierKitSerializer(models.SoldierKit.objects.filter(collection_id=data['levels'][idx]['enemy_kit']['id'], collection_slot=3).first()).data
+            ).decode('utf-8'))
+    
+    with open(f"./models/Project/{project_id}/project.json", "w") as f:
+        json.dump(data, f)
+    
+    return Response(data)
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication, SessionAuthentication])
+@permission_classes([AllowAny])
+def manager_import_project(request : Request) -> Response:
+    filename = request.data['filename']
+    project_data : dict = {}
+    with open(filename, 'r') as f:
+        project_data = json.loads(f.read())
+    
+    project = navigation_models.Project.objects.create(
+        name = project_data['name'],
+        author = project_data['author'],
+        date_created = project_data['date_created'],
+        date_modified = project_data['data_modified'],
+        description = project_data['description']
+    )
+    return Response('')

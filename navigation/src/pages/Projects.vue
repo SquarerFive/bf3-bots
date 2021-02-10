@@ -8,6 +8,7 @@
       </div>
       <div class="q-pa-md q-gutter-md">
           <q-btn class="bg-primary text-white" label="+ New Project" @click="openCreateProject" />
+          <q-btn class="bg-primary text-white" label="Import Project" />
       </div>
     <div class="q-pa-md row items-start q-gutter-md">
 
@@ -25,6 +26,7 @@ import ProjectWidgetComponent from '../components/ProjectWidgetComponent.vue'
 import CreateProjectComponent from '../components/CreateProjectComponent.vue'
 import { Project, defaultProject, Manager } from '../store/models'
 import { Component } from 'vue-property-decorator'
+import { ManagerStore } from 'src/store/ManagerStoreModule'
 
 @Component({
   components: { ProjectWidgetComponent, CreateProjectComponent }
@@ -51,7 +53,8 @@ export default class Projects extends Vue {
     }
 
     openCreateProject () {
-      this.$store.commit('player/updateCreateProjectOpened', true)
+      ManagerStore.setCreateProjectOpened(true)
+      // this.$store.commit('player/updateCreateProjectOpened', true)
     }
 }
 
