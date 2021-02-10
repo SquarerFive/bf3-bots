@@ -280,6 +280,8 @@ def manager_add_level_block(request : Request, project_id : int):
         levelObject.pre_process_data()
         navigation_query.encode_level(levelObject)
         levelModel = navigation_query.models.Level.objects.filter(project_id=project_id, name=level_name).first()
+    
+
 
 
     levelModel = navigation_query.models.Level.objects.filter(project_id=project_id, name=level_name).first()
@@ -428,6 +430,9 @@ def manager_start_all_tasks(request: Request, project_id : int) -> Response:
     levelModel = navigation_query.models.Level.objects.filter(project_id=first_task.project_id, level_id=first_task.level_id).first()
     # levelObject = navigation_query.decode_level(levelModel)
     levelObject = global_cache.get_object(project_id, levelModel.level_id)
+    print("Level Object Info: ", levelObject.data.shape, levelObject.costs.shape, levelObject.elevation.shape)
+    levelObject.sensecheck()
+    global_cache.save_object()
     for task in models.ProjectTaskJSON.objects.all():
         if levelModel.level_id != task.level_id or levelModel.project_id != task.project_id:
             levelObject.classify_costs()
@@ -529,12 +534,12 @@ def manager_emit_event(request : Request) -> Response:
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def manager_clear_tasks(request : Request) -> Response:
-    #for task in models.ProjectTaskJSON.objects.all():
-    #    task.delete()
+    for task in models.ProjectTaskJSON.objects.all():
+        task.delete()
 
     table_name = models.ProjectTaskJSON._meta.db_table
     with connection.cursor() as cursor:
-        cursor.execute(f"DROP TABLE {table_name};")
+        #cursor.execute(f"DROP TABLE {table_name};")
         cursor.execute('vacuum;')
     return Response("Done!")
 

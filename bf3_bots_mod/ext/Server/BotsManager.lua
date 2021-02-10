@@ -43,15 +43,16 @@ function BotsManager:OnPlayerCreated(player)
 end
 
 function BotsManager:OnPlayerLeft(player)
-    local idx = -1
-    for g, pl in pairs(self.players) do
-        if pl.ip == player.ip then
-            idx = g
-            break
-        end
-    end
-    print('removing player at: '..idx)
-    table.remove(self.players, idx)
+    -- local idx = -1
+    -- for g, pl in pairs(self.players) do
+    --     if pl.ip == player.ip then
+    --         idx = g
+    --         break
+    --     end
+    -- end
+    -- print('removing player at: '..idx)
+    -- table.remove(self.players, idx)
+    self.players = PlayerManager:GetPlayers()
     self:UpdateSortedPlayersTable()
 end
 
@@ -94,10 +95,12 @@ function BotsManager:GetPlayersJSON()
     local data = '['
     if #players > 0 then
         for idx, player in pairs(players) do
-            if idx == 1 then
-                data = data..self:GetPlayerJSON(player)
-            else
-                data = data..', '..self:GetPlayerJSON(player)
+            if player ~= nil then
+                if idx == 1 then
+                    data = data..self:GetPlayerJSON(player)
+                else
+                    data = data..', '..self:GetPlayerJSON(player)
+                end
             end
         end
     end

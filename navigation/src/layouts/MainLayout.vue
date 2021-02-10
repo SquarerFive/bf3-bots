@@ -42,6 +42,14 @@
           @click="openLogin()"
           v-if="!isLoggedIn"
         />
+        <q-btn
+          flat
+          label="LOGOUT"
+          class="bg-primary"
+          style="font-size: 11px; margin-top: -18px; padding: 0px; margin-left: 5px"
+          @click="onLogout()"
+          v-if="isLoggedIn"
+        />
       </q-toolbar>
     </q-header>
 
@@ -140,6 +148,10 @@ export default class MainLayout extends Vue {
   openLogin () {
     this.loginOpened = true
     console.log('Login opened')
+  }
+
+  onLogout () {
+    ManagerStore.setLoggedIn(false)
   }
 
   get playerPosition (): string {

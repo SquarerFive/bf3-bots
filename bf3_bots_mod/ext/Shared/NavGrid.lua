@@ -220,7 +220,7 @@ end
 
 
 
-function NavGrid.CreateFromBounds(size_x, size_z, min_point, max_point, start_x, start_z, profile, project_id)
+function NavGrid.CreateFromBounds(size_x, size_z, min_point, max_point, start_x, start_z, profile, project_id, width, height)
     local self = NavGrid()
     self.profile = profile
     self.project_id = project_id
@@ -281,8 +281,8 @@ function NavGrid.CreateFromBounds(size_x, size_z, min_point, max_point, start_x,
     local options = HttpOptions(headers, 90)
     options:SetHeader("Content-Type", "application/json")
     options:SetHeader("Content-Length", tostring(#dataToPush))
-    options:SetHeader("Size-X", tostring(size_x))
-    options:SetHeader("Size-Y", tostring(size_z))
+    options:SetHeader("Size-X", tostring(width))
+    options:SetHeader("Size-Y", tostring(height))
     options:SetHeader("Min-X", tostring(min_point.x))
     options:SetHeader("Min-Y", tostring(min_point.z))
     options:SetHeader("Max-X", tostring(max_point.x))
@@ -377,7 +377,7 @@ end
     --    return score
 
 
-function NavGrid:Extend(size_x, size_z, min_point, max_point, start_x, start_z)
+function NavGrid:Extend(size_x, size_z, min_point, max_point, start_x, start_z, width, height)
     local center_position = min_point + Vec3(self.cell_size/2, self.cell_size/2, self.cell_size/2)
     center_position = Vec3(center_position.x, center_position.y+300, center_position.z)
     --local jsonContentScores = '{ "scores": ['
@@ -434,8 +434,8 @@ function NavGrid:Extend(size_x, size_z, min_point, max_point, start_x, start_z)
     local options = HttpOptions(headers, 90)
     options:SetHeader("Content-Type", "application/json")
     options:SetHeader("Content-Length", tostring(#dataToPush))
-    options:SetHeader("Size-X", tostring(size_x))
-    options:SetHeader("Size-Y", tostring(size_z))
+    options:SetHeader("Size-X", tostring(width))
+    options:SetHeader("Size-Y", tostring(height))
     options:SetHeader("Min-X", tostring(min_point.x))
     options:SetHeader("Min-Y", tostring(min_point.z))
     options:SetHeader("Max-X", tostring(max_point.x))
