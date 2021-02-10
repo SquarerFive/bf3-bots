@@ -897,7 +897,7 @@ def manager_export_project(request : Request, project_id : int) -> Response:
                 serializers.SoldierKitSerializer(models.SoldierKit.objects.filter(collection_id=data['levels'][idx]['enemy_kit']['id'], collection_slot=3).first()).data
             ).decode('utf-8'))
     
-    with open(f"./models/Project/{project_id}/project.json", "w") as f:
+    with open(f"./models/Project/{navigation_models.Project.objects.filter(project_id=project_id).first().name}/project.json", "w") as f:
         json.dump(data, f)
     
     return Response(data)

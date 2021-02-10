@@ -51,7 +51,7 @@
     <q-card-actions>
       <q-btn flat :to="'/project/'+project.project_id+'/dashboard'">Open</q-btn>
       <q-btn flat @click="onProjectClicked">Set Active</q-btn>
-      <q-btn flat>Inherit</q-btn>
+      <q-btn :loading="isExporting" @click="onProjectExport" flat>Export</q-btn>
     </q-card-actions>
   </q-card>
 </template>
@@ -64,6 +64,7 @@ import { Project, Manager } from '../store/models'
 @Component
 export default class ProjectWidgetComponent extends Vue {
     manager : Manager | undefined;
+    isExporting = false
 
     @Prop({ required: true }) readonly project!: Project;
     mounted () {
@@ -74,7 +75,20 @@ export default class ProjectWidgetComponent extends Vue {
     onProjectClicked () {
       if (this.manager) {
         console.log('onsetactiveproject')
+        ManagerStore.setProject(this.project)
         this.manager.dispatchVext('OnSetActiveProject', [JSON.stringify({ project_id: this.project.project_id, profile: ManagerStore.profile })])
+      }
+    }
+
+    onProjectExport () {
+      if (this.manager) {
+        this.isExporting = true
+        this.manager.exportProject(String(this.project.project_id)).then(_ => {
+          this.isExporting = false
+        }).catch(err => {
+          this.isExporting = false
+          console.error(err)
+        })
       }
     }
 }

@@ -69,8 +69,8 @@
           </div>
           <div class="row">
             <q-space />
-            <q-btn color="warning" text-color="dark" label="Apply Settings" @click="applyBotAimSettings"/>
-            <q-btn color="warning" text-color="dark" label="Close" style="margin-left: 1vh;" @click="closeBotSettings"/>
+            <q-btn push color="warning" text-color="dark" label="Apply Settings" @click="applyBotAimSettings"/>
+            <q-btn push color="warning" text-color="dark" label="Close" style="margin-left: 1vh;" @click="closeBotSettings"/>
           </div>
         </q-tab-panel>
 

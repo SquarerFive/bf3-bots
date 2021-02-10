@@ -21,6 +21,7 @@
           class="goldman"
           style="margin-top: -18px; font-size: 16px"
         >
+        <q-icon name="api" size="20px" style="margin-right: 5px;"/>
           NAVIGATION MANAGER
         </q-toolbar-title>
         <q-toolbar-title
@@ -28,8 +29,8 @@
           style="font-size: 12px; margin-top: -18px"
         >
         </q-toolbar-title>
-        <q-btn dense color="warning" text-color="dark" label="Show bot configuration" style="font-size: 11px; margin-top: -18px; padding: 0px; margin-right: 5px;" @click="toggleBotConfiguration"/>
-        <q-btn dense color="warning" text-color="dark" label="Switch input to game." style="font-size: 11px; margin-top: -18px; padding: 0px; margin-right: 5px;" @click="switchInputToGame"/>
+        <q-btn push dense color="warning" text-color="dark" label="Show bot configuration" style="font-size: 11px; margin-top: -18px; padding: 0px; margin-right: 5px;" @click="toggleBotConfiguration"/>
+        <q-btn push dense color="warning" text-color="dark" label="Switch input to game." style="font-size: 11px; margin-top: -18px; padding: 0px; margin-right: 5px;" @click="switchInputToGame"/>
         <p style="font-size: 11px" v-if="managerStore">
           Project: {{managerStore.currentProject.name}}
         </p>
@@ -76,17 +77,17 @@ const linksData = [
     link: ''
   },
   {
-    title: 'Github',
-    caption: 'github.com/squarerfive',
-    icon: 'code',
-    link: 'https://github.com/squarerfive'
-  },
-  {
     title: 'Projects',
     caption: 'Manage pathfinding projects',
     icon: 'map',
     to: 'projects',
     link: ''
+  },
+  {
+    title: 'Github',
+    caption: 'github.com/squarerfive',
+    icon: 'code',
+    link: 'https://github.com/squarerfive'
   }
 ]
 

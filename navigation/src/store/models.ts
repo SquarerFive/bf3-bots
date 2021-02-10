@@ -513,6 +513,11 @@ export class Manager {
     })
     return response
   }
+
+  async exportProject (project_id : string) {
+    const response = this.post(`/v1/project/${project_id}/export/`, {})
+    return response
+  }
 }
 
 /**

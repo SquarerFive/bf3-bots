@@ -1,5 +1,8 @@
 <template>
   <q-page style="background-color: white">
+    <q-dialog full-width v-model="isOpenedImportProject">
+      <import-project-component />
+    </q-dialog>
       <div class="bg-grey-4 text-center flex-center" style="height:200px;">
           <div class="flex-center text-center column no-wrap" style="padding:10px;">
               <h2>Projects</h2>
@@ -7,8 +10,9 @@
             </div>
       </div>
       <div class="q-pa-md q-gutter-md">
-          <q-btn class="bg-primary text-white" label="+ New Project" @click="openCreateProject" />
-          <q-btn class="bg-primary text-white" label="Import Project" />
+          <q-btn push class="bg-primary col-1 text-white" label="New Project" @click="openCreateProject" icon="add_task" />
+          <q-btn push class="bg-primary col-1 text-white" label="Import Project" @click="openImportProject" icon="file_upload" />
+          <q-btn push class="bg-primary col-1 text-white" label="Refresh" :loading="isRefreshing" @click="refresh" icon="refresh" />
       </div>
     <div class="q-pa-md row items-start q-gutter-md">
 
@@ -24,19 +28,20 @@
 import Vue from 'vue'
 import ProjectWidgetComponent from '../components/ProjectWidgetComponent.vue'
 import CreateProjectComponent from '../components/CreateProjectComponent.vue'
-import { Project, defaultProject, Manager } from '../store/models'
+import { Project, Manager } from '../store/models'
 import { Component } from 'vue-property-decorator'
 import { ManagerStore } from 'src/store/ManagerStoreModule'
+import ImportProjectComponent from 'components/ImportProjectComponent.vue'
 
 @Component({
-  components: { ProjectWidgetComponent, CreateProjectComponent }
+  components: { ProjectWidgetComponent, CreateProjectComponent, ImportProjectComponent }
 })
 export default class Projects extends Vue {
-    projects: Project[] = <Project[]>[
-      defaultProject
-    ]
+    projects: Project[] = <Project[]>[]
 
     manager: Manager | undefined
+    isOpenedImportProject = false
+    isRefreshing = false
 
     mounted () {
       if (!this.manager) {
@@ -52,9 +57,27 @@ export default class Projects extends Vue {
       }
     }
 
+    refresh () {
+      if (this.manager) {
+        this.isRefreshing = true
+        this.manager.get_projects().then(p => {
+          this.projects = p
+          this.isRefreshing = false
+        }).catch(e => {
+          console.log('could not get projects for reason: ', e)
+          this.isRefreshing = false
+          this.projects = []
+        })
+      }
+    }
+
     openCreateProject () {
       ManagerStore.setCreateProjectOpened(true)
       // this.$store.commit('player/updateCreateProjectOpened', true)
+    }
+
+    openImportProject () {
+      this.isOpenedImportProject = true
     }
 }
 

@@ -135,6 +135,8 @@ export default class LoginComponent extends Vue {
         description: this.description
       }).then(resp => {
         console.log(resp.data)
+        this.tab = 'login'
+        this.onSubmit()
       }).catch(error => {
         console.log(error)
       })
