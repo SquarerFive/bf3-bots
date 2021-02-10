@@ -31,6 +31,8 @@ from manager import models
 
 import random
 
+from django.db import connection
+
 # Globals [to avoid poo memory, cache it here until the level changes]
 class GlobalCache:
     def __init__(self):
@@ -442,6 +444,9 @@ def manager_start_all_tasks(request: Request, project_id : int) -> Response:
     print('done')
     for task in models.ProjectTaskJSON.objects.all():
         task.delete()
+    with connection.cursor() as cursor:
+        cursor.execute('vacuum;')
+        
     return Response('Success')
 
 @api_view(['POST'])
@@ -524,8 +529,13 @@ def manager_emit_event(request : Request) -> Response:
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def manager_clear_tasks(request : Request) -> Response:
-    for task in models.ProjectTaskJSON.objects.all():
-        task.delete()
+    #for task in models.ProjectTaskJSON.objects.all():
+    #    task.delete()
+
+    table_name = models.ProjectTaskJSON._meta.db_table
+    with connection.cursor() as cursor:
+        cursor.execute(f"DROP TABLE {table_name};")
+        cursor.execute('vacuum;')
     return Response("Done!")
 
 @api_view(['GET'])
