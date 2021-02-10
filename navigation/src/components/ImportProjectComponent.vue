@@ -47,7 +47,6 @@
               title="Review Data"
               icon="assignment"
             >
-              
             </q-step>
 
             <q-step
@@ -55,7 +54,7 @@
               title="Add Project"
               icon="add_comment"
             >
-              
+
             </q-step>
 
             <template v-slot:navigation>
