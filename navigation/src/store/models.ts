@@ -285,7 +285,7 @@ export class Manager {
       e.enemy_kit.support.kit_assets = [e.enemy_kit.support.kit_asset ? e.enemy_kit.support.kit_asset : defaultGameAsset]
       e.enemy_kit.recon.kit_assets = [e.enemy_kit.recon.kit_asset ? e.enemy_kit.recon.kit_asset : defaultGameAsset]
     })
-    levels[1].enemy_kit.level_id = 100
+    // levels[1].enemy_kit.level_id = 100
     console.log('get levels')
     console.log(defaultSoldierKitCollection)
     ManagerStore.setAvailableLevels(levels)
