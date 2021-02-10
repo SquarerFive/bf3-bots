@@ -7,8 +7,12 @@ from .. import models
 from shapely.vectorized import contains
 import math
 
+from .transformations import remap
+
 @njit
 def score_fast(input_arr:np.ndarray, elevation_arr : np.ndarray, target:np.ndarray, roads_mask : np.ndarray, level : int):
+    min_elevation = elevation_arr[level].min()
+    max_elevation = elevation_arr[level].max()
     for x in prange(input_arr.shape[1]):
         for y in prange(input_arr.shape[2]):
             if roads_mask[x][y]:
@@ -22,9 +26,15 @@ def score_fast(input_arr:np.ndarray, elevation_arr : np.ndarray, target:np.ndarr
                     if input_arr[level][x][y] == 500: # else:
                         target[level][x][y] = 500
                     if input_arr[level][x][y] == 700:
-                        target[level][x][y] = 700
+                        elevation_alpha = remap(elevation_arr[level][x][y], min_elevation, max_elevation, 0.0, 1.0)
+                        elevation_alpha = math.pow(math.pow(elevation_alpha, 0.125)*1.5, 7)
+                        elevation_value = remap(elevation_alpha, 0.0, 1.0, min_elevation, max_elevation)
+                        target[level][x][y] = 700 + elevation_value 
                 elif level == 1:
-                    target[level][x][y] = math.pow((math.pow(elevation_arr[level][x][y], 3.696115)*1.159)/2, 3.141)
+                    elevation_alpha = remap(elevation_arr[level][x][y], min_elevation, max_elevation, 0.0, 1.0)
+                    elevation_alpha = math.pow(math.pow(elevation_alpha, 0.15)*1.5, 2)
+                    elevation_value = remap(elevation_alpha, 0.0, 1.0, min_elevation, max_elevation)
+                    target[level][x][y] = elevation_value
 
 @njit(parallel=True)
 def get_world_array_fast(x_arr: np.ndarray, y_arr : np.ndarray, min_point : tuple, max_point : tuple, width: float, height: float):

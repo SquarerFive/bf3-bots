@@ -54,7 +54,7 @@
         </q-card-section>
 
         <q-card-section class="q-pt-none">
-          <q-btn :disable="loading || tasks.length === 0" @click="onClickStartAllTasks" label="Start All Tasks" color="warning" text-color="dark" />
+          <q-btn :loading="loading" :disable="tasks.length === 0" @click="onClickStartAllTasks" label="Start All Tasks" color="warning" text-color="dark" />
         </q-card-section>
         <q-list>
           <q-scroll-area style="height: 200px">
@@ -148,10 +148,13 @@ export default class ProjectLayout extends Vue {
 
     onClickStartAllTasks () {
       if (this.manager) {
+        this.loading = true
         this.manager.startAllTasks(ManagerStore.currentProject.project_id).then(result => {
           console.log('startAllTasks', result)
+          this.loading = false
         }).catch(err => {
           console.error(err)
+          this.loading = false
         })
       }
     }

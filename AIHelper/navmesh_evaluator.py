@@ -13,7 +13,7 @@ from pathfinding.finder.breadth_first import BreadthFirstFinder
 from matplotlib import pyplot
 from scipy.sparse.csgraph import shortest_path
 from numba import njit, jit, prange
-
+import math
 # from navigation.utilities.astar import astar
 
 import pyastar
@@ -21,16 +21,28 @@ import time
 from scipy.ndimage.filters import gaussian_filter
 # import cv2
 
+@njit()
+def remap(value, old_min, old_max, new_min, new_max):
+    old_range = (old_max - old_min)
+    new_range = (new_max - new_min)
+    return (((value - old_min)*new_range)/old_range)+new_min
+
 @njit
-def fix_scores(array, elevation):
+def fix_scores(array, elevation : numpy.ndarray):
+    min_elevation = elevation.min()
+    max_elevation = elevation.max()
+
     for x in prange(array.shape[0]):
         for y in prange(array.shape[1]):
             if array[x][y] == 0.0:
-                array[x][y] = 1 + (200 - elevation[x][y])
+                array[x][y] = 1 + ( elevation[x][y])
             if array[x][y] == 500:
                 array[x][y] = 500
-            if array[x][y] == 256:
-                array[x][y] = 256
+            if array[x][y] == 700:
+                elevation_alpha = remap(elevation[x][y], min_elevation, max_elevation, 0.0, 1.0)
+                elevation_alpha = math.pow(math.pow(elevation_alpha, 0.25)*1.5, 4)
+                elevation_value = remap(elevation_alpha, 0.0, 1.0, min_elevation, max_elevation)
+                array[x][y] = 700 + elevation_value 
 
 @njit
 def flip_scorecard(array, new_array):
@@ -68,9 +80,9 @@ def get_valid_point_in_radius(arr, x, y, radius: float = 10.0):
     #return (final_pos[1], final_pos[0])
 
 def get_path_to(start, end):
-    with open("./models/Project/2/Level/1/elevation.npy", "rb") as f:
+    with open("./models/Project/BF3-Bots-0.0.4/Level/XP1_004/elevation.npy", "rb") as f:
         elevation = numpy.load(f)
-    with open("./models/Project/2/Level/1/data.npy", "rb") as f:
+    with open("./models/Project/BF3-Bots-0.0.4/Level/XP1_004/data.npy", "rb") as f:
         arr = numpy.load(f)
         fix_scores(arr, elevation)
         # new_arr = numpy.zeros(arr.shape)
@@ -80,12 +92,13 @@ def get_path_to(start, end):
         path = pyastar.astar_path(arr, (344, 601),  get_valid_point_in_radius(arr, 353, 631), allow_diagonal=True)
 
 
-with open("./models/Project/2/Level/1/elevation.npy", "rb") as f:
-    elevation = numpy.load(f)
+with open("./models/Project/BF3-Bots-0.0.4/Level/XP1_004/elevation.npy", "rb") as f:
+    elevation = numpy.load(f)[0]
 
-with open("./models/Project/2/Level/1/data.npy", "rb") as f:
-    arr = numpy.load(f)
+with open("./models/Project/BF3-Bots-0.0.4/Level/XP1_004/data.npy", "rb") as f:
+    arr = numpy.load(f)[0]
     new_arr = numpy.zeros(arr.shape)
+    print(new_arr.shape, arr.shape)
     fix_scores(arr, elevation)
     # flip_scorecard(arr, new_arr)
     # arr = new_arr
