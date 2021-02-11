@@ -117,7 +117,7 @@ with open("./models/Project/BF3-Bots-0.0.4/Level/XP1_004/data.npy", "rb") as f:
     #path = pyastar.astar_path(arr, (353, 659),  get_valid_point_in_radius(arr, 341, 591), allow_diagonal=True)
     #path = pyastar.astar_path(arr, (684, 397),  get_valid_point_in_radius(arr, 658, 444), allow_diagonal=False)
     # path = pyastar.astar_path(arr, (745, 528),  get_valid_point_in_radius(arr, 848, 596), allow_diagonal=True)
-    path = pyastar.astar_path(arr, (403, 609),  get_valid_point_in_radius(arr, 561, 775), allow_diagonal=True)
+    path = pyastar.astar_path(arr, (1100, 924 ),  get_valid_point_in_radius(arr, 1044, 938 ), allow_diagonal=True)
 
     te = time.time()
     print(te - ts)
