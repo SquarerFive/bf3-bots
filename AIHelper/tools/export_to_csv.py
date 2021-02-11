@@ -25,7 +25,8 @@ for assetType in list(paths.keys()):
     for path in paths[assetType]['path']:
         for root, dirs, files in os.walk(path, topdown=False):
             for name in files:
-                pathname = root + (name.split(".txt")[0])
+                # pathname = root +"/" + (name.split(".txt")[0])
+                pathname = os.path.join(root, name).replace("\\", "/").split(".txt")[0]
                 filter = False
                 is_us = True
                 is_ru = True

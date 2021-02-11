@@ -9,6 +9,7 @@ class ProjectTaskJSONAdmin(admin.ModelAdmin):
 @admin.register(models.GameAsset)
 class GameAssetAdmin(admin.ModelAdmin):
     fields = ("name", "path", 'asset_type')
+    list_display = ("name", "path", "asset_type")
 
 @admin.register(models.SoldierKit)
 class SoldierKitAdmin(admin.ModelAdmin):

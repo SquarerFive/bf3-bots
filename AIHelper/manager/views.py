@@ -934,3 +934,13 @@ def manager_import_project(request : Request) -> Response:
         description = project_data['description']
     )
     return Response('')
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication, SessionAuthentication])
+@permission_classes([IsAuthenticated])
+def manager_clear_assets(request : Request) -> Response:
+    print("--- Deleting ALL assets ---")
+    models.GameAsset.objects.all().delete()
+    with connection.cursor() as cursor:
+        cursor.execute('vacuum;')
+    return Response('Successfully deleted all assets.')

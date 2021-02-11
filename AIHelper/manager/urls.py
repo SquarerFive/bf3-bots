@@ -46,6 +46,7 @@ urlpatterns = [
     path("project/<int:project_id>/get-level-id/", views.manager_get_level_id, name="manager-get-level-id"),
 
     path("utils/assets/import-from-csv/", views.manager_import_asset_from_csv, name="manager-import-asset-from-csv"),
+    path("utils/assets/clear/", views.manager_clear_assets, name="manager-clear-assets")
 ]
 
 urlpatterns += router.urls
