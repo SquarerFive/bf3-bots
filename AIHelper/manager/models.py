@@ -15,11 +15,14 @@ class GameAsset(models.Model):
     path = models.TextField(default='Path/ToObject')
     asset_type = models.TextField(default="Primary Weapon")
     asset_team = models.TextField(default="ALL")
+    tags = models.JSONField(default=dict)
 
 class SoldierKit(models.Model):
     # JSON field contains all possible weapons for that slot
     primary_weapon = models.JSONField(default=dict) # 0
+    primary_attachments = models.JSONField(default=dict) # 
     secondary_weapon = models.JSONField(default=dict) # 1
+    secondary_attachments = models.JSONField(default=dict) # 
     primary_gadget = models.JSONField(default=dict) # 2
     secondary_gadget = models.JSONField(default=dict) # 5
     melee = models.JSONField(default=dict) # 7

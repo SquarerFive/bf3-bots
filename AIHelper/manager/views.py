@@ -586,8 +586,9 @@ def manager_import_asset_from_csv(request : Request) -> Response:
                 asset_team = 'US'
             else:
                 asset_team = 'RU'
+            tags = json.loads(data['Tags'][index])
             # print(is_us, is_ru)
-            models.GameAsset.objects.create(name=asset_name, path=asset_path, asset_type=data['Category'][index], asset_team=asset_team)
+            models.GameAsset.objects.create(name=asset_name, path=asset_path, asset_type=data['Category'][index], asset_team=asset_team, tags=tags)
 
     return Response("Success")
 
@@ -634,7 +635,9 @@ def manager_push_soldier_kit_data(request : Request, project_id : int, level_id 
     if not friendly_kit.assault:
         assault : models.SoldierKit = models.SoldierKit.objects.create()
         assault.primary_weapon = data['friendly']['assault']['primary_weapon']
+        assault.primary_attachments = data['friendly']['assault']['primary_attachments']
         assault.secondary_weapon = data['friendly']['assault']['secondary_weapon']
+        assault.secondary_attachments = data['friendly']['assault']['secondary_attachments']
         assault.primary_gadget = data['friendly']['assault']['primary_gadget']
         assault.secondary_gadget = data['friendly']['assault']['secondary_gadget']
         assault.melee = data['friendly']['assault']['melee']
@@ -647,7 +650,9 @@ def manager_push_soldier_kit_data(request : Request, project_id : int, level_id 
     else:
         assault : models.SoldierKit = models.SoldierKit.objects.filter(collection_slot = 0, collection_id = friendly_kit.id).first()
         assault.primary_weapon = data['friendly']['assault']['primary_weapon']
+        assault.primary_attachments = data['friendly']['assault']['primary_attachments']
         assault.secondary_weapon = data['friendly']['assault']['secondary_weapon']
+        assault.secondary_attachments = data['friendly']['assault']['secondary_attachments']
         assault.primary_gadget = data['friendly']['assault']['primary_gadget']
         assault.secondary_gadget = data['friendly']['assault']['secondary_gadget']
         assault.melee = data['friendly']['assault']['melee']
@@ -660,7 +665,9 @@ def manager_push_soldier_kit_data(request : Request, project_id : int, level_id 
     if not friendly_kit.engineer:
         engineer : models.SoldierKit = models.SoldierKit.objects.create()
         engineer.primary_weapon = data['friendly']['engineer']['primary_weapon']
+        engineer.primary_attachments = data['friendly']['engineer']['primary_attachments']
         engineer.secondary_weapon = data['friendly']['engineer']['secondary_weapon']
+        engineer.secondary_attachments = data['friendly']['engineer']['secondary_attachments']
         engineer.primary_gadget = data['friendly']['engineer']['primary_gadget']
         engineer.secondary_gadget = data['friendly']['engineer']['secondary_gadget']
         engineer.melee = data['friendly']['engineer']['melee']
@@ -673,7 +680,9 @@ def manager_push_soldier_kit_data(request : Request, project_id : int, level_id 
     else:
         engineer : models.SoldierKit = models.SoldierKit.objects.filter(collection_slot = 1, collection_id = friendly_kit.id).first()
         engineer.primary_weapon = data['friendly']['engineer']['primary_weapon']
+        engineer.primary_attachments = data['friendly']['engineer']['primary_attachments']
         engineer.secondary_weapon = data['friendly']['engineer']['secondary_weapon']
+        engineer.secondary_attachments = data['friendly']['engineer']['secondary_attachments']
         engineer.primary_gadget = data['friendly']['engineer']['primary_gadget']
         engineer.secondary_gadget = data['friendly']['engineer']['secondary_gadget']
         engineer.melee = data['friendly']['engineer']['melee']
@@ -686,7 +695,9 @@ def manager_push_soldier_kit_data(request : Request, project_id : int, level_id 
     if not friendly_kit.support:
         support : models.SoldierKit = models.SoldierKit.objects.create()
         support.primary_weapon = data['friendly']['support']['primary_weapon']
+        support.primary_attachments = data['friendly']['support']['primary_attachments']
         support.secondary_weapon = data['friendly']['support']['secondary_weapon']
+        support.secondary_attachments = data['friendly']['support']['secondary_attachments']
         support.primary_gadget = data['friendly']['support']['primary_gadget']
         support.secondary_gadget = data['friendly']['support']['secondary_gadget']
         support.melee = data['friendly']['support']['melee']
@@ -699,7 +710,9 @@ def manager_push_soldier_kit_data(request : Request, project_id : int, level_id 
     else:
         support : models.SoldierKit = models.SoldierKit.objects.filter(collection_slot = 2, collection_id = friendly_kit.id).first()
         support.primary_weapon = data['friendly']['support']['primary_weapon']
+        support.primary_attachments = data['friendly']['support']['primary_attachments']
         support.secondary_weapon = data['friendly']['support']['secondary_weapon']
+        support.secondary_attachments = data['friendly']['support']['secondary_attachments']
         support.primary_gadget = data['friendly']['support']['primary_gadget']
         support.secondary_gadget = data['friendly']['support']['secondary_gadget']
         support.melee = data['friendly']['support']['melee']
@@ -712,7 +725,9 @@ def manager_push_soldier_kit_data(request : Request, project_id : int, level_id 
     if not friendly_kit.recon:
         recon : models.SoldierKit = models.SoldierKit.objects.create()
         recon.primary_weapon = data['friendly']['recon']['primary_weapon']
+        recon.primary_attachments = data['friendly']['recon']['primary_attachments']
         recon.secondary_weapon = data['friendly']['recon']['secondary_weapon']
+        recon.secondary_attachments = data['friendly']['recon']['secondary_attachments']
         recon.primary_gadget = data['friendly']['recon']['primary_gadget']
         recon.secondary_gadget = data['friendly']['recon']['secondary_gadget']
         recon.melee = data['friendly']['recon']['melee']
@@ -726,6 +741,8 @@ def manager_push_soldier_kit_data(request : Request, project_id : int, level_id 
         recon : models.SoldierKit = models.SoldierKit.objects.filter(collection_slot = 3, collection_id = friendly_kit.id).first()
         recon.primary_weapon = data['friendly']['recon']['primary_weapon']
         recon.secondary_weapon = data['friendly']['recon']['secondary_weapon']
+        recon.primary_attachments = data['friendly']['recon']['primary_attachments']
+        recon.secondary_attachments = data['friendly']['recon']['secondary_attachments']
         recon.primary_gadget = data['friendly']['recon']['primary_gadget']
         recon.secondary_gadget = data['friendly']['recon']['secondary_gadget']
         recon.melee = data['friendly']['recon']['melee']
@@ -749,7 +766,9 @@ def manager_push_soldier_kit_data(request : Request, project_id : int, level_id 
     if not enemy_kit.assault:
         assault : models.SoldierKit = models.SoldierKit.objects.create()
         assault.primary_weapon = data['enemy']['assault']['primary_weapon']
+        assault.primary_attachments = data['enemy']['assault']['primary_attachments']
         assault.secondary_weapon = data['enemy']['assault']['secondary_weapon']
+        assault.secondary_attachments = data['enemy']['assault']['secondary_attachments']
         assault.primary_gadget = data['enemy']['assault']['primary_gadget']
         assault.secondary_gadget = data['enemy']['assault']['secondary_gadget']
         assault.melee = data['enemy']['assault']['melee']
@@ -762,7 +781,9 @@ def manager_push_soldier_kit_data(request : Request, project_id : int, level_id 
     else:
         assault : models.SoldierKit = models.SoldierKit.objects.filter(collection_slot = 0, collection_id = enemy_kit.id).first()
         assault.primary_weapon = data['enemy']['assault']['primary_weapon']
+        assault.primary_attachments = data['enemy']['assault']['primary_attachments']
         assault.secondary_weapon = data['enemy']['assault']['secondary_weapon']
+        assault.secondary_attachments = data['enemy']['assault']['secondary_attachments']
         assault.primary_gadget = data['enemy']['assault']['primary_gadget']
         assault.secondary_gadget = data['enemy']['assault']['secondary_gadget']
         assault.melee = data['enemy']['assault']['melee']
@@ -775,7 +796,9 @@ def manager_push_soldier_kit_data(request : Request, project_id : int, level_id 
     if not enemy_kit.engineer:
         engineer : models.SoldierKit = models.SoldierKit.objects.create()
         engineer.primary_weapon = data['enemy']['engineer']['primary_weapon']
+        engineer.primary_attachments = data['enemy']['engineer']['primary_attachments']
         engineer.secondary_weapon = data['enemy']['engineer']['secondary_weapon']
+        engineer.secondary_attachments = data['enemy']['engineer']['secondary_attachments']
         engineer.primary_gadget = data['enemy']['engineer']['primary_gadget']
         engineer.secondary_gadget = data['enemy']['engineer']['secondary_gadget']
         engineer.melee = data['enemy']['engineer']['melee']
@@ -788,7 +811,9 @@ def manager_push_soldier_kit_data(request : Request, project_id : int, level_id 
     else:
         engineer : models.SoldierKit = models.SoldierKit.objects.filter(collection_slot = 1, collection_id = enemy_kit.id).first()
         engineer.primary_weapon = data['enemy']['engineer']['primary_weapon']
+        engineer.primary_attachments = data['enemy']['engineer']['primary_attachments']
         engineer.secondary_weapon = data['enemy']['engineer']['secondary_weapon']
+        engineer.secondary_attachments = data['enemy']['engineer']['secondary_attachments']
         engineer.primary_gadget = data['enemy']['engineer']['primary_gadget']
         engineer.secondary_gadget = data['enemy']['engineer']['secondary_gadget']
         engineer.melee = data['enemy']['engineer']['melee']
@@ -801,7 +826,9 @@ def manager_push_soldier_kit_data(request : Request, project_id : int, level_id 
     if not enemy_kit.support:
         support : models.SoldierKit = models.SoldierKit.objects.create()
         support.primary_weapon = data['enemy']['support']['primary_weapon']
+        support.primary_attachments = data['enemy']['support']['primary_attachments']
         support.secondary_weapon = data['enemy']['support']['secondary_weapon']
+        support.secondary_attachments = data['enemy']['support']['secondary_attachments']
         support.primary_gadget = data['enemy']['support']['primary_gadget']
         support.secondary_gadget = data['enemy']['support']['secondary_gadget']
         support.melee = data['enemy']['support']['melee']
@@ -814,7 +841,9 @@ def manager_push_soldier_kit_data(request : Request, project_id : int, level_id 
     else:
         support : models.SoldierKit = models.SoldierKit.objects.filter(collection_slot = 2, collection_id = enemy_kit.id).first()
         support.primary_weapon = data['enemy']['support']['primary_weapon']
+        support.primary_attachments = data['enemy']['support']['primary_attachments']
         support.secondary_weapon = data['enemy']['support']['secondary_weapon']
+        support.secondary_attachments = data['enemy']['support']['secondary_attachments']
         support.primary_gadget = data['enemy']['support']['primary_gadget']
         support.secondary_gadget = data['enemy']['support']['secondary_gadget']
         support.melee = data['enemy']['support']['melee']
@@ -827,7 +856,9 @@ def manager_push_soldier_kit_data(request : Request, project_id : int, level_id 
     if not enemy_kit.recon:
         recon : models.SoldierKit = models.SoldierKit.objects.create()
         recon.primary_weapon = data['enemy']['recon']['primary_weapon']
+        recon.primary_attachments = data['enemy']['recon']['primary_attachments']
         recon.secondary_weapon = data['enemy']['recon']['secondary_weapon']
+        recon.secondary_attachments = data['enemy']['recon']['secondary_attachments']
         recon.primary_gadget = data['enemy']['recon']['primary_gadget']
         recon.secondary_gadget = data['enemy']['recon']['secondary_gadget']
         recon.melee = data['enemy']['recon']['melee']
@@ -840,7 +871,9 @@ def manager_push_soldier_kit_data(request : Request, project_id : int, level_id 
     else:
         recon : models.SoldierKit = models.SoldierKit.objects.filter(collection_slot = 3, collection_id = enemy_kit.id).first()
         recon.primary_weapon = data['enemy']['recon']['primary_weapon']
+        recon.primary_attachments = data['enemy']['recon']['primary_attachments']
         recon.secondary_weapon = data['enemy']['recon']['secondary_weapon']
+        recon.secondary_attachments = data['enemy']['recon']['secondary_attachments']
         recon.primary_gadget = data['enemy']['recon']['primary_gadget']
         recon.secondary_gadget = data['enemy']['recon']['secondary_gadget']
         recon.melee = data['enemy']['recon']['melee']

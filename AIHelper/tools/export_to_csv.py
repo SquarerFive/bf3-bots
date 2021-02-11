@@ -1,5 +1,6 @@
 import os
 import csv
+import json
 # paths_to_search = ['Persistence/Unlocks/Soldiers/Visual/MP/Us/', 'Persistence/Unlocks/Soldiers/Visual/MP/RU/']
 paths_to_search = ['Gameplay/Kits/']
 
@@ -18,7 +19,7 @@ paths = {
 }
 
 data = [
-    ('Name', 'Category', 'US', 'RU')
+    ('Name', 'Category', 'US', 'RU', 'Tags')
 ]
 
 for assetType in list(paths.keys()):
@@ -30,11 +31,17 @@ for assetType in list(paths.keys()):
                 filter = False
                 is_us = True
                 is_ru = True
+                tags = []
                 if assetType == 'Weapons':
                     if name[0] == 'U':
                         filter = False
+                        if len(name.split("_")) != 2:
+                            tags.append("Attachment")
                     else:
                         filter = True
+                        
+                    # print(len(name.split("_")))
+                    
                 if assetType == 'Kits':
                     is_us = name.lower()[0:2] == 'us'
                     is_ru = name.lower()[0:2] == 'ru'
@@ -43,7 +50,7 @@ for assetType in list(paths.keys()):
                     is_ru = name.lower()[3:5] == 'ru'
                     # print(is_us, is_ru)
                 if not filter:
-                    data.append((pathname, assetType, 1 if is_us else 0, 1 if is_ru else 0))
+                    data.append((pathname, assetType, 1 if is_us else 0, 1 if is_ru else 0, json.dumps(tags)))
 
 
 with open('assets.csv', 'w', newline="") as f:
