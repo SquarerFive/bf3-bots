@@ -138,7 +138,7 @@ def compute(bot_id : int, current_level : Level, BotModels : models.Bot, PlayerM
             # print("GETIN")
             target = models.Player.objects.filter(player_id=bot.target).first() or models.Bot.objects.filter(player_id=bot.target).first()
             if target:
-                print('valid path to get in vehicle')
+                # print('valid path to get in vehicle')
                 end =  current_level.transform.transform_to_grid((float(target.transform['trans']['x']) , float(target.transform['trans']['z'])))
                 bot.path = current_level.astar(
                         bot_grid_pos,
@@ -174,3 +174,88 @@ def compute(bot_id : int, current_level : Level, BotModels : models.Bot, PlayerM
         bot.action = 2
         bot.path = []
         bot.save()
+
+def compute_model(bot : models.Bot, current_level : Level, override_target = False, overidden_target = -2):
+    if bot.alive:
+        objectives : List[navigation_models.Objective] = get_target_objectives(bot.team, navigation_models.Objective)
+        closest_objective, distance_to_objective = get_nearest_objective(bot, objectives)
+
+        enemies : List[models.BasePlayer] = list(models.Bot.objects.exclude(team=bot.team).all()) + list(models.Player.objects.exclude(team=bot.team).all())
+
+        closest_enemy, distance_to_enemy = get_nearest_enemy(bot, enemies)
+        bot_grid_pos = current_level.transform.transform_to_grid((bot.transform['trans']['x'], bot.transform['trans']['z']))
+
+        
+
+        if bot.action == int(orders.BotActionEnum.ATTACK):
+            if (closest_enemy and distance_to_enemy < 120 or override_target) and not bot.in_vehicle: # TODO: change this to x within viewing angle of y 
+                # print(bot.in_vehicle)
+                # print("attack enemy")
+                # print('test')
+                enemy_grid_pos =  current_level.transform.transform_to_grid((float(closest_enemy.transform['trans']['x']) , float(closest_enemy.transform['trans']['z'])))
+                if override_target and models.Player.objects.filter(player_id=overidden_target).first():
+                    if not models.Player.objects.filter(player_id=overidden_target).first().alive:
+                        override_target = False
+                        bot.overidden_target = -2
+
+                # Not a great method, as this opens up the change that the bot will target a friendly.
+                if not override_target:
+                    bot.target = closest_enemy.player_id
+                else:
+                    bot.target = override_target
+
+                bot.order = orders.BotOrdersEnum.ENEMY
+                # bot.action = orders.BotActionEnum.ATTACK
+                bot.path = current_level.astar(
+                    bot_grid_pos,
+                    enemy_grid_pos
+                )
+                #print("path")
+                if type(bot.path ) == type(None):
+                    bot.path = []
+                else:
+                    if len(bot.path) == 0:
+                        bot.path = []
+                # bot.save()
+
+            elif closest_objective:
+                # print('no enemy, but close objective')
+                bot.path = []
+                
+                bot.target = -1
+                bot.order = orders.BotOrdersEnum.OBJECTIVE
+                # bot.action = orders.BotActionEnum.ATTACK
+                #print("closest obj: ", closest_objective.name)
+                end =  current_level.transform.transform_to_grid((float(closest_objective.transform['trans']['x']) , float(closest_objective.transform['trans']['z'])))
+                # print("closest objective @ grid = " ,end)
+                # print("bot grid pos: ", current_level.transform.transform_to_grid((bot.transform['trans']['x'], bot.transform['trans']['z'])))
+                path = current_level.astar(
+                    current_level.transform.transform_to_grid((bot.transform['trans']['x'], bot.transform['trans']['z'])),
+                    end#current_level.transform.transform_to_grid((float(closest_objective.transform['trans']['x']) , closest_objective.transform['trans']['z']))
+                )
+                bot.path = path
+                # print("path: ", bot.path)
+                if bot.in_vehicle and distance_to_objective < 5:
+                    # print('we can get out')
+                    bot.order = orders.BotOrdersEnum.FRIENDLY
+                    bot.action = orders.BotActionEnum.GET_OUT
+                # bot.save()
+            
+            elif bot.action == 6 and not bot.in_vehicle:
+                target = models.Player.objects.filter(player_id=bot.target).first() or models.Bot.objects.filter(player_id=bot.target).first()
+                if target:
+                    # print('valid path to get in vehicle')
+                    end =  current_level.transform.transform_to_grid((float(target.transform['trans']['x']) , float(target.transform['trans']['z'])))
+                    bot.path = current_level.astar(
+                            bot_grid_pos,
+                            end
+                        )
+                    if type(bot.path ) == type(None):
+                            bot.path = []
+                    else:
+                        if len(bot.path) == 0:
+                            bot.path = []
+                else:
+                    bot.action = orders.BotActionEnum.ATTACK
+                    bot.order = orders.BotOrdersEnum.ENEMY
+                # bot.save()

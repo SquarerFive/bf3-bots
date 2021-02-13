@@ -1,3 +1,4 @@
+from navigation.utilities.level import Level
 from typing import Any
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 import time
@@ -26,9 +27,13 @@ class TaskPool:
     
     def start(self):
         while self.should_stop == False:
-            self.interval = self.active_interval if len(self.tasks) > 0 else self.inactive_interval
-            self.run_tasks()
-            time.sleep(self.interval)
+            try:
+                self.interval = self.active_interval if len(self.tasks) > 0 else self.inactive_interval
+                self.run_tasks()
+                time.sleep(self.interval)
+            except:
+                print('key interrupt')
+                self.should_stop = True
 
 class ThreadPool:
     def __init__(self, num_threads = 6):
@@ -75,7 +80,7 @@ class Command(BaseCommand):
         print("CTRL+C to Stop Task")
         global_cache = GlobalCache()
         thread_pool = ThreadPool()
-        thread_pool.start()
+        # thread_pool.start()
         while True:
             print("updating")
             currentGameManager = models.BF3GameManager.objects.first()
@@ -85,11 +90,17 @@ class Command(BaseCommand):
                     currentGameManager.active_level_id
                 )
                 if level_object:
+                    b_array = []
                     for bot in bot_models.Bot.objects.all():
-                        thread_pool.enqueue(
-                            lambda : behaviour.compute(bot.bot_index, level_object, bot_models.Bot, bot_models.Player, navigation_models.Objective, True, bot.overidden_target)
-                        )
-                    print(thread_pool.stats())
+                        # thread_pool.enqueue(
+                        #     # lambda : behaviour.compute(bot.bot_index, level_object, bot_models.Bot, bot_models.Player, navigation_models.Objective, True, bot.overidden_target)
+                        #     lambda : behaviour.compute_model(bot, level_object, True, bot.overidden_target)
+                        # )
+                        behaviour.compute_model(bot, level_object, bot.overidden_target > -2, bot.overidden_target)
+                        b_array.append(bot)
+
+                    bot_models.Bot.objects.bulk_update(b_array, ['path', 'action', 'order', 'target'])
+                    # print(thread_pool.stats())
             else:
                 print("No Game Manager found. Maybe start the game?")
             time.sleep(options['interval'])

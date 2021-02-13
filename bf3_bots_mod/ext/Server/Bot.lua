@@ -605,6 +605,7 @@ function Bot:Tick(delta_time, pass)
                     if self.target.soldier.transform.trans:Distance(self.target.soldier.transform.trans:Clone()) > 30 then
                         self.target = nil
                         self.firing = false
+                        self.knifing = false
                         return
                     end
                     local focus = self:GetLocalOffsetTransform(self.target.soldier.transform)
@@ -613,6 +614,7 @@ function Bot:Tick(delta_time, pass)
                     self:SetFocusOn(focus.trans)
 
                     if self.player_controller.soldier.transform.trans:Distance(self.target.soldier.transform.trans:Clone()) < 15 and not shouldStop then
+                        self.knifing = false
                         self.firing = true
                         self.crouching = false
                         self.stopMoving = false
@@ -620,6 +622,7 @@ function Bot:Tick(delta_time, pass)
                         self:SetFocusOn(focus.trans)
 
                     elseif self.player_controller.soldier.transform.trans:Distance(self.target.soldier.transform.trans:Clone()) < 15 and shouldStop then
+                        self.knifing = false
                         self.firing = true
                         self.throttle = false
                         self.sprinting = false
