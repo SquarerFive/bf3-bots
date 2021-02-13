@@ -94,6 +94,8 @@ function NavGrid:__init()
 
     self.profile = {}
     self.project_id = 0
+
+    self.elevation_based_scoring = false
     
     
     if #cachedSpatialEntities == 0 then
@@ -220,10 +222,11 @@ end
 
 
 
-function NavGrid.CreateFromBounds(size_x, size_z, min_point, max_point, start_x, start_z, profile, project_id, width, height)
+function NavGrid.CreateFromBounds(size_x, size_z, min_point, max_point, start_x, start_z, profile, project_id, width, height, elevation_based_scoring)
     local self = NavGrid()
     self.profile = profile
     self.project_id = project_id
+    self.elevation_based_scoring = elevation_based_scoring
     local center_position = min_point + Vec3(self.cell_size/2, self.cell_size/2, self.cell_size/2)
     center_position = Vec3(center_position.x, center_position.y+300, center_position.z)
     --local jsonContentScores = '{ "scores": ['
@@ -303,7 +306,7 @@ function NavGrid:RaycastAndScore(Start, End, OldScore)
         local elevation = -6969420
         if hit ~= nil then
             if hit.rigidBody ~= nil then
-                if i == 1 then
+                if i == 1 and not self.elevation_based_scoring then
                     if hit.rigidBody:Is("TerrainPhysicsEntity") or hit.rigidBody:Is("ClientTerrainEntity") then
                         score = 0.0
                         elevation = hit.position.y

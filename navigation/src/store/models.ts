@@ -65,7 +65,8 @@ export interface LevelBuildSettings {
   voxel_step_size: number
   voxel_size: number
   iterations_x : number
-  iterations_y : number
+  iterations_y : number,
+  elevation_based_scoring: boolean
 }
 
 export interface LevelBuildSyncPayload {
@@ -483,7 +484,7 @@ export class Manager {
   }
 
   async recalculateCosts (project_id : number, level_id : number, elevationBased : boolean, elevationAlphaPower : number, elevationAlphaBeta : number, elevationAlphaBetaPower : number) {
-    const response = await this.post(`/v1/project/${project_id}/level/${level_id}/recalculate/`, { 
+    const response = await this.post(`/v1/project/${project_id}/level/${level_id}/recalculate/`, {
       elevation_based_scoring: elevationBased,
       elevation_alpha_power: elevationAlphaPower,
       elevation_alpha_beta: elevationAlphaBeta,

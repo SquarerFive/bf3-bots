@@ -2,6 +2,7 @@
     <q-page>
         <q-drawer dark side="right" v-model="right" class="bg-grey-10">
             <q-list dark class="bg-grey-10">
+                <q-scroll-area style="height: 100vh">
                 <q-item dark>
                     <q-item-section class='text-subtitle1'>
                         Add Level
@@ -63,19 +64,28 @@
                             </q-item-section>
                         </q-item>
                         <q-item style="margin-top:50px;">
+                            <q-item-section>
+                                <q-checkbox label="Elevation-based Scoring" v-model="elevationBasedScoring" dark />
+                            </q-item-section>
+                        </q-item>
+                        <q-item style="margin-top: 0px" >
                             <q-btn @click="calculateSettings" color="warning" text-color="dark" label="Calculate Settings"/>
                         </q-item>
                         <q-item style="background-color: #131313; color: #545454; font-size:12px;">
                             <span>Iterations[GridSizeX] X: {{config.iterations_x}} <br> Iterations[GridSizeY] Y: {{config.iterations_y}}</span>
                         </q-item>
                         <q-item>
-                            <q-btn @click="startBuild" :disable="isBuilding" color="warning" text-color="dark" label="Add Level and Generate Navmesh"/>
+                            <q-item-section>
+                            <q-btn @click="startBuild" :loading="isBuilding" :disable="isBuilding" color="warning" text-color="dark" label="Add Level and Generate Navmesh"/>
+                            </q-item-section>
                         </q-item>
                     </q-form>
-                    <q-item class="absolute-bottom bg-grey-10" v-if="initializedGameSyncManager">
+                    <q-item class="bg-grey-10" v-if="initializedGameSyncManager">
                         <q-linear-progress dark stripe rounded size="20px" :value="buildProgress" color="red" class="q-mt-sm" />
                     </q-item>
+                    </q-scroll-area>
             </q-list>
+
         </q-drawer>
     </q-page>
 </template>
@@ -98,6 +108,7 @@ export default class AddLevel extends Vue {
     voxelSize = 1.0
     initializedGameSyncManager = false
     isBuilding = false
+    elevationBasedScoring = false
 
     config : LevelBuildSettings = {
       level_name: '',
@@ -106,7 +117,8 @@ export default class AddLevel extends Vue {
       iterations_x: 0,
       iterations_y: 0,
       voxel_step_size: 32.0,
-      voxel_size: 1.0
+      voxel_size: 1.0,
+      elevation_based_scoring: this.elevationBasedScoring
     }
 
     get buildProgress () {

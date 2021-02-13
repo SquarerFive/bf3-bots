@@ -45,10 +45,11 @@ class Level:
 
     def get_best_navmesh_level(self, position : Tuple[int, int, float]):
         d = math.inf
-        l = 0
+        l = 1
         for level in range(self.elevation.shape[0]):
-            if abs(self.elevation[level][position[0]][position[1]]-position[2]) < d:
-                d = abs(self.elevation[level][position[0]][position[1]]-position[2])
+            c = abs((self.elevation[level][position[0]][position[1]]+self.costs[level][position[0]][position[1]]) - position[2])
+            if abs(self.elevation[level][position[0]][position[1]] -position[2])  < d:
+                d = c
                 l = level
         return l
 
@@ -146,7 +147,7 @@ class Level:
     #     path = [(p[1], p[0]) for p in path]
     #     return path
 
-    def find_path_safe(self, start: tuple, end: tuple) -> list:
+    def find_path_safe(self, start: tuple, end: tuple, level : int = 0) -> list:
         #print(self.costs)
         #grid = self.grid
         #grid.cleanup()
@@ -161,7 +162,7 @@ class Level:
         # print(self.costs[end[0]][[end[1]]])
         #path = astar.astar(self.costs, start, end)
         #print('astar: ', start, end)
-        path = pyastar.astar_path(self.costs[0], start, end, allow_diagonal=True)
+        path = pyastar.astar_path(self.costs[level], start, end, allow_diagonal=True)
         #print(path)
         # path = [(p[1], p[0]) for p in path]
         # grid.__del
@@ -176,13 +177,15 @@ class Level:
         #else:
         # return []
         # print('finding path', start, end)
-        print('best navmesh level: ', self.get_best_navmesh_level((start[0], start[1], elevation)))
+        best_level = self.get_best_navmesh_level((start[0], start[1], elevation))
+        print('best navmesh level: ', best_level)
         if (start[0] > 0 and start[0] < self.costs.shape[1] and start[1] > 0 and start[1] < self.costs.shape[2]
             and end[0] > 0 and end[0] < self.costs.shape[1] and end[1] > 0 and end[1] < self.costs.shape[2]):
                 path = self.find_path_safe(
                     self.get_valid_point_in_radius(self.costs, start[0], start[1], 5), 
-                    self.get_valid_point_in_radius(self.costs, end[0], end[1], 5))
+                    self.get_valid_point_in_radius(self.costs, end[0], end[1], 5), best_level)
         else:
+            print("Outside of map")
             return []
         #print('got path')
         #path = astar(self.costs, start, end)

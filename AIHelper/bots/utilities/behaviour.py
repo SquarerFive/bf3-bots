@@ -176,7 +176,7 @@ def compute(bot_id : int, current_level : Level, BotModels : models.Bot, PlayerM
         bot.save()
 
 def compute_model(bot : models.Bot, current_level : Level, override_target = False, overidden_target = -2):
-    if bot.alive:
+    if bot.alive and 'trans' in list(bot.transform.keys()):
         objectives : List[navigation_models.Objective] = get_target_objectives(bot.team, navigation_models.Objective)
         closest_objective, distance_to_objective = get_nearest_objective(bot, objectives)
 
@@ -191,7 +191,7 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
             target_grid_pos = current_level.transform.transform_to_grid((target[0], target[2]))
 
             bot.path = current_level.astar(
-                bot_grid_pos, target_grid_pos, bot.transform['trans']['y']
+                bot_grid_pos, target_grid_pos, elevation=bot.transform['trans']['y']
             )
            
 
@@ -214,7 +214,7 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                 bot.path = current_level.astar(
                     bot_grid_pos,
                     enemy_grid_pos,
-                    bot.transform['trans']['y']
+                    elevation=bot.transform['trans']['y']
                 )
                 #print("path")
                 if type(bot.path ) == type(None):
@@ -236,7 +236,7 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                 path = current_level.astar(
                     current_level.transform.transform_to_grid((bot.transform['trans']['x'], bot.transform['trans']['z'])),
                     end,
-                    bot.transform['trans']['y']
+                    elevation=bot.transform['trans']['y']
                 )
                 bot.path = path
                 # print("path: ", bot.path)
@@ -254,7 +254,7 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                     bot.path = current_level.astar(
                             bot_grid_pos,
                             end,
-                            bot.transform['trans']['y']
+                            elevation=bot.transform['trans']['y']
                         )
                     if type(bot.path ) == type(None):
                             bot.path = []
