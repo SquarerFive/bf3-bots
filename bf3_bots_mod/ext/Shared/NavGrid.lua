@@ -250,7 +250,7 @@ function NavGrid.CreateFromBounds(size_x, size_z, min_point, max_point, start_x,
             rayScoreC[1]['elevation'] = 0.0
             rayScoreC[1]['value'] = 0.0
             if (rayResult) then
-                local rayScore = self:RaycastAndScore(position,Vec3(position.x, rayResult.position.y-1.0,position.z), rayResult.position.y)
+                local rayScore = self:RaycastAndScore(position,Vec3(position.x, position.y-6000, position.z), rayResult.position.y)
                 -- self.grid_scores[x][y][1] = rayScore
                 -- self.grid_scores[x][y][2] = rayResult.position.y
                 if rayScore[1] ~= nil then
@@ -298,20 +298,25 @@ function NavGrid:RaycastAndScore(Start, End, OldScore)
 
     local hits = self.NestedRaycast(Start, End, Vec3(0.0, -1.0, 0.0), 5)
     local results = {} -- { 1: { value: 0.0, elevation: 0.0 } }
-    for _, hit in pairs(hits) do
+    for i, hit in pairs(hits) do
         local score = 256
         local elevation = -6969420
         if hit ~= nil then
             if hit.rigidBody ~= nil then
-                if hit.rigidBody:Is("TerrainPhysicsEntity") or hit.rigidBody:Is("ClientTerrainEntity") then
-                    score = 0.0
-                    elevation = hit.position.y
-                elseif hit.rigidBody:Is("BreakablePhysicsEntity") or hit.rigidBody:Is("StaticPhysicsEntity") then
-                    score = 256
-                    elevation = hit.position.y
-                elseif hit.rigidBody:Is("ClientWaterEntity") or hit.rigidBody:Is("WaterPhysicsEntity") then
-                    score = 500
-                    elevation = hit.position.y - 3
+                if i == 1 then
+                    if hit.rigidBody:Is("TerrainPhysicsEntity") or hit.rigidBody:Is("ClientTerrainEntity") then
+                        score = 0.0
+                        elevation = hit.position.y
+                    elseif hit.rigidBody:Is("BreakablePhysicsEntity") or hit.rigidBody:Is("StaticPhysicsEntity") then
+                        score = 256
+                        elevation = hit.position.y
+                    elseif hit.rigidBody:Is("ClientWaterEntity") or hit.rigidBody:Is("WaterPhysicsEntity") then
+                        score = 500
+                        elevation = hit.position.y - 3
+                    else
+                        score = 700
+                        elevation = hit.position.y
+                    end
                 else
                     score = 700
                     elevation = hit.position.y
@@ -403,7 +408,7 @@ function NavGrid:Extend(size_x, size_z, min_point, max_point, start_x, start_z, 
             rayScoreC[1]['elevation'] = 0.0
             rayScoreC[1]['value'] = 0.0
             if (rayResult) then
-                local rayScore = self:RaycastAndScore(position,Vec3(position.x, rayResult.position.y-1.0,position.z), rayResult.position.y)
+                local rayScore = self:RaycastAndScore(position,Vec3(position.x, position.y-6000,position.z), rayResult.position.y)
                 -- self.grid_scores[x][y][1] = rayScore
                 -- self.grid_scores[x][y][2] = rayResult.position.y
                 if (rayScore[1] ~= nil) then
@@ -491,7 +496,7 @@ function NavGrid.NestedRaycast(start_point, end_point, direction, layers)
     for i = 1, layers+1 do
         local p = start_point
         if last_point ~= nil then
-            p = last_point + (direction*1.3)
+            p = last_point + (direction*1.9)
         end
         local ray = RaycastManager:Raycast(p, end_point, RayCastFlags.IsAsyncRaycast)
         

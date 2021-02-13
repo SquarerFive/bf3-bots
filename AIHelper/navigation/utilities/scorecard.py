@@ -30,11 +30,11 @@ def score_fast(input_arr:np.ndarray, elevation_arr : np.ndarray, target:np.ndarr
                         elevation_alpha = math.pow(math.pow(elevation_alpha, 0.125)*1.5, 7)
                         elevation_value = remap(elevation_alpha, 0.0, 1.0, min_elevation, max_elevation)
                         target[level][x][y] = 700 + elevation_value 
-                elif level == 1:
+                elif level > 0:
                     elevation_alpha = remap(elevation_arr[level][x][y], min_elevation, max_elevation, 0.0, 1.0)
-                    elevation_alpha = math.pow(math.pow(elevation_alpha, 0.15)*1.5, 2)
+                    elevation_alpha = math.pow(math.pow(elevation_alpha, 0.05)*1.5, 7)
                     elevation_value = remap(elevation_alpha, 0.0, 1.0, min_elevation, max_elevation)
-                    target[level][x][y] = elevation_value
+                    target[level][x][y] = 700 + elevation_value 
 
 @njit(parallel=True)
 def get_world_array_fast(x_arr: np.ndarray, y_arr : np.ndarray, min_point : tuple, max_point : tuple, width: float, height: float):

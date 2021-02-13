@@ -82,8 +82,9 @@ class Command(BaseCommand):
         thread_pool = ThreadPool()
         # thread_pool.start()
         while True:
-            print("updating")
+            
             currentGameManager = models.BF3GameManager.objects.first()
+            ts = time.time()
             if currentGameManager:
                 level_object = global_cache.get_object(
                     currentGameManager.active_project_id,
@@ -91,6 +92,7 @@ class Command(BaseCommand):
                 )
                 if level_object:
                     b_array = []
+                    # t = []
                     for bot in bot_models.Bot.objects.all():
                         # thread_pool.enqueue(
                         #     # lambda : behaviour.compute(bot.bot_index, level_object, bot_models.Bot, bot_models.Player, navigation_models.Objective, True, bot.overidden_target)
@@ -98,6 +100,8 @@ class Command(BaseCommand):
                         # )
                         try:
                             behaviour.compute_model(bot, level_object, bot.overidden_target > -2, bot.overidden_target)
+                            # t.append(threading.Thread(target = lambda : behaviour.compute_model(bot, level_object, bot.overidden_target > -2, bot.overidden_target)))
+                            # t[-1].start()
                             b_array.append(bot)
                         except Exception as e:
                             print('Encountered Error: ', e)
@@ -106,6 +110,8 @@ class Command(BaseCommand):
                     # print(thread_pool.stats())
             else:
                 print("No Game Manager found. Maybe start the game?")
+            te = time.time()
+            print("Completed task cycle in: {}s".format(te-ts))
             time.sleep(options['interval'])
 
         thread_pool.stop()

@@ -80,9 +80,9 @@ def get_valid_point_in_radius(arr, x, y, radius: float = 10.0):
     #return (final_pos[1], final_pos[0])
 
 def get_path_to(start, end):
-    with open("./models/Project/BF3-Bots-0.0.4/Level/XP1_004/elevation.npy", "rb") as f:
+    with open("./models/Project/BF3 Bots 0.0.4/Level/XP1_004/elevation.npy", "rb") as f:
         elevation = numpy.load(f)
-    with open("./models/Project/BF3-Bots-0.0.4/Level/XP1_004/data.npy", "rb") as f:
+    with open("./models/Project/BF3 Bots 0.0.4/Level/XP1_004/data.npy", "rb") as f:
         arr = numpy.load(f)
         fix_scores(arr, elevation)
         # new_arr = numpy.zeros(arr.shape)
@@ -92,10 +92,10 @@ def get_path_to(start, end):
         path = pyastar.astar_path(arr, (344, 601),  get_valid_point_in_radius(arr, 353, 631), allow_diagonal=True)
 
 
-with open("./models/Project/BF3-Bots-0.0.4/Level/XP1_004/elevation.npy", "rb") as f:
+with open("./models/Project/BF3 Bots 0.0.4/Level/XP1_004/elevation.npy", "rb") as f:
     elevation = numpy.load(f)[0]
 
-with open("./models/Project/BF3-Bots-0.0.4/Level/XP1_004/data.npy", "rb") as f:
+with open("./models/Project/BF3 Bots 0.0.4/Level/XP1_004/data.npy", "rb") as f:
     arr = numpy.load(f)[0]
     new_arr = numpy.zeros(arr.shape)
     print(new_arr.shape, arr.shape)

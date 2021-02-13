@@ -39,7 +39,7 @@
               <q-item-section avatar>
                 <q-icon name="edit_road" />
               </q-item-section>
-              <q-item-section> Draw Roads </q-item-section>
+              <q-item-section> Draw Roads [e-256]</q-item-section>
             </q-item>
             <q-item
               clickable
@@ -50,7 +50,7 @@
               <q-item-section avatar>
                 <q-icon name="house" />
               </q-item-section>
-              <q-item-section> Draw Structure [obstructing] </q-item-section>
+              <q-item-section> Draw Structure [e+256] </q-item-section>
             </q-item>
           </div>
         </q-list>
