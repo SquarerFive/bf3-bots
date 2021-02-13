@@ -33,6 +33,9 @@ import random
 
 from django.db import connection
 
+from background_task import background
+from .tasks import manager_compute
+
 # Globals [to avoid poo memory, cache it here until the level changes]
 class GlobalCache:
     def __init__(self):
@@ -45,6 +48,14 @@ class GlobalCache:
                 return self.level_object
         self.level_model = level.models.Level.objects.filter(project_id= project_id, level_id=level_id).first()
         self.level_object = navigation_query.decode_level(self.level_model)
+        game_manager = models.BF3GameManager.objects.first()
+        if game_manager == None:
+            game_manager = models.BF3GameManager(active_project_id = project_id, active_level_id=level_id)
+            game_manager.save()
+        else:
+            game_manager.active_project_id = project_id
+            game_manager.active_level_id = level_id
+            game_manager.save()
         return self.level_object
 
     def save_object(self):
@@ -506,7 +517,7 @@ def manager_update_level(request: Request, project_id : int) -> Response:
                 'kit_asset': kit.kit_asset
             }
             bots_query.create_or_update_bot(bot)
-            behaviour.compute(bot['bot_index'], level_object, bots_models.Bot, bots_models.Player, navigation_models.Objective, int(bot['requested_target_id'])!=-2, int(bot['requested_target_id']))
+            # behaviour.compute(bot['bot_index'], level_object, bots_models.Bot, bots_models.Player, navigation_models.Objective, int(bot['requested_target_id'])!=-2, int(bot['requested_target_id']))
         
         data = {
             "bots" : bots_query.get_bots_as_dict()
@@ -977,3 +988,4 @@ def manager_clear_assets(request : Request) -> Response:
     with connection.cursor() as cursor:
         cursor.execute('vacuum;')
     return Response('Successfully deleted all assets.')
+

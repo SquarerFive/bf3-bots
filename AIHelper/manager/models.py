@@ -44,3 +44,7 @@ class SoldierKitCollection(models.Model):
 
     project_id = models.IntegerField(default=0)
     level_id = models.IntegerField(default=0)
+
+class BF3GameManager(models.Model):
+    active_project_id = models.IntegerField(default=0)
+    active_level_id = models.IntegerField(default=0)

@@ -86,6 +86,11 @@ def compute(bot_id : int, current_level : Level, BotModels : models.Bot, PlayerM
                 # print("attack enemy")
                 # print('test')
                 enemy_grid_pos =  current_level.transform.transform_to_grid((float(closest_enemy.transform['trans']['x']) , float(closest_enemy.transform['trans']['z'])))
+                if override_target:
+                    if not models.Player.objects.filter(player_id=override_target_id).first().alive:
+                        override_target = False
+                        bot.overidden_target = -2
+
                 # Not a great method, as this opens up the change that the bot will target a friendly.
                 if not override_target:
                     bot.target = closest_enemy.player_id

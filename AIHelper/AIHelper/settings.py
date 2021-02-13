@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "bots",
     "manager",
     'corsheaders',
+    'background_task',
     'rest_framework',
     'rest_framework.authtoken'
 ]
