@@ -4,27 +4,45 @@ AI mod for BF3, reviving the Battlefield 2 experience.
 This mod is currently in early development. Feel free to contribute but there is no guaruntee that the mod will be stable if you plan on using it (I will only be providing support for those who wish to contribute at the moment).
 
 
-## Version 0.0.35 : Changelogs
+## Version 0.0.39 : Changelogs + Features
+- Fixed: #16, #15, #9, and several bugs. Full Changelist:
+```
+Layered navmesh seemed to only be valid for layer 0.
+Nav-mesh dimensions were inconrrect after adding a new level.
+Improved the performance on AIServer by 12000%. Where it should now be in sync with the game.
+Improved AI reaction times and moved compute tasks over to the startcomputetask command. Reaction times can be set using the --interval parameter.
+Added the ability to set attachments for primary and secondary weapons on the bots.
+Improved feedback within many UI elements, to let the user know whether a task is being run.
+Bots now trace back if they are stuck on some object.
+Exposed nav-mesh calculation parameters in the map editor.
+AIServer is now distributable via an executable package.
+Re-enabled vegetation.
+Added filters to the asset browser.
+Added csv tools to import and export dumped VEXT assets.
+Database is now vacuumed after all tasks are deleted.
+Create new arrays during the import if the nav-mesh on disk is corrupt.
+Added bot driving interpolation, and vehicleController.
+```
+- Loadout manager, each slot contains all possible weapons - where one is randomly selected when the AI is spawned. Loadouts are set individually for each map and faction, for new maps a loadout can easily be cloned from an existing map or faction. Customize the attachments for each of the weapons.
+![Loadout Screen](./docs/images/loadout_screen.png)
+Asset manager, where you may add a weapon from the left into the selected list, this being all possible weapons the bot could spawn with.
+![Asset Viewer](./docs/images/asset_viewer.png)
 - AI Infantry Combat and Vehicle Driving
 - Automated nav-mesh generation
+![Add level prompt](./docs/images/add-level-0-0-4.png)
 - WIP Interior/Subsurface Navigation
 - Working server bullet damage
-- Loadout manager, each slot contains all possible weapons - where one is randomly selected when the AI is spawned. Loadouts are set individually for each map and faction, for new maps a loadout can easily be cloned from an existing map or faction.
-- Fixed several bugs, the nav mesh now updates properly when a new map is loaded. Objectives are also cleared when this happens. 
-- Basic bot accuracy modifiers, aiming offsets and randomization can be set during runtime.
 
 ## Requirements
-- Git (https://git-scm.com/download/win)
-- Anaconda 3 (https://www.anaconda.com/products/individual)
 - Battlefield 3 and Venice Unleashed
 
 ## Installation
-1. Install Anaconda 3
-2. Open Powershell/CMD in the same folder where you have cloned bf3-bots. Example: `cd ~/repositories/bf3-bots/`
-3. Run the following command `conda env create -f environment.yml`
-4. Activate the conda environment: `conda activate battlefield`
-5. CD into the AI server folder: `cd AIHelper`
-6. Start the AI server: `python manage.py runserver`
+0. You will need to open up two instances of CMD/Powershell for this.
+1. Start the AI Server ```sh ./dist/AIHelper/AIHelper.exe runserver --noreload```
+2. Start the AI compute background task: ```sh ./dist/AIHelper/AIHelper.exe startcomputetask```
+3. Copy the directory 'bf3_bots_mod' into your BF3 server mods folder (ie, `MyServerInstance/Admin/Mods/`), then add `bf3_bots_mod` to your ModList.txt file.
+4. Start your VU/BF3 server, hold down F1 in-game to focus on the UI. Create an account by registering (this is to prevent random players from messing with the settings).
+5. On the top-left of the screen, open the menu and click 'Set Active' on the BF3 Bots Mod 0.0.4 project.
 
 ## System Requirements
 - CPU: Intel/AMD @3.5GHz - 4 cores 8 threads minimum
