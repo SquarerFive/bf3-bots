@@ -185,9 +185,19 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
         closest_enemy, distance_to_enemy = get_nearest_enemy(bot, enemies)
         bot_grid_pos = current_level.transform.transform_to_grid((bot.transform['trans']['x'], bot.transform['trans']['z']))
 
-        
+        if bot.stuck:
+            back = [bot.transform['forward']['x']*-5, bot.transform['forward']['y']*-5, bot.transform['forward']['z']*-5]
+            target = bot.transform['trans']['x'] + back[0], bot.transform['trans']['y'] + back[1], bot.transform['trans']['z'] + back[2]
+            target_grid_pos = current_level.transform.transform_to_grid((target[0], target[2]))
+            # current_level.get_valid_point_in_radius(current_level.costs, *bot_grid_pos, radius=10)
+            print('bot stuck, target pos:', target_grid_pos, bot.name)
+            bot.path = current_level.astar(
+                bot_grid_pos, target_grid_pos
+            )
+            print(bot.path)
+            # bot.stuck = False
 
-        if bot.action == int(orders.BotActionEnum.ATTACK):
+        elif bot.action == int(orders.BotActionEnum.ATTACK):
             if (closest_enemy and distance_to_enemy < 120 or override_target) and not bot.in_vehicle: # TODO: change this to x within viewing angle of y 
                 # print(bot.in_vehicle)
                 # print("attack enemy")

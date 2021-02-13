@@ -111,17 +111,18 @@ class Level:
         found = False
         # final
         final_pos = [x,y]
+        min_s = math.inf
         for g in range(1, int(radius)):
             for offset in offsets:
                 i = y+(offset[1]*g)
                 j = x+(offset[0]*g)
-                
-                if arr[0][j][i] != np.inf:
+                score = arr[0][j][i]-self.elevation[0][j][i]
+                if arr[0][j][i] != np.inf and score < min_s and score > 0.0:
                     found = True
                     final_pos = [j, i]
-                    break
-            if found:
-                break
+                    min_s = score
+            #if found:
+            #    break
         return final_pos
 
 

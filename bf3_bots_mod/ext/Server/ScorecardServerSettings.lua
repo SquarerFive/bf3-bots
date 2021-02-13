@@ -31,18 +31,18 @@ Events:Subscribe('Partition:Loaded', function(partition)
 			serverSettings.isAiEnabled = true
 			serverSettings.isReconfigurable = true
 			serverSettings.isSoldierDetailedCollisionEnabled = true
-			serverSettings.isInternetSimulationEnabled = true
+			-- serverSettings.isInternetSimulationEnabled = false
 			serverSettings.isNetworkStatsEnabled = true
 			-- serverSettings.vegetationEnabled = false
             serverSettings.isPresenceEnabled = true
-            serverSettings.queryProviderEnabled = true
+            serverSettings.queryProviderEnabled = false
             serverSettings.isRenderDamageEvents = true
             serverSettings.isStatsEnabled = true
-            serverSettings.havokVisualDebugger = true
-            serverSettings.scoringLogEnabled = true
-            serverSettings.isRanked = true
-            serverSettings.unlockResolver = true
-			serverSettings.serverName = "Yeet"
+            -- serverSettings.havokVisualDebugger = false
+            -- serverSettings.scoringLogEnabled = true
+            -- serverSettings.isRanked = false
+            -- serverSettings.unlockResolver = true
+			-- serverSettings.serverName = "Yeet"
             print("AI enabled? ".. tostring(serverSettings.isAiEnabled))
 			print("Collision enabled? ".. tostring(serverSettings.isSoldierDetailedCollisionEnabled))
 			print("InternetSimulation enabled? ".. tostring(serverSettings.isInternetSimulationEnabled))

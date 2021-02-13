@@ -11,7 +11,6 @@ class BasePlayer(models.Model):
     alive = models.BooleanField(default=False)
     is_squad_leader = models.BooleanField(default = False)
     is_squad_private = models.BooleanField(default = False)
-
     transform = models.JSONField(default=dict)
     in_vehicle = models.BooleanField(default=False)
 
@@ -33,6 +32,10 @@ class Bot(BasePlayer):
     overidden_target = models.IntegerField(default = -2)
     selected_kit = models.JSONField(default = dict)
 
+    last_transform = models.JSONField(default=dict, null=True, blank=True)
+    last_transform_update = models.DateTimeField(auto_created=True, editable=True)
+    
+    stuck = models.BooleanField(default=False)
 
     
 class Player(BasePlayer):

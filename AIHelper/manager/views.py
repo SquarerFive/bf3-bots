@@ -540,7 +540,7 @@ def manager_update_level(request: Request, project_id : int) -> Response:
             else:
                 bots_query.create_or_update_bot(bot)
             # behaviour.compute(bot['bot_index'], level_object, bots_models.Bot, bots_models.Player, navigation_models.Objective, int(bot['requested_target_id'])!=-2, int(bot['requested_target_id']))
-        bots_models.Bot.objects.bulk_update(b_array, ['transform', 'health', 'in_vehicle', 'team', 'order', 'action', 'bot_index', 'alive', 'squad', 'overidden_target'])
+        bots_models.Bot.objects.bulk_update(b_array, ['transform', 'health', 'in_vehicle', 'team', 'order', 'action', 'bot_index', 'alive', 'squad', 'overidden_target', 'last_transform', 'last_transform_update', 'stuck'])
         data = {
             "bots" : bots_query.get_bots_as_dict()
         }

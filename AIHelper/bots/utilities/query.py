@@ -4,6 +4,9 @@ from typing import List, Tuple, Union
 
 bot_step = 0
 
+from . behaviour import distance
+import datetime
+
 def create_or_update_bot(bot : dict):
     b : models.Bot = models.Bot.objects.filter(player_id = bot['player_id']).first()
     if not b:
@@ -19,7 +22,11 @@ def create_or_update_bot(bot : dict):
             transform=bot['transform'], 
             bot_index=bot['bot_index'],
             alive=bot['alive'],
-            selected_kit = bot['kit'])
+            selected_kit = bot['kit'],
+            last_transform_update = datetime.datetime.now(),
+            last_transform = {},
+            stuck=False
+            )
     else:
         b.transform = bot['transform']
         b.health = bot['health']
@@ -70,6 +77,17 @@ def create_or_update_bot_model(b : models.Bot, bot: dict):
         #if int(bot['requested_target_id']) != -2:
         #    b.target = int(bot['requested_target_id'])
         b.overidden_target = int(bot['requested_target_id'])
+
+        delta = datetime.datetime.now().replace(tzinfo=b.last_transform_update.tzinfo) - b.last_transform_update
+        if delta.total_seconds() > 8:
+            b.last_transform_update = datetime.datetime.now()
+            if 'trans' in list(b.last_transform.keys()):
+                if distance(bot['transform']['trans']['x'], 0, bot['transform']['trans']['z'], 
+                    b.last_transform['trans']['x'], 0, b.last_transform['trans']['z']) < 0.8:
+                    b.stuck = True
+                else:
+                    b.stuck = False
+            b.last_transform = bot['transform']
         # b.save()
 
 def create_or_update_player(player : dict):

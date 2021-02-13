@@ -102,7 +102,7 @@ class Command(BaseCommand):
                         except Exception as e:
                             print('Encountered Error: ', e)
 
-                    bot_models.Bot.objects.bulk_update(b_array, ['path', 'action', 'order', 'target'])
+                    bot_models.Bot.objects.bulk_update(b_array, ['path', 'action', 'order', 'target', 'stuck'])
                     # print(thread_pool.stats())
             else:
                 print("No Game Manager found. Maybe start the game?")
