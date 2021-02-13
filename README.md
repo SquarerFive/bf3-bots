@@ -38,8 +38,8 @@ Asset manager, where you may add a weapon from the left into the selected list, 
 
 ## Installation
 0. You will need to open up two instances of CMD/Powershell for this.
-1. Start the AI Server ```sh ./dist/AIHelper/AIHelper.exe runserver --noreload```
-2. Start the AI compute background task: ```sh ./dist/AIHelper/AIHelper.exe startcomputetask```
+1. Start the AI Server ```./dist/AIHelper/AIHelper.exe runserver --noreload```
+2. Start the AI compute background task: ```./dist/AIHelper/AIHelper.exe startcomputetask```
 3. Copy the directory 'bf3_bots_mod' into your BF3 server mods folder (ie, `MyServerInstance/Admin/Mods/`), then add `bf3_bots_mod` to your ModList.txt file.
 4. Start your VU/BF3 server, hold down F1 in-game to focus on the UI. Create an account by registering (this is to prevent random players from messing with the settings).
 5. On the top-left of the screen, open the menu and click 'Set Active' on the BF3 Bots Mod 0.0.4 project.
