@@ -56,14 +56,18 @@ def encode_level(in_level : level.Level) -> None:
 def decode_level(in_data : models.Level) -> Union[level.Level, None]:
     if not in_data: return None
     path = in_data.relative_path
-    with open(f'{path}/data.npy', 'rb') as f:
-        data = np.load(f)
-    with open(f'{path}/costs.npy', 'rb') as f:
-        costs = np.load(f)
-        costs = costs.astype(np.float32)
-    print("Succesfully imported costs with shape: ", costs.shape)
-    with open(f'{path}/elevation.npy', 'rb') as f:
-        elevation = np.load(f)
+    failed_to_import = False
+    try:
+        with open(f'{path}/data.npy', 'rb') as f:
+            data = np.load(f)
+        with open(f'{path}/costs.npy', 'rb') as f:
+            costs = np.load(f)
+            costs = costs.astype(np.float32)
+        print("Succesfully imported costs with shape: ", costs.shape)
+        with open(f'{path}/elevation.npy', 'rb') as f:
+            elevation = np.load(f)
+    except:
+        failed_to_import = True
 
     # data_bytes = base64.b64decode(in_data.raw_data)
     # costs_bytes = base64.b64decode(in_data.cost_data)
@@ -75,12 +79,15 @@ def decode_level(in_data : models.Level) -> Union[level.Level, None]:
 
     transform = transformations.from_dict(in_data.transform)
     l = level.Level(in_data.name)
-    l.data = data
-    l.costs = costs
-    l.elevation = elevation
+    if not failed_to_import:
+        l.data = data
+        l.costs = costs
+        l.elevation = elevation
     l.transform = transform
     l.project_id = in_data.project_id
     l.model = in_data
+    if failed_to_import:
+        l.pre_process_data()
     return l
 
 def get_level_from_name(name : str) -> Union[level.Level, None]:

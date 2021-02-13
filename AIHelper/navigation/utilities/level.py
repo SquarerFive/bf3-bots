@@ -17,7 +17,7 @@ import math
 
 from . import astar
 
-from typing import Union
+from typing import Tuple, Union
 import copy
 import pyastar
 
@@ -42,6 +42,16 @@ class Level:
 
     def classify_costs(self, elevation_based : bool = False, elevation_alpha_power : float = 0.05, elevation_alpha_beta : float = 1.5, elevation_alpha_beta_power : float = 7.0):
         scorecard.Scorecard.score(self.model, self.transform, self.data, self.elevation, self.costs, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
+
+    def get_best_navmesh_level(self, position : Tuple[int, int, float]):
+        d = math.inf
+        l = 0
+        for level in range(self.elevation.shape[0]):
+            if abs(self.elevation[level][position[0]][position[1]]-position[2]) < d:
+                d = abs(self.elevation[level][position[0]][position[1]]-position[2])
+                l = level
+        return l
+
 
     # Call this after initialising Level
     def pre_process_data(self):
@@ -157,7 +167,7 @@ class Level:
         # grid.__del
         return path
 
-    def astar(self, start : tuple, end : tuple, safe=True , all : bool = False) -> list:
+    def astar(self, start : tuple, end : tuple, safe=True , all : bool = False, elevation : Union[float, None] = None) -> list:
         # print("running astar  ", start, end)
         # print("size of data: ", self.data.shape)
         #path, cost = route_through_arrays(self.costs, start, end, fully_connected=False, geometric=True) # astar(self.data, start, end)
@@ -166,6 +176,7 @@ class Level:
         #else:
         # return []
         # print('finding path', start, end)
+        print('best navmesh level: ', self.get_best_navmesh_level((start[0], start[1], elevation)))
         if (start[0] > 0 and start[0] < self.costs.shape[1] and start[1] > 0 and start[1] < self.costs.shape[2]
             and end[0] > 0 and end[0] < self.costs.shape[1] and end[1] > 0 and end[1] < self.costs.shape[2]):
                 path = self.find_path_safe(

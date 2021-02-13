@@ -105,6 +105,7 @@ class Command(BaseCommand):
                             b_array.append(bot)
                         except Exception as e:
                             print('Encountered Error: ', e)
+                            raise(e)
 
                     bot_models.Bot.objects.bulk_update(b_array, ['path', 'action', 'order', 'target', 'stuck'])
                     # print(thread_pool.stats())

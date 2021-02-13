@@ -191,7 +191,7 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
             target_grid_pos = current_level.transform.transform_to_grid((target[0], target[2]))
 
             bot.path = current_level.astar(
-                bot_grid_pos, target_grid_pos
+                bot_grid_pos, target_grid_pos, bot.transform['trans']['y']
             )
            
 
@@ -213,7 +213,8 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                 # bot.action = orders.BotActionEnum.ATTACK
                 bot.path = current_level.astar(
                     bot_grid_pos,
-                    enemy_grid_pos
+                    enemy_grid_pos,
+                    bot.transform['trans']['y']
                 )
                 #print("path")
                 if type(bot.path ) == type(None):
@@ -234,7 +235,8 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                 
                 path = current_level.astar(
                     current_level.transform.transform_to_grid((bot.transform['trans']['x'], bot.transform['trans']['z'])),
-                    end
+                    end,
+                    bot.transform['trans']['y']
                 )
                 bot.path = path
                 # print("path: ", bot.path)
@@ -251,7 +253,8 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                     end =  current_level.transform.transform_to_grid((float(target.transform['trans']['x']) , float(target.transform['trans']['z'])))
                     bot.path = current_level.astar(
                             bot_grid_pos,
-                            end
+                            end,
+                            bot.transform['trans']['y']
                         )
                     if type(bot.path ) == type(None):
                             bot.path = []
