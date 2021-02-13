@@ -10,7 +10,8 @@ import math
 from .transformations import remap
 
 @njit
-def score_fast(input_arr:np.ndarray, elevation_arr : np.ndarray, target:np.ndarray, roads_mask : np.ndarray, level : int):
+def score_fast(input_arr:np.ndarray, elevation_arr : np.ndarray, target:np.ndarray, roads_mask : np.ndarray, level : int, elevation_based : bool = False,
+    elevation_alpha_power : float = 0.05, elevation_alpha_beta : float = 1.5, elevation_alpha_beta_power : float = 7.0):
     min_elevation = elevation_arr[level].min()
     max_elevation = elevation_arr[level].max()
     for x in prange(input_arr.shape[1]):
@@ -18,7 +19,7 @@ def score_fast(input_arr:np.ndarray, elevation_arr : np.ndarray, target:np.ndarr
             if roads_mask[x][y]:
                 target[level][x][y] = 1.0 + ((elevation_arr[level][x][y])/2)
             else:
-                if level == 0:
+                if level == 0 and not elevation_based:
                     if input_arr[level][x][y] == 0.0:# or roads_mask[x][y]:
                         target[level][x][y] = 1.0 + (elevation_arr[level][x][y])
                     if input_arr[level][x][y] == 256:
@@ -27,14 +28,14 @@ def score_fast(input_arr:np.ndarray, elevation_arr : np.ndarray, target:np.ndarr
                         target[level][x][y] = 500
                     if input_arr[level][x][y] == 700:
                         elevation_alpha = remap(elevation_arr[level][x][y], min_elevation, max_elevation, 0.0, 1.0)
-                        elevation_alpha = math.pow(math.pow(elevation_alpha, 0.125)*1.5, 7)
+                        elevation_alpha = math.pow(math.pow(elevation_alpha, elevation_alpha_power)*elevation_alpha_beta, elevation_alpha_beta_power)
                         elevation_value = remap(elevation_alpha, 0.0, 1.0, min_elevation, max_elevation)
                         target[level][x][y] = 700 + elevation_value 
-                elif level > 0:
+                elif level > 0 or elevation_based:
                     elevation_alpha = remap(elevation_arr[level][x][y], min_elevation, max_elevation, 0.0, 1.0)
-                    elevation_alpha = math.pow(math.pow(elevation_alpha, 0.05)*1.5, 7)
+                    elevation_alpha = math.pow(math.pow(elevation_alpha, elevation_alpha_power)*elevation_alpha_beta, elevation_alpha_beta_power)
                     elevation_value = remap(elevation_alpha, 0.0, 1.0, min_elevation, max_elevation)
-                    target[level][x][y] = 700 + elevation_value 
+                    target[level][x][y] = elevation_value 
 
 @njit(parallel=True)
 def get_world_array_fast(x_arr: np.ndarray, y_arr : np.ndarray, min_point : tuple, max_point : tuple, width: float, height: float):
@@ -54,7 +55,8 @@ def get_world_array(transform : transformations.GridTransform, input_arr : np.nd
     get_world_array_fast(x_arr, y_arr, (*transform.min_point,), (*transform.max_point,), transform.width, transform.height)
     return (x_arr, y_arr)
 
-def score(model: models.Level, transform : transformations.GridTransform,  input_arr : np.ndarray, elevation_arr : np.ndarray, target : np.ndarray, layer : int = 0):
+def score(model: models.Level, transform : transformations.GridTransform,  input_arr : np.ndarray, elevation_arr : np.ndarray, target : np.ndarray, layer : int = 0, elevation_based : bool = False,
+    elevation_alpha_power : float = 0.05, elevation_alpha_beta : float = 1.5, elevation_alpha_beta_power : float = 7.0):
     valid = False
     if model.roads:
         if layer in model.roads.keys():
@@ -67,8 +69,10 @@ def score(model: models.Level, transform : transformations.GridTransform,  input
         mask = contains(roads, x_arr, y_arr)
     else:
         mask = np.full((input_arr.shape[1], input_arr.shape[2]), False, dtype=bool)
-    
-    score_fast(input_arr, elevation_arr, target, mask, layer)
+    print(f"""elevationAlphaPower: {elevation_alpha_power}
+    elevationAlphaBeta: {elevation_alpha_beta}
+    elevationAlphaBetaPower: {elevation_alpha_beta_power} """)
+    score_fast(input_arr, elevation_arr, target, mask, layer, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
     # print('mask', mask)
     # print('roads', roads, Point(-630, -450).intersects(roads))
     # print("scoring")
@@ -98,13 +102,14 @@ def flip_scorecard(array, new_array):
 
 class Scorecard:
     @staticmethod
-    def score(model : models.Level, transform : transformations.GridTransform, input_arr:np.ndarray, elevation_arr : np.ndarray, target:np.ndarray) -> None:
+    def score(model : models.Level, transform : transformations.GridTransform, input_arr:np.ndarray, elevation_arr : np.ndarray, target:np.ndarray, elevation_based = False, 
+        elevation_alpha_power : float = 0.05, elevation_alpha_beta : float = 1.5, elevation_alpha_beta_power : float = 7.0) -> None:
         # score_fast(input_arr, elevation_arr, target)
-        score(model, transform, input_arr, elevation_arr, target, 0)
-        score(model, transform, input_arr, elevation_arr, target, 1)
-        score(model, transform, input_arr, elevation_arr, target, 2)
-        score(model, transform, input_arr, elevation_arr, target, 3)
-        score(model, transform, input_arr, elevation_arr, target, 4)
+        score(model, transform, input_arr, elevation_arr, target, 0, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
+        score(model, transform, input_arr, elevation_arr, target, 1, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
+        score(model, transform, input_arr, elevation_arr, target, 2, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
+        score(model, transform, input_arr, elevation_arr, target, 3, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
+        score(model, transform, input_arr, elevation_arr, target, 4, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
     
     @staticmethod
     def flip(input_arr: np.ndarray, target_arr:np.ndarray) -> None:

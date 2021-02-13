@@ -578,14 +578,19 @@ def manager_clear_tasks(request : Request) -> Response:
         cursor.execute('vacuum;')
     return Response("Done!")
 
-@api_view(['GET'])
+@api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def manager_recalculate_costs(request : Request, project_id : int, level_id : int) -> Response:
     global global_cache
     level_object = global_cache.get_object(project_id, level_id)
+    print(request.data)
+    elevation_based = request.data['elevation_based_scoring']
+    elevation_alpha_power = float(request.data['elevation_alpha_power'])
+    elevation_alpha_beta = float(request.data['elevation_alpha_beta'])
+    elevation_alpha_beta_power = float(request.data['elevation_alpha_beta_power'])
     if level_object:
-        level_object.classify_costs()
+        level_object.classify_costs(elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
         global_cache.save_object()
         return Response("Success!")
     return Response("Failed to find level!", status=404)

@@ -7,10 +7,25 @@
       <div class="col-3 col-md-2 bg-grey-10" style="height: 100%;">
         <q-list separator dark>
           <div>
-            <q-btn label="Recalculate costs" flat color="warning" text-color="white" style="width:50%" @click="onClickRecalculateCosts"/>
+            <q-btn :loading="isRecalculating" label="Recalculate costs" flat color="warning" text-color="white" style="width:50%" @click="onClickRecalculateCosts"/>
             <q-btn label="Reset Level" flat color="warning" text-color="white" style="width:50%;" @click="onClickResetLevel"/>
           </div>
-          <q-separator dark />
+          <div>
+            <q-checkbox label="Elevation-Based scoring" v-model="elevationBasedScoring" />
+          </div>
+          <q-item>
+          <q-item-section>
+            <q-input dark outlined dense v-model="elevationAlphaPower" hint="Elevation Alpha Power" />
+          </q-item-section>
+          <q-item-section>
+            <q-input dark outlined dense v-model="elevationAlphaBeta" hint="Elevation Alpha Beta" />
+          </q-item-section>
+          <q-item-section>
+            <q-input dark outlined dense v-model="elevationAlphaBetaPower" hint="Elevation Alpha Beta Power" />
+          </q-item-section>
+          </q-item>
+          <q-separator dark style="margin-top: 35px;" />
+          <q-item>
           <q-btn-dropdown flat :label="`Level Z: ${levelZ}`" style='width: 100%'>
             <q-list>
               <q-item v-for="levelZElem in levelZIndexes" :key='levelZElem' dense clickable v-close-popup @click='onChangeLevelZIndex(levelZElem)'>
@@ -20,6 +35,7 @@
               </q-item>
             </q-list>
           </q-btn-dropdown>
+          </q-item>
           <q-item clickable v-ripple>
             <q-item-section>
               <q-checkbox dark
@@ -118,6 +134,12 @@ export default class MapEditor extends Vue {
     0, 1, 2, 3, 4
   ]
   //
+
+  isRecalculating = false
+  elevationBasedScoring = false
+  elevationAlphaPower = '0.05'
+  elevationAlphaBeta = '1.5'
+  elevationAlphaBetaPower = '7.0'
 
   drawingColors = [
     '#ff7017',
@@ -437,7 +459,10 @@ export default class MapEditor extends Vue {
 
   onClickRecalculateCosts () {
     if (this.manager) {
-      this.manager.recalculateCosts(this.level.project_id, this.level.level_id).catch(err => { console.error(err) })
+      this.isRecalculating = true
+      this.manager.recalculateCosts(this.level.project_id, this.level.level_id, this.elevationBasedScoring, parseFloat(this.elevationAlphaPower), parseFloat(this.elevationAlphaBeta), parseFloat(this.elevationAlphaBetaPower)).then(() => {
+        this.isRecalculating = false
+      }).catch(err => { console.error(err); this.isRecalculating = false })
     }
   }
 }

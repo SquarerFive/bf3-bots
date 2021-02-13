@@ -482,8 +482,13 @@ export class Manager {
     return response
   }
 
-  async recalculateCosts (project_id : number, level_id : number) {
-    const response = await this.get(`/v1/project/${project_id}/level/${level_id}/recalculate/`)
+  async recalculateCosts (project_id : number, level_id : number, elevationBased : boolean, elevationAlphaPower : number, elevationAlphaBeta : number, elevationAlphaBetaPower : number) {
+    const response = await this.post(`/v1/project/${project_id}/level/${level_id}/recalculate/`, { 
+      elevation_based_scoring: elevationBased,
+      elevation_alpha_power: elevationAlphaPower,
+      elevation_alpha_beta: elevationAlphaBeta,
+      elevation_alpha_beta_power: elevationAlphaBetaPower
+    })
     return response
   }
 

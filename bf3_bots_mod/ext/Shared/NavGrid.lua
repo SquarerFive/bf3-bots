@@ -496,7 +496,7 @@ function NavGrid.NestedRaycast(start_point, end_point, direction, layers)
     for i = 1, layers+1 do
         local p = start_point
         if last_point ~= nil then
-            p = last_point + (direction*1.9)
+            p = last_point + (direction*3.5)
         end
         local ray = RaycastManager:Raycast(p, end_point, RayCastFlags.IsAsyncRaycast)
         
