@@ -96,8 +96,11 @@ class Command(BaseCommand):
                         #     # lambda : behaviour.compute(bot.bot_index, level_object, bot_models.Bot, bot_models.Player, navigation_models.Objective, True, bot.overidden_target)
                         #     lambda : behaviour.compute_model(bot, level_object, True, bot.overidden_target)
                         # )
-                        behaviour.compute_model(bot, level_object, bot.overidden_target > -2, bot.overidden_target)
-                        b_array.append(bot)
+                        try:
+                            behaviour.compute_model(bot, level_object, bot.overidden_target > -2, bot.overidden_target)
+                            b_array.append(bot)
+                        except Exception as e:
+                            print('Encountered Error: ', e)
 
                     bot_models.Bot.objects.bulk_update(b_array, ['path', 'action', 'order', 'target'])
                     # print(thread_pool.stats())

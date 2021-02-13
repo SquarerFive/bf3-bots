@@ -769,13 +769,43 @@ function Bot:SpawnBot(transform, pose, soldierBP, kit, unlocks, spawnEntity)
         -- self.selected_kit = nil
         if self.selected_kit ~= nil then
             local primaryWeapon = nil
+            local primaryWeaponAttachments = {}
             if self.selected_kit.primary_weapon ~= nil then
                 -- print('adding primary weapon: '..self.selected_kit.primary_weapon.path)
                 primaryWeapon = ResourceManager:SearchForDataContainer(self.selected_kit.primary_weapon.path)
+                if #self.selected_kit.primary_weapon.children > 0 then
+                    for _, child in pairs(self.selected_kit.primary_weapon.children) do
+                        local attachment = ResourceManager:SearchForDataContainer(child.path)
+                        if attachment == nil then
+                            print("Nil primary attachment: "..child.path)
+                        else
+                            if attachment:Is("UnlockAssetBase") then
+                                table.insert(
+                                    primaryWeaponAttachments, UnlockAssetBase(attachment)
+                                )
+                            end
+                        end
+                    end
+                end
             end
             local secondaryWeapon = nil
+            local secondaryWeaponAttachments = {}
             if self.selected_kit.secondary_weapon ~= nil then
                 secondaryWeapon = ResourceManager:SearchForDataContainer(self.selected_kit.secondary_weapon.path)
+                if #self.selected_kit.secondary_weapon.children > 0 then
+                    for _, child in pairs(self.selected_kit.secondary_weapon.children) do
+                        local attachment = ResourceManager:SearchForDataContainer(child.path)
+                        if attachment == nil then
+                            print("Nil secondary attachment: "..child.path)
+                        else
+                            if attachment:Is("UnlockAssetBase") then
+                                table.insert(
+                                    secondaryWeaponAttachments, UnlockAssetBase(attachment)
+                                )
+                            end
+                        end
+                    end
+                end
             end
             local primaryGadget = nil
             if self.selected_kit.primary_gadget ~= nil then
@@ -814,12 +844,18 @@ function Bot:SpawnBot(transform, pose, soldierBP, kit, unlocks, spawnEntity)
                 local primaryWeaponSlot = UnlockWeaponAndSlot()
                 primaryWeaponSlot.slot = 0
                 primaryWeaponSlot.weapon = SoldierWeaponUnlockAsset(primaryWeapon)
+                for _, uA in pairs(primaryWeaponAttachments) do
+                    primaryWeaponSlot.unlockAssets:add(uA)
+                end
                 customization.weapons:add(primaryWeaponSlot)
             end
             if secondaryWeapon ~= nil then
                 local secondaryWeaponSlot = UnlockWeaponAndSlot()
                 secondaryWeaponSlot.slot = 1
                 secondaryWeaponSlot.weapon = SoldierWeaponUnlockAsset(secondaryWeapon)
+                for _, uA in pairs(secondaryWeaponAttachments) do
+                    secondaryWeaponSlot.unlockAssets:add(uA)
+                end
                 customization.weapons:add(secondaryWeaponSlot)
             end
             if primaryGadget ~= nil then
