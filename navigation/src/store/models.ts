@@ -95,12 +95,15 @@ export interface GameAsset {
   path: string
   asset_type: string
   asset_team : string,
-  tags: string[]
+  tags: string[],
+  children: GameAsset[]
 }
 
 export interface SoldierKit {
   primary_weapon: GameAsset[]
+  primary_attachments: GameAsset[]
   secondary_weapon: GameAsset[]
+  secondary_attachments: GameAsset[]
   primary_gadget: GameAsset[]
   secondary_gadget: GameAsset[]
   melee: GameAsset[]
@@ -145,7 +148,8 @@ export const defaultGameAsset: GameAsset = {
   path: 'path to asset',
   asset_type: 'weapon_primary',
   asset_team: 'US',
-  tags: []
+  tags: [],
+  children: []
 }
 
 export const defaultGameAsset_second: GameAsset = {
@@ -154,12 +158,15 @@ export const defaultGameAsset_second: GameAsset = {
   path: 'path to asset',
   asset_type: 'weapon_primary',
   asset_team: 'US',
-  tags: []
+  tags: [],
+  children: []
 }
 
 export const defaultSoldierKit: SoldierKit = {
   primary_weapon: [],
+  primary_attachments: [],
   secondary_weapon: [],
+  secondary_attachments: [],
   primary_gadget: [],
   secondary_gadget: [],
   melee: [],

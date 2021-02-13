@@ -47,10 +47,23 @@ class Level:
     def pre_process_data(self):
         _width = self.transform.width+1
         _height = self.transform.height + 1
+
+        print("Creating arrays with size: ", _width, _height)
         self.data = np.zeros((10, _width, _height))
         self.elevation = np.zeros((10, _width, _height))
         self.costs = np.zeros((10, _width, _height))
         self.costs_canvas = np.zeros((10, _width, _height))
+    
+    def sensecheck(self):
+        try:
+            print(self.transform.width)
+            print(self.transform.height)
+            if self.data.shape[1] < self.transform.width+1:
+                print("Sensecheck failed, recreating array.")
+                self.pre_process_data()
+        except:
+            print("No array found, reinitialising.")
+            self.pre_process_data()
 
     def process_data(self):
         print("Processing data")

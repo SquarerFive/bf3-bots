@@ -28,13 +28,16 @@ def encode_level(in_level : level.Level) -> None:
     if not l:
         # l = models.Level(raw_data=data_bytes_b64, cost_data=costs_bytes_b64, elevation_data=elevation_bytes_b64, name=in_level.name, project_id=in_level.project_id, level_id=l_id)
         l = models.Level.objects.create(name=in_level.name, project_id=in_level.project_id, level_id=l_id, transform=in_level.transform.as_dict())
-        l.relative_path = l.relative_path.format(models.Project.objects.filter(id=l.project_id).first().name, l.name)
+        #print("PATH: ")
+        #print(l.relative_path)
+        l.relative_path = l.relative_path.format(models.Project.objects.filter(id=l.project_id).first().name, l.name.split("/")[-1])
+        #print(l.relative_path)
         Path(l.relative_path).mkdir(parents=True, exist_ok=True)
     else:
         # l.raw_data = data_bytes_b64
         # l.cost_data = costs_bytes_b64
         # l.elevation_data = elevation_bytes_b64
-        l.relative_path = l.relative_path.format(in_level.project_id, l.level_id)
+        # l.relative_path = l.relative_path.format(in_level.project_id, l.level_id)
         Path(l.relative_path).mkdir(parents=True, exist_ok=True)
     
     with open(f'{l.relative_path}/data.npy', 'wb') as f:

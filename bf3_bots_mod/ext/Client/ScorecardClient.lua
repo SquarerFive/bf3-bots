@@ -50,6 +50,9 @@ function ScorecardClient:__init()
     self.profile = {}
     --
     self.project_id = 0
+    --
+    self.width = 0
+    self.height = 0
 
     NetEvents:Subscribe("OnRequestScorecardGrid", self, self.OnRequestScorecardGrid)
 	NetEvents:Subscribe("OnSetPath", self, self.OnSetPath)
@@ -141,6 +144,8 @@ end
 function ScorecardClient:OnLevelRastersReset(result)
     print(result)
     print('step size ' .. self.step_size_x)
+    self.width = self.step_size_x * self.steps
+    self.height = self.step_size_y * self.steps
     self.ready_to_go = true
 end
 
@@ -295,12 +300,14 @@ function ScorecardClient:Tick(deltaTime, pass, local_player)
             if self.scorecard_grid == nil then
                 self.scorecard_grid = NavGrid.CreateFromBounds(
                     end_of_grid_x, end_of_grid_y, self.min_point, self.max_point,
-                    start_of_grid_x, start_of_grid_y, self.profile, self.project_id
+                    start_of_grid_x, start_of_grid_y, self.profile, self.project_id,
+                    self.width, self.height
                 )
             else
                 self.scorecard_grid:Extend(
                     end_of_grid_x, end_of_grid_y, self.min_point, self.max_point,
-                    start_of_grid_x, start_of_grid_y
+                    start_of_grid_x, start_of_grid_y,
+                    self.width, self.height
                 )
             end
             self.current_step_y = self.current_step_y + 1
