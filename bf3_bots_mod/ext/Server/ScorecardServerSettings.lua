@@ -13,7 +13,7 @@ Events:Subscribe('Partition:Loaded', function(partition)
             print("doing SyncedGameSettings")
             local syncedGameSettings = SyncedGameSettings(instance)
             syncedGameSettings:MakeWritable()
-            syncedGameSettings.enableFriendlyFire = true
+            -- syncedGameSettings.enableFriendlyFire = true
             syncedGameSettings.allowClientSideDamageArbitration = false
         end
 		if instance:Is('ServerSettings') then
@@ -33,7 +33,7 @@ Events:Subscribe('Partition:Loaded', function(partition)
 			serverSettings.isSoldierDetailedCollisionEnabled = true
 			serverSettings.isInternetSimulationEnabled = true
 			serverSettings.isNetworkStatsEnabled = true
-			serverSettings.vegetationEnabled = false
+			-- serverSettings.vegetationEnabled = false
             serverSettings.isPresenceEnabled = true
             serverSettings.queryProviderEnabled = true
             serverSettings.isRenderDamageEvents = true
