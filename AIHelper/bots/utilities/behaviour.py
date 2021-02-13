@@ -86,7 +86,7 @@ def compute(bot_id : int, current_level : Level, BotModels : models.Bot, PlayerM
                 # print("attack enemy")
                 # print('test')
                 enemy_grid_pos =  current_level.transform.transform_to_grid((float(closest_enemy.transform['trans']['x']) , float(closest_enemy.transform['trans']['z'])))
-                if override_target:
+                if override_target and models.Player.objects.filter(player_id=override_target_id).first():
                     if not models.Player.objects.filter(player_id=override_target_id).first().alive:
                         override_target = False
                         bot.overidden_target = -2

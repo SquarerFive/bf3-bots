@@ -35,6 +35,7 @@ from django.db import connection
 
 from background_task import background
 from .tasks import manager_compute
+import time
 
 # Globals [to avoid poo memory, cache it here until the level changes]
 class GlobalCache:
@@ -487,18 +488,35 @@ def manager_add_level_feature(request: Request, project_id : int, level_id : int
 @permission_classes([AllowAny])
 def manager_update_level(request: Request, project_id : int) -> Response:
     global global_cache
+    
     data = json.loads(request.body.decode('utf-8'))
     level_name = str(request.headers['Level'])
     level_model : navigation_models.Level = level.models.Level.objects.filter(name=level_name, project_id=project_id).first()
     if level_model:
         level_object = global_cache.get_object(project_id, level_model.level_id)
+        ts = time.time()
         friendly_faction_kit_collection : models.SoldierKitCollection = models.SoldierKitCollection.objects.filter(project_id=project_id, level_id=level_model.level_id, faction=0).first()
         enemy_faction_kit_collection : models.SoldierKitCollection = models.SoldierKitCollection.objects.filter(project_id=project_id, level_id=level_model.level_id, faction=1).first()
+        players = bots_models.Player.objects.all()
+        objectives = navigation_models.Objective.objects.all()
+        
         for objective in data['objectives']:
             navigation_query.add_objective(objective)
+        p_array = []
         for player in data['players']:
-            bots_query.create_or_update_player(player)
+            player_m = players.filter(player_id=player['player_id']).first()
+            if player_m:
+                bots_query.create_or_update_player_model(player_m, player)
+                p_array.append(player_m)
+            else:
+                bots_query.create_or_update_player(player)
+
+        bots_models.Player.objects.bulk_update(p_array, ['transform', 'player_id', 'name', 'online_id', 'alive', 'is_squad_leader', 'is_squad_private', 'in_vehicle', 'has_soldier', 'team', 'squad', 'health'])
+        
+        bots = bots_models.Bot.objects.all()
+        b_array = []
         for bot in data['bots']:
+            bot_model = bots.filter(bot_index=bot['bot_index']).first()
             active_collection = friendly_faction_kit_collection if bot['team'] == 0 else enemy_faction_kit_collection
             kits = [
                 models.SoldierKit.objects.filter(collection_id=active_collection.id, collection_slot=0).first(),
@@ -516,14 +534,20 @@ def manager_update_level(request: Request, project_id : int) -> Response:
                 'unlocks': kit.appearance[random.randint(0, len(kit.melee))-1] if len(kit.appearance) > 0 else None,
                 'kit_asset': kit.kit_asset
             }
-            bots_query.create_or_update_bot(bot)
+            if (bot_model):
+                bots_query.create_or_update_bot_model(bot_model, bot)
+                b_array.append(bot_model)
+            else:
+                bots_query.create_or_update_bot(bot)
             # behaviour.compute(bot['bot_index'], level_object, bots_models.Bot, bots_models.Player, navigation_models.Objective, int(bot['requested_target_id'])!=-2, int(bot['requested_target_id']))
-        
+        bots_models.Bot.objects.bulk_update(b_array, ['transform', 'health', 'in_vehicle', 'team', 'order', 'action', 'bot_index', 'alive', 'squad', 'overidden_target'])
         data = {
             "bots" : bots_query.get_bots_as_dict()
         }
         response_data = json.dumps(data)
         # print(response_data)
+        te = time.time()
+        print("Time to update level: ", te-ts)
         return HttpResponse(response_data)
     print('no level')
     return Response('Failed to find level {0} for current project {1}'.format(level_name, project_id), status=404)
