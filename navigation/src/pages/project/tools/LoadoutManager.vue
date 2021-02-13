@@ -16,9 +16,11 @@
                 </q-card-section>
                 <q-card-section>
                 <asset-browser-component :onlyAllowSingleAsset="isSettingKitAsset" :manager="manager" ref='assetBrowser' :teamFilter="''" :assetSearchFilter="searchFilter"> </asset-browser-component>
+                <!--
                 <q-btn color="primary" style="margin: 5px; float: right;">
                     Submit
                 </q-btn>
+                -->
                 </q-card-section>
             </q-card>
         </q-dialog>
@@ -105,8 +107,9 @@ export default class LoadoutManager extends Vue {
       const levelId = this.$route.params.level_id
       this.manager.get_level(String(ManagerStore.currentProject.project_id), levelId).then(result => {
         this.level = result
-        console.log(this.level)
+        // console.log(this.level)
         this.friendlyKitCollection = this.level.friendly_kit
+        console.log('kit', this.friendlyKitCollection)
         this.enemyKitCollection = this.level.enemy_kit
         this.activeKitCollection = this.level.friendly_kit
         this.cloneTree = this.levelsToTree()

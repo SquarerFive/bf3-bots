@@ -21,14 +21,37 @@
                     <q-card-section>
                         <q-list>
                             <q-item padding="none" v-for="asset in kit.primary_weapon" :key="asset.id" dense style="margin:0; padding: 0; width: 100%">
-                                <asset-component style="width: 100%" :add="false" :asset="asset" :outSelectedAssets="kit.primary_weapon" />
+                                <asset-component :selectable="false" style="width: 100%" :add="false" :asset="asset" :outSelectedAssets="kit.primary_weapon" />
                             </q-item>
                         </q-list>
                     </q-card-section>
                     </q-scroll-area>
                 </q-card>
             </q-item>
-
+            <!--
+            <q-item>
+                <q-item-label caption style='color: #989898'>
+                    Primary Attachments
+                </q-item-label>
+                <q-space />
+                <q-item-label>
+                    <q-btn dense icon="add" flat size='12px' color="grey-6" padding="none" @click="onRequestAddAssetFn(kit.primary_attachments)"/>
+                </q-item-label>
+            </q-item>
+            <q-item style="width: 100%; margin-top: -20px">
+                <q-card bordered flat dark style="position: relative;">
+                    <q-scroll-area style="height: 100px; width: 32vh">
+                    <q-card-section>
+                        <q-list>
+                            <q-item padding="none" v-for="asset in kit.primary_attachments" :key="asset.id" dense style="margin:0; padding: 0; width: 100%">
+                                <asset-component style="width: 100%" :add="false" :asset="asset" :outSelectedAssets="kit.primary_attachments" />
+                            </q-item>
+                        </q-list>
+                    </q-card-section>
+                    </q-scroll-area>
+                </q-card>
+            </q-item>
+            -->
             <q-item>
                 <q-item-label caption style='color: #989898'>
                     Secondary
@@ -44,7 +67,7 @@
                     <q-card-section>
                         <q-list>
                             <q-item padding="none" v-for="asset in kit.secondary_weapon" :key="asset.id" dense style="margin:0; padding: 0">
-                                <asset-component style="width: 100%" :add="false" :asset="asset" :outSelectedAssets="kit.secondary_weapon" />
+                                <asset-component :selectable="false" style="width: 100%" :add="false" :asset="asset" :outSelectedAssets="kit.secondary_weapon" />
                             </q-item>
                         </q-list>
                     </q-card-section>
@@ -67,7 +90,7 @@
                     <q-card-section>
                         <q-list>
                             <q-item padding="none" v-for="asset in kit.primary_gadget" :key="asset.id" dense style="margin:0; padding: 0">
-                                <asset-component style="width: 100%" :add="false" :asset="asset" :outSelectedAssets="kit.primary_gadget" />
+                                <asset-component :selectable="false" style="width: 100%" :add="false" :asset="asset" :outSelectedAssets="kit.primary_gadget" />
                             </q-item>
                         </q-list>
                     </q-card-section>
@@ -90,7 +113,7 @@
                     <q-card-section>
                         <q-list>
                             <q-item padding="none" v-for="asset in kit.secondary_gadget" :key="asset.id" dense style="margin:0; padding: 0">
-                                <asset-component style="width: 100%" :add="false" :asset="asset" :outSelectedAssets="kit.secondary_gadget" />
+                                <asset-component :selectable="false" style="width: 100%" :add="false" :asset="asset" :outSelectedAssets="kit.secondary_gadget" />
                             </q-item>
                         </q-list>
                     </q-card-section>
@@ -113,7 +136,7 @@
                     <q-card-section>
                         <q-list>
                             <q-item padding="none" v-for="asset in kit.melee" :key="asset.id" dense style="margin:0; padding: 0">
-                                <asset-component style="width: 100%" :dark="true" :add="false" :asset="asset" :outSelectedAssets="kit.melee" />
+                                <asset-component :selectable="false" style="width: 100%" :dark="true" :add="false" :asset="asset" :outSelectedAssets="kit.melee" />
                             </q-item>
                         </q-list>
                     </q-card-section>
@@ -135,7 +158,7 @@
                     <q-card-section>
                         <q-list>
                             <q-item padding="none" v-for="asset in kit.appearance" :key="asset.id" dense style="margin:0; padding: 0">
-                                <asset-component style="width: 100%" :dark="true" :add="false" :asset="asset" :outSelectedAssets="kit.appearance" />
+                                <asset-component :selectable="false" style="width: 100%" :dark="true" :add="false" :asset="asset" :outSelectedAssets="kit.appearance" />
                             </q-item>
                         </q-list>
                     </q-card-section>
@@ -157,7 +180,7 @@
                     <q-card-section>
                         <q-list>
                             <q-item padding="none" dense style="margin:0; padding: 0" v-for="asset in kit.kit_assets" :key="asset.name">
-                                <asset-component style="width: 100%" :dark="true" :add="false" :asset="asset" :outSelectedAssets="kit.kit_assets" />
+                                <asset-component :selectable="false" style="width: 100%" :dark="true" :add="false" :asset="asset" :outSelectedAssets="kit.kit_assets" />
                             </q-item>
                         </q-list>
                     </q-card-section>
