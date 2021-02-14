@@ -23,6 +23,7 @@ urlpatterns = [
     path("clear-tasks/", views.manager_clear_tasks, name="manager-clear-tasks"),
     path("project/", views.manager_get_projects, name = 'manager-get-projects'),
     path('assets/', views.manager_get_assets, name='manager-get-assets'),
+    path('players/', views.manager_get_players, name='manager-get-players'),
     # path('levels/', views.manager_get_level_internal, name='manager-get-level-internal'),
 
     path("project/<int:project_id>/", views.manager_get_project, name='manager-get-project'),

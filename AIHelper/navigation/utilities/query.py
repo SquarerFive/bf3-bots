@@ -67,6 +67,7 @@ def decode_level(in_data : models.Level) -> Union[level.Level, None]:
         with open(f'{path}/elevation.npy', 'rb') as f:
             elevation = np.load(f)
     except:
+        print('--- failed to import level, recreating arrays ---')
         failed_to_import = True
 
     # data_bytes = base64.b64decode(in_data.raw_data)

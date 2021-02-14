@@ -1,6 +1,6 @@
 <template>
-    <q-card class="my-card" style="min-width: 300px;">
-      <q-img :src="findImageURLForLevel(currentLevel.name)">
+    <q-card class="my-card" style="min-width: 300px; max-width: 400px;">
+      <q-img width="300px" height="150px" :src="findImageURLForLevel(currentLevel.name)">
         <div class="absolute-bottom">
           <div class="text-h6">{{currentLevel.name}}</div>
           <div class="text-subtitle3">Level Instance</div>
@@ -35,7 +35,7 @@ export default class LevelWidgetComponent extends Vue {
       if (found) {
         return found[1]
       }
-      return ''
+      return 'https://media.contentapi.ea.com/content/dam/gin/images/2017/01/bf3-keyart.jpg.adapt.crop191x100.628p.jpg'
     }
 }
 

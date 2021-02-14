@@ -47,10 +47,12 @@ class Level:
         d = math.inf
         l = 1
         for level in range(self.elevation.shape[0]):
-            c = abs((self.elevation[level][position[0]][position[1]]+self.costs[level][position[0]][position[1]]) - position[2])
-            if abs(self.elevation[level][position[0]][position[1]] -position[2])  < d:
+            c = (self.elevation[level][position[0]][position[1]] - position[2])
+            if c < d:
                 d = c
                 l = level
+        if l > 4:
+            l = min(4, l)
         return l
 
 
@@ -177,10 +179,11 @@ class Level:
         #else:
         # return []
         # print('finding path', start, end)
-        best_level = self.get_best_navmesh_level((start[0], start[1], elevation))
+        best_level =  self.get_best_navmesh_level((start[0], start[1], elevation))
         print('best navmesh level: ', best_level)
         if (start[0] > 0 and start[0] < self.costs.shape[1] and start[1] > 0 and start[1] < self.costs.shape[2]
             and end[0] > 0 and end[0] < self.costs.shape[1] and end[1] > 0 and end[1] < self.costs.shape[2]):
+                print("Start elevation at {} - {}:".format(str(start), elevation), self.elevation[best_level][start[0]][start[1]])
                 path = self.find_path_safe(
                     self.get_valid_point_in_radius(self.costs, start[0], start[1], 5), 
                     self.get_valid_point_in_radius(self.costs, end[0], end[1], 5), best_level)
@@ -197,7 +200,7 @@ class Level:
                 wxy = self.transform.transform_to_world(p)
                 world_paths.append({
                     "x": wxy[0],
-                    "y": self.elevation[0][p[0]][p[1]]+1,
+                    "y": elevation, #self.elevation[1][p[0]][p[1]]+1,
                     "z": wxy[1]
                 })
                 if idx > 50:
@@ -247,7 +250,8 @@ class Level:
                 scorecard.flip_scorecard(np.load(f), self.data)
             elif data_type == "elevation":
                 try:
-                    self.elevation = np.load(f)
+                    # self.elevation = np.load(f)
+                    scorecard.flip_scorecard(np.load(f), self.elevation)
                 except Exception as e:
                     print("Failed to load elevation!! ", e)
                 #scorecard.flip_scorecard(np.load(f), self.elevation)

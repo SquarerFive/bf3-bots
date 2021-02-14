@@ -199,10 +199,11 @@ function BotsManager:GetBotsJSON()
 end
 
 function BotsManager:GetPlayersJSONConcat()
-    --local players = PlayerManager:GetPlayers()
+    local players = PlayerManager:GetPlayers()
     local buffer = {'"players": ['}
-    if #self.players > 0 then
-        for idx, player in pairs(self.players) do
+    
+    if #players > 0 then
+        for idx, player in pairs(players) do
             if player ~= nil then
                 if idx == 1 then
                     buffer[#buffer+1] = self:GetPlayerJSON(player)

@@ -244,7 +244,7 @@ function ScorecardClient:Tick(deltaTime, pass, local_player)
             local hits = NavGrid.NestedRaycast(start, start + (local_player.soldier.transform.forward*6000), local_player.soldier.transform.forward, 5)
             if #hits > 0 then
                 self.preview_path = {
-                    start:Clone(), hits[0].position:Clone()
+                    start:Clone(), hits[1].position:Clone()
                 }
             end
             for index, hit in pairs(hits) do

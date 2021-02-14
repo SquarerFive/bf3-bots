@@ -30,6 +30,7 @@ class Level(models.Model):
     level_id = models.IntegerField(default= 0)
 
     roads = models.JSONField(default = dict, null=True, blank=True)
+    structures = models.JSONField(default = dict, null=True, blank=True)
 
     friendly_kit = models.ForeignKey(SoldierKitCollection, on_delete=models.CASCADE, related_name='friendly_kit', null=True)
     enemy_kit = models.ForeignKey(SoldierKitCollection, on_delete=models.CASCADE, related_name='enemy_kit', null=True)

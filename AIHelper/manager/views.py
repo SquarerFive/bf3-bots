@@ -57,6 +57,7 @@ class GlobalCache:
             game_manager.active_project_id = project_id
             game_manager.active_level_id = level_id
             game_manager.save()
+        print('load level', project_id, level_id)
         return self.level_object
 
     def save_object(self):
@@ -226,7 +227,7 @@ def manager_render_level(request: Request, project_id: int, level_id: int, raste
         # level_object.astar((403, 609), (560, 705))
         cost_surface = level_object.costs[raster_layer]
         print(cost_surface.shape)
-        image = Image.fromarray(((cost_surface*255) / np.max(cost_surface)).astype(np.uint8), mode="L")
+        image = Image.fromarray(((cost_surface*255) / np.nanmax(cost_surface[cost_surface != np.inf])).astype(np.uint8), mode="L")
         response = HttpResponse(content_type='image/png')
         image.save(response, "PNG")
         return response
@@ -471,16 +472,16 @@ def manager_start_all_tasks(request: Request, project_id : int) -> Response:
 @permission_classes([IsAuthenticated])
 def manager_add_level_feature(request: Request, project_id : int, level_id : int, feature_type: str):
     global global_cache
-    level_model = navigation_query.models.Level.objects.filter(project_id=project_id, level_id=level_id).first()
+    level_model : navigation_models.Level = navigation_query.models.Level.objects.filter(project_id=project_id, level_id=level_id).first()
     if feature_type == 'road':
         level_model.roads = json.loads(request.body.decode('utf-8'))
         level_model.save()
         print(level_model.roads, type(level_model.roads))
-        #level_object = global_cache.get_object(project_id, level_id)
-        # level_object = navigation_query.decode_level(level_model)
-        # level_object.classify_costs()
-        # navigation_query.encode_level(level_object)
-        #global_cache.save_object()
+    if feature_type == 'structure':
+        level_model.structures = json.loads(request.body.decode('utf-8'))
+        level_model.save()
+        print("Added structure")
+        
     return Response('Success')
 
 @api_view(['POST'])
@@ -1018,3 +1019,14 @@ def manager_clear_assets(request : Request) -> Response:
         cursor.execute('vacuum;')
     return Response('Successfully deleted all assets.')
 
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication, SessionAuthentication])
+@permission_classes([IsAuthenticated])
+def manager_get_players(request : Request) -> Response:
+    data = json.loads(JSONRenderer().render(serializers.PlayerSerializer(
+            bots_models.Player.objects.all(), many=True
+        ).data))
+    for idx, player in enumerate(data):
+        data[idx]['is_human'] = bots_models.Bot.objects.filter(player_id=player['player_id']).first() == None
+
+    return Response(data)

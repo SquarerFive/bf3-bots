@@ -11,7 +11,7 @@
             <q-btn label="Reset Level" flat color="warning" text-color="white" style="width:50%;" @click="onClickResetLevel"/>
           </div>
           <div>
-            <q-checkbox label="Elevation-Based scoring" v-model="elevationBasedScoring" />
+            <q-checkbox dark label="Elevation-Based scoring" v-model="elevationBasedScoring" />
           </div>
           <q-item>
           <q-item-section>
@@ -55,7 +55,7 @@
               <q-item-section avatar>
                 <q-icon name="edit_road" />
               </q-item-section>
-              <q-item-section> Draw Roads [e-256]</q-item-section>
+              <q-item-section> Draw Roads [e*0.25]</q-item-section>
             </q-item>
             <q-item
               clickable
@@ -66,7 +66,7 @@
               <q-item-section avatar>
                 <q-icon name="house" />
               </q-item-section>
-              <q-item-section> Draw Structure [e+256] </q-item-section>
+              <q-item-section> Draw Structure [e*2.25] </q-item-section>
             </q-item>
           </div>
         </q-list>
@@ -76,7 +76,12 @@
         <div id="mapContainer">&nbsp;</div>
       </div>
       <div class="col-2 bg-grey-10" style="height: 100%">
-        <q-editor dark v-model="mapContent" height="100%"  flat/>
+        <q-scroll-area style="height: 80vh">
+          <div class="text-subtitle1" style="padding-left:5px; color: #989898;" >Roads</div><q-separator dark />
+          <q-editor dark v-model="dynamicRoadContentsForCurrentLayer" height="100%"  flat/>
+          <div class="text-subtitle1" style="padding-left:5px; color: #989898;" >Structures</div><q-separator dark />
+          <q-editor dark v-model="dynamicStructureContentsForCurrentLayer" height="100%"  flat/>
+        </q-scroll-area>
       </div>
     </div>
   </div>
@@ -88,8 +93,8 @@ import 'leaflet/dist/leaflet.css'
 import 'leaflet-draw/dist/leaflet.draw.css'
 // import * as L from 'leaflet';
 
-import { defaultLevel, Level, Manager } from 'src/store/models'
-import L, { LatLng } from 'leaflet'
+import { defaultLevel, Level, Manager, Player } from 'src/store/models'
+import L, { FeatureGroup, LatLng } from 'leaflet'
 import 'leaflet-draw'
 import { ManagerStore } from 'src/store/ManagerStoreModule'
 // import { ManagerStore } from 'src/store/ManagerStoreModule'
@@ -150,6 +155,9 @@ export default class MapEditor extends Vue {
 
   map : L.Map|undefined
 
+  players : Player[] = []
+  playerFeatures : FeatureGroup|null = null
+
   setupMap () {
     const mapContainer = L.map('mapContainer', { crs: L.CRS.Simple }).setView(
       [225, 225],
@@ -172,6 +180,9 @@ export default class MapEditor extends Vue {
     }
 
     this.drawnItems = new L.FeatureGroup()
+    this.playerFeatures = new L.FeatureGroup()
+
+    mapContainer.addLayer(this.playerFeatures)
 
     for (let i = 0; i < this.levelZIndexes.length; ++i) {
       this.roadItemsLayers.push(new L.FeatureGroup())
@@ -191,13 +202,12 @@ export default class MapEditor extends Vue {
       this.navigableItemsJSONLayers.push(new L.FeatureGroup())
       this.unNavigableItemsJSONLayers.push(new L.FeatureGroup())
       this.destructableItemsJSONLayers.push(new L.FeatureGroup())
-
-      mapContainer.addLayer(this.roadItemsLayers[this.roadItemsLayers.length - 1])
-      mapContainer.addLayer(this.buildingItemsLayers[this.buildingItemsLayers.length - 1])
-      mapContainer.addLayer(this.navigableItemsLayers[this.navigableItemsLayers.length - 1])
-      mapContainer.addLayer(this.unNavigableItemsLayers[this.unNavigableItemsLayers.length - 1])
-      mapContainer.addLayer(this.destructableItemsLayers[this.destructableItemsLayers.length - 1])
     }
+    mapContainer.addLayer(this.roadItemsLayers[this.levelZ])
+    mapContainer.addLayer(this.buildingItemsLayers[this.levelZ])
+    mapContainer.addLayer(this.navigableItemsLayers[this.levelZ])
+    mapContainer.addLayer(this.unNavigableItemsLayers[this.levelZ])
+    mapContainer.addLayer(this.destructableItemsLayers[this.levelZ])
     // mapContainer.addLayer(this.drawnItems)
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
@@ -319,8 +329,17 @@ export default class MapEditor extends Vue {
           mapContent.push(gContextLayers[i].toGeoJSON())
         }
         this.mapContent = JSON.stringify(mapContent) // JSON.stringify(d.toGeoJSON())
+        this.onChangeLevelZIndex(this.levelZ + 1)
+        this.onChangeLevelZIndex(this.levelZ - 1)
         if (this.manager) {
-          this.manager.updateLevelFeature(ManagerStore.currentProject.project_id, this.level.level_id, 'road', this.mapContent).then(
+          this.manager.updateLevelFeature(ManagerStore.currentProject.project_id, this.level.level_id, 'road', this.dynamicRoadContent()).then(
+            result => {
+              console.log(result)
+            }
+          ).catch(err => {
+            console.error(err)
+          })
+          this.manager.updateLevelFeature(ManagerStore.currentProject.project_id, this.level.level_id, 'structure', this.dynamicStructureContent()).then(
             result => {
               console.log(result)
             }
@@ -328,6 +347,7 @@ export default class MapEditor extends Vue {
             console.error(err)
           })
         }
+
         // console.log(c.toGeoJSON())
       }
     })
@@ -339,6 +359,26 @@ export default class MapEditor extends Vue {
     // console.log(this.drawnItems)
     if (this.mapCostRaster && this.manager && this.map) {
       console.log('update map')
+      if (this.playerFeatures) {
+        this.playerFeatures.clearLayers()
+        this.manager.getPlayers().then(result => {
+          this.players = result
+        }).catch(err => {
+          console.error(err)
+        })
+        this.players.forEach(player => {
+          if (this.manager && this.playerFeatures) {
+            const gridPos = this.manager.projectToGrid(player.transform.trans, this.level)
+            const point = new L.CircleMarker(new L.LatLng(this.level.transform.height - gridPos[1], gridPos[0]), { radius: 5.0 })
+            if (player.is_human) {
+              point.setStyle({ color: '#dea300' })
+            } else if (player.team === 1) {
+              point.setStyle({ color: '#b8411d' })
+            }
+            this.playerFeatures.addLayer(point)
+          }
+        })
+      }
       // this.mapCostRaster.setUrl('https://openthread.google.cn/images/ot-contrib-google.png')
       setTimeout(() => {
         if ((this.mapCostRaster && this.manager && this.map)) {
@@ -354,6 +394,57 @@ export default class MapEditor extends Vue {
     }
   }
 
+  get dynamicRoadContentsForCurrentLayer () {
+    const gContextLayer = this.getFeatureGroupJSON(0)
+    const mapContent = []
+    if (gContextLayer) {
+      mapContent.push(gContextLayer.toGeoJSON())
+      return JSON.stringify(mapContent[0])
+    }
+    return ''
+  }
+
+  get dynamicStructureContentsForCurrentLayer () {
+    const gContextLayer = this.getFeatureGroupJSON(1)
+    const mapContent = []
+    if (gContextLayer) {
+      mapContent.push(gContextLayer.toGeoJSON())
+      return JSON.stringify(mapContent[0])
+    }
+    return ''
+  }
+
+  dynamicRoadContent () {
+    const gContextLayers = this.getFeatureGroupJSONLayers(0)
+    if (gContextLayers[0]) {
+      const l : L.FeatureGroup = gContextLayers[0]
+      const mapContext : ReturnType<typeof l.toGeoJSON>[] = []
+      gContextLayers.forEach(l => {
+        if (l) {
+          mapContext.push(l.toGeoJSON())
+        }
+      })
+      console.log('dynamic road contents: ', mapContext)
+      return JSON.stringify(mapContext)
+    }
+    return ''
+  }
+
+  dynamicStructureContent () {
+    const gContextLayers = this.getFeatureGroupJSONLayers(1)
+    if (gContextLayers[0]) {
+      const l : L.FeatureGroup = gContextLayers[0]
+      const mapContext : ReturnType<typeof l.toGeoJSON>[] = []
+      gContextLayers.forEach(l => {
+        if (l) {
+          mapContext.push(l.toGeoJSON())
+        }
+      })
+      return JSON.stringify(mapContext)
+    }
+    return ''
+  }
+
   updateDrawingMode (drawing: boolean, drawMode: number) {
     this.drawing = drawing
     this.drawingMode = drawMode
@@ -367,6 +458,14 @@ export default class MapEditor extends Vue {
 
   getFeatureColour (key : number) : string {
     if ((!(key in this.drawingColors)) || !this.drawing) {
+      return '#00aeff'
+    } else {
+      return String(this.drawingColors[key])
+    }
+  }
+
+  forceGetFeatureColour (key : number) : string {
+    if ((!(key in this.drawingColors))) {
       return '#00aeff'
     } else {
       return String(this.drawingColors[key])
@@ -423,7 +522,20 @@ export default class MapEditor extends Vue {
   }
 
   onChangeLevelZIndex (layer : number) {
-    this.levelZ = layer
+    if (this.map) {
+      this.map.removeLayer(this.roadItemsLayers[this.levelZ])
+      this.map.removeLayer(this.buildingItemsLayers[this.levelZ])
+      this.map.removeLayer(this.navigableItemsLayers[this.levelZ])
+      this.map.removeLayer(this.unNavigableItemsLayers[this.levelZ])
+      this.map.removeLayer(this.destructableItemsLayers[this.levelZ])
+
+      this.levelZ = layer
+      this.map.addLayer(this.roadItemsLayers[this.levelZ])
+      this.map.addLayer(this.buildingItemsLayers[this.levelZ])
+      this.map.addLayer(this.navigableItemsLayers[this.levelZ])
+      this.map.addLayer(this.unNavigableItemsLayers[this.levelZ])
+      this.map.addLayer(this.destructableItemsLayers[this.levelZ])
+    }
   }
 
   iHandler : ReturnType<typeof setInterval>|undefined;
@@ -433,6 +545,49 @@ export default class MapEditor extends Vue {
     this.$root.$on('setupMap', (inLevel : Level) => {
       this.level = inLevel
       this.setupMap()
+      if (this.manager) {
+        const roadLayers = this.manager.projectFeatureCollectionToGrid(this.level.roads, this.level)
+        for (let i = 0; i < roadLayers.length; ++i) {
+          roadLayers[i].forEach(layer => {
+            if (this.roadItemsLayers[i]) {
+              // this.roadItemsLayers[i].setStyle({ color: this.getFeatureColour(0) })
+              const c = this.roadItemsLayers[i].addLayer(layer)
+              c.setStyle({ color: this.forceGetFeatureColour(0) })
+              console.log('add Layer: ', i, layer, this.roadItemsLayers[i])
+            }
+          })
+        }
+        const roadLayersJSON = this.manager.importFeatureCollectionJSON(this.level.roads, this.level)
+        for (let i = 0; i < roadLayersJSON.length; ++i) {
+          roadLayersJSON[i].forEach(layer => {
+            if (this.roadItemsJSONLayers[i]) {
+              this.roadItemsJSONLayers[i].addLayer(layer)
+            }
+          })
+        }
+        const structureLayers = this.manager.projectFeatureCollectionToGrid(this.level.structures, this.level)
+        for (let i = 0; i < structureLayers.length; ++i) {
+          structureLayers[i].forEach(layer => {
+            const c = this.buildingItemsLayers[i].addLayer(layer)
+            c.setStyle({ color: this.forceGetFeatureColour(1) })
+            // this.buildingItemsLayers[i].setStyle({ color: this.getFeatureColour(1) })
+            console.log('adding building layer', layer)
+          })
+        }
+        const structureLayersJSON = this.manager.importFeatureCollectionJSON(this.level.structures, this.level)
+        for (let i = 0; i < structureLayersJSON.length; ++i) {
+          structureLayers[i].forEach(layer => {
+            this.buildingItemsJSONLayers[i].addLayer(layer)
+            // this.buildingItemsJSONLayers[i].setStyle({ color: this.getFeatureColour(1) })
+          })
+        }
+
+        this.manager.getPlayers().then(result => {
+          this.players = result
+        }).catch(err => {
+          console.error(err)
+        })
+      }
     })
     // this.setupMap()
     // console.log('Setup map')

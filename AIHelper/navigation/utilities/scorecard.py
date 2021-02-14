@@ -10,14 +10,38 @@ import math
 from .transformations import remap
 
 @njit
-def score_fast(input_arr:np.ndarray, elevation_arr : np.ndarray, target:np.ndarray, roads_mask : np.ndarray, level : int, elevation_based : bool = False,
-    elevation_alpha_power : float = 0.05, elevation_alpha_beta : float = 1.5, elevation_alpha_beta_power : float = 7.0):
+def score_fast(
+    input_arr : np.ndarray, 
+    elevation_arr : np.ndarray, 
+    target : np.ndarray, 
+    level : int,
+    roads_mask : np.ndarray, 
+    structures_mask : np.ndarray, 
+    elevation_based : bool = False,
+    elevation_alpha_power : float = 0.05, 
+    elevation_alpha_beta : float = 1.5, 
+    elevation_alpha_beta_power : float = 7.0
+    ):
     min_elevation = elevation_arr[level].min()
     max_elevation = elevation_arr[level].max()
     for x in prange(input_arr.shape[1]):
         for y in prange(input_arr.shape[2]):
             if roads_mask[x][y]:
-                target[level][x][y] = 1.0 + ((elevation_arr[level][x][y])/2)
+                elevation_alpha = remap(elevation_arr[level][x][y], min_elevation, max_elevation, 0.0, 1.0)
+                elevation_alpha = math.pow(math.pow(elevation_alpha, elevation_alpha_power)*elevation_alpha_beta, elevation_alpha_beta_power)*10
+                elevation_value = remap(elevation_alpha, 0.0, 1.0, min_elevation, max_elevation)
+                if elevation_arr[level][x][y] > 0.0:
+                    target[level][x][y] = 1 + max(elevation_value*0.25, 1.0)
+                else:
+                    target[level][x][y] = math.inf
+            if structures_mask[x][y]:
+                elevation_alpha = remap(elevation_arr[level][x][y], min_elevation, max_elevation, 0.0, 1.0)
+                elevation_alpha = math.pow(math.pow(elevation_alpha, elevation_alpha_power)*elevation_alpha_beta, elevation_alpha_beta_power)*10
+                elevation_value = remap(elevation_alpha, 0.0, 1.0, min_elevation, max_elevation)
+                if elevation_arr[level][x][y] > 0.0:
+                    target[level][x][y] = 1 + max(elevation_value*2.25, 1.0)
+                else:
+                    target[level][x][y] = math.inf
             else:
                 if level == 0 and not elevation_based:
                     if input_arr[level][x][y] == 0.0:# or roads_mask[x][y]:
@@ -33,9 +57,12 @@ def score_fast(input_arr:np.ndarray, elevation_arr : np.ndarray, target:np.ndarr
                         target[level][x][y] = 700 + elevation_value 
                 elif level > 0 or elevation_based:
                     elevation_alpha = remap(elevation_arr[level][x][y], min_elevation, max_elevation, 0.0, 1.0)
-                    elevation_alpha = math.pow(math.pow(elevation_alpha, elevation_alpha_power)*elevation_alpha_beta, elevation_alpha_beta_power)
+                    elevation_alpha = math.pow(math.pow(elevation_alpha, elevation_alpha_power)*elevation_alpha_beta, elevation_alpha_beta_power)*10
                     elevation_value = remap(elevation_alpha, 0.0, 1.0, min_elevation, max_elevation)
-                    target[level][x][y] = 1 + elevation_value
+                    if elevation_arr[level][x][y] > 0.0:
+                        target[level][x][y] = 1 + max(elevation_value, 1.0)
+                    else:
+                        target[level][x][y] = math.inf
 
 @njit(parallel=True)
 def get_world_array_fast(x_arr: np.ndarray, y_arr : np.ndarray, min_point : tuple, max_point : tuple, width: float, height: float):
@@ -57,22 +84,36 @@ def get_world_array(transform : transformations.GridTransform, input_arr : np.nd
 
 def score(model: models.Level, transform : transformations.GridTransform,  input_arr : np.ndarray, elevation_arr : np.ndarray, target : np.ndarray, layer : int = 0, elevation_based : bool = False,
     elevation_alpha_power : float = 0.05, elevation_alpha_beta : float = 1.5, elevation_alpha_beta_power : float = 7.0):
-    valid = False
+    roads_valid = False
+    structures_valid = False
     if model.roads:
-        if layer in model.roads.keys():
+        if isinstance(model.roads, list):
             if 'features' in list(model.roads[layer].keys()):
-                valid = True
-    if valid:
+                roads_valid = True
+    if roads_valid:
         roads_data = model.roads[layer]['features']
         roads = GeometryCollection([shape(feature['geometry']).buffer(0.0) for feature in roads_data]).buffer(0.0)
         x_arr, y_arr = get_world_array(transform, input_arr)
-        mask = contains(roads, x_arr, y_arr)
+        road_mask = contains(roads, x_arr, y_arr)
     else:
-        mask = np.full((input_arr.shape[1], input_arr.shape[2]), False, dtype=bool)
+        road_mask = np.full((input_arr.shape[1], input_arr.shape[2]), False, dtype=bool)
+    if model.structures:
+        if isinstance(model.structures, list):
+            if 'features' in list(model.structures[layer].keys()):
+                structures_valid = True
+    if structures_valid:
+        structures_data = model.structures[layer]['features']
+        structures = GeometryCollection([shape(feature['geometry']).buffer(0.0) for feature in structures_data]).buffer(0.0)
+        x_arr, y_arr = get_world_array(transform, input_arr)
+        structures_mask = contains(structures, x_arr, y_arr)
+    else:
+        structures_mask = np.full((input_arr.shape[1], input_arr.shape[2]), False, dtype=bool)
+
     print(f"""elevationAlphaPower: {elevation_alpha_power}
     elevationAlphaBeta: {elevation_alpha_beta}
     elevationAlphaBetaPower: {elevation_alpha_beta_power} """)
-    score_fast(input_arr, elevation_arr, target, mask, layer, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
+    score_fast(input_arr, elevation_arr, target, layer,  road_mask, structures_mask, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
+    structures_mask = None
     # print('mask', mask)
     # print('roads', roads, Point(-630, -450).intersects(roads))
     # print("scoring")

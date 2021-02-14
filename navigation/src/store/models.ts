@@ -1,5 +1,6 @@
 /* eslint-disable camelcase */
 import axios, { AxiosResponse } from 'axios'
+import L, { GeoJSON, LatLng } from 'leaflet'
 import Vue from 'vue'
 import { ManagerStore } from './ManagerStoreModule'
 
@@ -41,7 +42,10 @@ export interface Level {
     friendly_kit: SoldierKitCollection
     enemy_kit: SoldierKitCollection
 
-    id : number
+    id : number,
+
+    roads: GeoJSON.FeatureCollection[],
+    structures: GeoJSON.FeatureCollection[]
 }
 
 export interface Levels {
@@ -143,6 +147,29 @@ export interface TreeNode {
   id : number
 }
 
+export interface Transform {
+  left: Vector,
+  up: Vector,
+  forward: Vector,
+  trans: Vector
+}
+
+export interface Player {
+  id : number,
+  player_id : number,
+  online_id : number,
+  alive : boolean,
+  is_squad_leader : boolean,
+  is_squad_private : boolean,
+  transform : Transform,
+  in_vehicle: boolean,
+  has_soldier: boolean,
+  team: number,
+  squad: number,
+  health: number,
+  is_human : boolean // artificial field
+}
+
 export const defaultGameAsset: GameAsset = {
   id: 0,
   name: 'default game asset',
@@ -217,7 +244,9 @@ export const defaultLevel: Level = {
   level_id: 0,
   friendly_kit: defaultSoldierKitCollection,
   enemy_kit: defaultSoldierKitCollection,
-  id: 0
+  id: 0,
+  roads: [],
+  structures: []
 }
 
 export class Manager {
@@ -316,6 +345,7 @@ export class Manager {
     if (level.enemy_kit == null) {
       level.enemy_kit = <SoldierKitCollection>deepCopy<SoldierKitCollection>(defaultSoldierKitCollection)
     }
+    this.projectFeatureCollectionToGrid(level.roads, level)
     level.friendly_kit.assault.kit_assets = [level.friendly_kit.assault.kit_asset ? level.friendly_kit.assault.kit_asset : defaultGameAsset]
     level.friendly_kit.engineer.kit_assets = [level.friendly_kit.engineer.kit_asset ? level.friendly_kit.engineer.kit_asset : defaultGameAsset]
     level.friendly_kit.support.kit_assets = [level.friendly_kit.support.kit_asset ? level.friendly_kit.support.kit_asset : defaultGameAsset]
@@ -463,6 +493,128 @@ export class Manager {
     return [newY, newX]
   }
 
+  projectToGrid (position : Vector, level : Level) {
+    const newX = this.remapValueRange(position.x, level.transform.min_point[0], level.transform.max_point[0], 0, level.transform.width)
+    const newY = this.remapValueRange(position.z, level.transform.min_point[1], level.transform.max_point[1], 0, level.transform.height)
+
+    return [newX, newY]
+  }
+
+  importFeatureCollectionJSON (featureCollections : GeoJSON.FeatureCollection[], level : Level) {
+    const layers : L.Layer[][] = []
+    if (featureCollections && Array.isArray(featureCollections)) {
+      featureCollections.forEach(featureCollection => {
+        layers.push([])
+        featureCollection.features.forEach(feature => {
+          if (feature !== undefined) {
+            layers[layers.length - 1].push(GeoJSON.geometryToLayer(feature))
+          }
+        })
+      })
+    }
+    return layers
+  }
+
+  projectFeatureCollectionToGrid (featureCollections : GeoJSON.FeatureCollection[], level : Level) {
+    // console.log('featureCollection', featureCollections[0].features[0].geometry)
+    const layers : L.Layer[][] = []
+    if (featureCollections && Array.isArray(featureCollections)) {
+      featureCollections.forEach(featureCollection => {
+        layers.push([])
+        featureCollection.features.forEach(feature => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
+          if (feature !== undefined) {
+            const layerType = feature.geometry.type
+            let projectedLayer : L.Layer|undefined
+            const layer = GeoJSON.geometryToLayer(feature)
+            if (layerType === 'Polygon') {
+              const lp = <L.Polygon>layer
+              const lpc : L.Polygon = new L.Polygon(lp.getLatLngs(), lp.options)
+              const points = lpc.getLatLngs()
+              // let projectedPoints : LatLng[] | LatLng[][] | LatLng[][][] = points
+              // projectedPoints = []
+              // let i = 0
+              if (Array.isArray(points[0])) {
+                if (Array.isArray(points[0][0])) {
+                  const pt : LatLng[][][] = <LatLng[][][]>points
+                  for (let i = 0; i < pt.length; ++i) {
+                    for (let j = 0; j < pt[i].length; ++j) {
+                      for (let k = 0; k < pt[i][j].length; ++k) {
+                        if (this) {
+                          const newPos = this.projectToGrid(
+                            {
+                              x: level.transform.height - pt[i][j][k].lat,
+                              z: pt[i][j][k].lng,
+                              y: 0
+                            },
+                            level
+                          )
+                          console.log('projecting', newPos)
+                          pt[i][j][k] = new LatLng(newPos[0], newPos[1])
+                        }
+                      }
+                    }
+                  }
+                } else {
+                  const pt : LatLng[][] = <LatLng[][]>points
+                  for (let i = 0; i < pt.length; ++i) {
+                    for (let j = 0; j < pt[i].length; ++j) {
+                      if (this) {
+                        const newPos = this.projectToGrid(
+                          {
+                            x: (level.transform.height - pt[i][j].lat) - level.transform.height,
+                            z: pt[i][j].lng,
+                            y: 0
+                          },
+                          level
+                        )
+                        console.log('projecting', newPos)
+                        pt[i][j] = new LatLng(newPos[0], newPos[1])
+                      }
+                    }
+                  }
+                }
+              } else {
+                const pt : LatLng[] = <LatLng[]>points
+                for (let i = 0; i < pt.length; ++i) {
+                  if (this) {
+                    const newPos = this.projectToWorld(
+                      pt[i].lng,
+                      pt[i].lat,
+                      level
+                    )
+                    pt[i] = new LatLng(newPos[0], newPos[1])
+                  }
+                }
+                lpc.setLatLngs(pt)
+                // e.layer = lp
+              }
+              projectedLayer = lpc
+            } else if (layerType === 'Point') {
+              const l : L.CircleMarker = <L.CircleMarker>layer
+              const lc : L.CircleMarker = new L.CircleMarker(l.getLatLng(), l.options)
+              lc.setRadius(1000)
+              if (this) {
+                const newPos = this.projectToWorld(
+                  lc.getLatLng().lng,
+                  lc.getLatLng().lat,
+                  level
+                )
+                lc.setLatLng(new LatLng(newPos[0], newPos[1]))
+                projectedLayer = lc
+              }
+            }
+            if (projectedLayer) {
+              layers[layers.length - 1].push(projectedLayer)
+            }
+          }
+        })
+      })
+    }
+    console.log('p Layers', layers, typeof layers[0])
+    return layers
+  }
+
   async getTasks (project_id : number) {
     const response = await this.get(`/v1/project/${project_id}/tasks/`)
     return <ProjectTask[]>response.data
@@ -533,6 +685,11 @@ export class Manager {
   async exportProject (project_id : string) {
     const response = this.post(`/v1/project/${project_id}/export/`, {})
     return response
+  }
+
+  async getPlayers () : Promise<Player[]> {
+    const response = await this.get('/v1/players/')
+    return <Player[]>response.data
   }
 }
 

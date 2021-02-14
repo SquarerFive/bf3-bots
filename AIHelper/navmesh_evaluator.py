@@ -96,6 +96,9 @@ with open("./models/Project/BF3 Bots 0.0.4/Level/XP1_004/elevation.npy", "rb") a
     elevation = numpy.load(f)[0]
 
 with open("./models/Project/BF3 Bots 0.0.4/Level/XP1_004/data.npy", "rb") as f:
+    with open('./models/Project/BF3 Bots 0.0.4/Level/MP_Subway/elevation.npy', 'rb') as fx:
+        elevation_arr = numpy.load(fx)[0]
+
     arr = numpy.load(f)[0]
     new_arr = numpy.zeros(arr.shape)
     print(new_arr.shape, arr.shape)
@@ -141,7 +144,7 @@ with open("./models/Project/BF3 Bots 0.0.4/Level/XP1_004/data.npy", "rb") as f:
     
 
     print(arr)
-    image = Image.fromarray((arr*255).astype(numpy.uint8), mode="L")
+    image = Image.fromarray((elevation_arr*255).astype(numpy.uint8), mode="L")
     image.save("test.png")
-    pyplot.imshow(arr)
+    pyplot.imshow(elevation_arr)
     pyplot.show()

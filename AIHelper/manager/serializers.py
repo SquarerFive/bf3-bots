@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from navigation import models as navigation_models
+from bots import models as bots_models
 from . import models
 
 class ProfileSerializer(serializers.ModelSerializer):
@@ -38,4 +39,9 @@ class SoldierKitCollectionSerializer(serializers.ModelSerializer):
 class SoldierKitSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.SoldierKit
+        fields = '__all__'
+
+class PlayerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = bots_models.Player
         fields = '__all__'

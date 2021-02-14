@@ -4,7 +4,7 @@ from .models import Level, Objective, Profile, Project
 
 @admin.register(Level)
 class LevelAdmin(admin.ModelAdmin):
-    fields = ("name","transform", "project_id", "date_created", "date_modified", "level_id", "roads")
+    fields = ("name","transform", "project_id", "date_created", "date_modified", "level_id", "roads", "structures")
 
 @admin.register(Objective)
 class ObjectiveAdmin(admin.ModelAdmin):
