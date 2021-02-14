@@ -1093,10 +1093,27 @@ def manager_add_spawn_point(request : Request, project_id : int, level_id : int,
     
     level_object = global_cache.get_object(project_id, level_id)
     if level_object:
+        point : dict = request.data
+        point['y'] = point['y'] + 0.6
+
         spnts = global_cache.level_model.spawn_points_friendly if faction == 0 else global_cache.level_model.spawn_points_enemy
         if isinstance(spnts, list):
             spnts.append(request.data)
         else:
             spnts = [request.data]
+        global_cache.level_model.use_spawn_points = True
         global_cache.level_model.save()
     return Response("Cannot find level.", status=404)
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication, SessionAuthentication])
+@permission_classes([IsAuthenticated])
+def manager_get_active_level_minimal(request : Request) -> Response:
+    global global_cache
+    settings : models.BF3GameManager = models.BF3GameManager.objects.first()
+    global_cache.get_object(settings.active_project_id, settings.active_level_id)
+    data =  serializers.LevelMinimalSerializer(navigation_models.Level.objects.filter(
+        level_id = settings.active_level_id, project_id = settings.active_project_id).first()).data
+        
+    print(data)
+    return Response(data)

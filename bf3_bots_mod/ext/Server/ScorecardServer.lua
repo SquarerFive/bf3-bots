@@ -49,6 +49,8 @@ end
 function ScorecardServer:OnSetActiveProject(player, active_project, profile)
     botsManager.project_id = math.floor(tonumber(active_project))
     botsManager.profile = profile
+
+    botsManager:InitialiseHeartbeatSettings()
 end
 
 function ScorecardServer:OnScorecardRequestPath(player, start_point, end_point)

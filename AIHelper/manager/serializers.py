@@ -21,6 +21,12 @@ class LevelSerializer(serializers.ModelSerializer):
         fields = '__all__'
         # exclude = ['raw_data', 'cost_data', 'elevation_data']
 
+class LevelMinimalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = navigation_models.Level
+        # fields = '__all__'
+        exclude = ['recorded_paths', 'roads', 'structures']
+
 class ProjectTaskJSONSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.ProjectTaskJSON

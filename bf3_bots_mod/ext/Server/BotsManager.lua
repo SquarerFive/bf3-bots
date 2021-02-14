@@ -33,7 +33,29 @@ function BotsManager:__init()
 
     self.project_id = -1
     self.profile = {}
+    self.level_id = -1
+    self.use_spawn_points = false
+    self.friendly_spawn_points = {} -- Vec3[]
+    self.enemy_spawn_points = {} -- Vec3[]
 
+end
+
+function BotsManager:InitialiseHeartbeatSettings()
+    local initialHeartbeatData = self:GetManager('/initialise-heartbeat/')
+    if (initialHeartbeatData.body ~= nil) then
+        print(initialHeartbeatData.body)
+        local data = json.decode(initialHeartbeatData.body)
+        self.use_spawn_points = data.use_spawn_points
+        self.friendly_spawn_points = {}
+        if self.use_spawn_points then
+            for _, p in pairs(data.spawn_points_friendly) do
+                table.insert(self.friendly_spawn_points, Vec3(p.x, p.y, p.z))
+            end
+            for _, p in pairs(data.spawn_points_enemy) do
+                table.insert(self.enemy_spawn_points, Vec3(p.x, p.y, p.z))
+            end
+        end
+    end
 end
 
 function BotsManager:OnPlayerCreated(player)
@@ -309,6 +331,7 @@ function BotsManager:OnLevelLoaded(levelName, gameMode, round, roundsPerMap)
         if tostring(result.body) ~= 'error' then
             local level_id = math.floor(tonumber(result.body))
             self:PostManager('/project/'..self.project_id..'/level/'..tostring(level_id)..'/on-level-loaded/', '{}')
+            self:InitialiseHeartbeatSettings()
         end
     end
     if #self.bots > 0 then
@@ -448,6 +471,15 @@ function BotsManager:PostManager (url, data)
     local url = 'http://127.0.0.1:8000/v1'..url
     return Net:PostHTTP(url, data, options)
 end 
+
+function BotsManager:GetManager (url)
+    local headers = {}
+    local options = HttpOptions(headers, 30)
+    options:SetHeader('Authorization', 'Token '..self.profile.token)
+    options:SetHeader('Content-Type', 'application/json')
+    local url = 'http://127.0.0.1:8000/v1'..url
+    return Net:GetHTTP(url, options)
+end
 
 function BotsManager:EmitAction(instigator, action, order)
     local data = {}
@@ -861,6 +893,30 @@ function BotsManager:SpawnBotsAroundTransform(Transform)
     end
 end
 
+function BotsManager:GetNearestSpawnPointFromTranslation(Translation, Team)
+    local spawnPoints = {}
+    if (Team == 1) then
+        spawnPoints = self.friendly_spawn_points
+    else
+        spawnPoints = self.enemy_spawn_points
+    end
+    local minDistance = math.huge
+    local minTranslation = Translation
+    local optimalPoints = {}
+    for _, p in pairs(spawnPoints) do
+        if p:Distance(Translation) < 30 then
+            table.insert(optimalPoints, p)
+        end
+    end
+    
+    minTranslation = optimalPoints[math.random(1, #optimalPoints)]
+
+    if minTranslation:Distance(Translation) > 50 then
+        return Translation
+    end
+    return minTranslation
+end
+
 function BotsManager:SpawnBotAroundTransform(Transform, bot)
     --US
     local soldierBlueprint = ResourceManager:SearchForInstanceByGuid(Guid('261E43BF-259B-41D2-BF3B-9AE4DDA96AD2'))
@@ -871,6 +927,21 @@ function BotsManager:SpawnBotAroundTransform(Transform, bot)
         soldierBlueprint = ResourceManager:SearchForInstanceByGuid(Guid('261E43BF-259B-41D2-BF3B-9AE4DDA96AD2'))
         soldierKit = ResourceManager:SearchForInstanceByGuid(Guid('DB0FCE83-2505-4948-8661-660DD0C64B63'))
     end
+
+    if self.use_spawn_points then
+        local currentTransform = Transform:Clone()
+        local newTransform = LinearTransform(
+            currentTransform.left, currentTransform.up, currentTransform.forward,
+            self:GetNearestSpawnPointFromTranslation(currentTransform.trans, bot.teamId)
+        )
+        bot:SpawnBot(newTransform,CharacterPoseType.CharacterPoseType_Stand , soldierBlueprint, soldierKit, {}, nil)
+        bot.objective = self:GetNearestEnemyObjectiveEntity(newTransform.trans, TeamId.Team1)
+        bot.path_step = 1
+        bot.path = {}
+        bot.action = Actions.ATTACK
+        return
+    end
+
     local currentTransform = Transform:Clone()
     local newPos = VecLib:RandomPointInRadius(currentTransform.trans, 25.0)
     currentTransform = LinearTransform(
