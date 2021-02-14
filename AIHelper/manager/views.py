@@ -1073,7 +1073,10 @@ def manager_on_recorded_path(request : Request, project_id : int) -> Response:
                     global_cache.level_model.recorded_paths = []
                     global_cache.level_model.save()
 
-        models.ProjectTaskJSON.objects.filter(name='RecordPathTask').delete()
-        with connection.cursor() as cursor:
-            cursor.execute('vacuum;')
-        return Response("Success")
+            models.ProjectTaskJSON.objects.filter(name='RecordPathTask').delete()
+            with connection.cursor() as cursor:
+                cursor.execute('vacuum;')
+            print("Rasterizing")
+            level_object.classify_costs(just_paths=True, elevation_based = True, elevation_alpha_power=2.0, elevation_alpha_beta=1.5, elevation_alpha_beta_power=1.0)
+            return Response("Success")
+    return Response("Could not find active state or level", status=404)

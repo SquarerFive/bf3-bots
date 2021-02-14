@@ -40,8 +40,9 @@ class Level:
 
         self.model = model
 
-    def classify_costs(self, elevation_based : bool = False, elevation_alpha_power : float = 0.05, elevation_alpha_beta : float = 1.5, elevation_alpha_beta_power : float = 7.0):
-        scorecard.Scorecard.score(self.model, self.transform, self.data, self.elevation, self.costs, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
+    def classify_costs(self, elevation_based : bool = False, elevation_alpha_power : float = 0.05, elevation_alpha_beta : float = 1.5, elevation_alpha_beta_power : float = 7.0, just_paths = False):
+        if not just_paths:
+            scorecard.Scorecard.score(self.model, self.transform, self.data, self.elevation, self.costs, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
         if isinstance(self.model.recorded_paths, list):
             for path in self.model.recorded_paths:
                 level = path['layer']
