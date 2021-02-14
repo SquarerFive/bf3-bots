@@ -136,7 +136,7 @@ export default class MapEditor extends Vue {
   //
   levelZ = 0;
   levelZIndexes = [
-    0, 1, 2, 3, 4
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9
   ]
   //
 

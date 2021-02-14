@@ -933,7 +933,13 @@ function BotsManager:RespawnBot(bot)
         if #friendly_objectives > 0 then
             local choice = friendly_objectives[math.random(1, #friendly_objectives)]
             if choice ~= nil then
-                self:SpawnBotAroundTransform(choice.transform , bot)
+                -- first, try spawn on objective entity
+                local successfulSpawn = bot.player_controller:Spawn(choice, false)
+                if (not successfulSpawn) then
+                    self:SpawnBotAroundTransform(choice.transform , bot)
+                else
+                    print("Successfully spawned on entity")
+                end
                 -- self:SpawnBotAtEntity(choice, bot)
                 bot.target = nil
             end

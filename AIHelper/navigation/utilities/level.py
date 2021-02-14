@@ -51,8 +51,8 @@ class Level:
             if c < d:
                 d = c
                 l = level
-        if l > 4:
-            l = min(4, l)
+        if l > 9:
+            l = min(9, l)
         return l
 
 
@@ -170,7 +170,7 @@ class Level:
         # grid.__del
         return path
 
-    def astar(self, start : tuple, end : tuple, safe=True , all : bool = False, elevation : Union[float, None] = None) -> list:
+    def astar(self, start : tuple, end : tuple, safe=True , all : bool = False, elevation : Union[float, None] = None, recurse_depth : int = 0) -> list:
         # print("running astar  ", start, end)
         # print("size of data: ", self.data.shape)
         #path, cost = route_through_arrays(self.costs, start, end, fully_connected=False, geometric=True) # astar(self.data, start, end)
@@ -204,9 +204,9 @@ class Level:
                     "z": wxy[1]
                 })
                 if idx > 1 and idx < len(path)-1:
-                    if abs(world_paths[idx]['y']-world_paths[idx-1]['y']) > 2.0:
+                    if abs(world_paths[idx]['y']-world_paths[idx-1]['y']) > 5.0 and recurse_depth < 1:
                         print("finding depth path")
-                        world_paths += self.astar(p, end, elevation=world_paths[idx-1]['y'])
+                        world_paths += self.astar(path[idx+4], end, elevation=elevation, recurse_depth = recurse_depth+1)
                         break
                 if idx > 50:
                     break

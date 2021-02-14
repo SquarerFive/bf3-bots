@@ -115,7 +115,10 @@ def score(model: models.Level, transform : transformations.GridTransform,  input
     print(f"""elevationAlphaPower: {elevation_alpha_power}
     elevationAlphaBeta: {elevation_alpha_beta}
     elevationAlphaBetaPower: {elevation_alpha_beta_power} """)
-    score_fast(input_arr, elevation_arr, target, layer,  road_mask, structures_mask, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
+    try:
+        score_fast(input_arr, elevation_arr, target, layer,  road_mask, structures_mask, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
+    except Exception as e:
+        print("Failed to score, ", str(e))
     structures_mask = None
     # print('mask', mask)
     # print('roads', roads, Point(-630, -450).intersects(roads))
@@ -149,11 +152,12 @@ class Scorecard:
     def score(model : models.Level, transform : transformations.GridTransform, input_arr:np.ndarray, elevation_arr : np.ndarray, target:np.ndarray, elevation_based = False, 
         elevation_alpha_power : float = 0.05, elevation_alpha_beta : float = 1.5, elevation_alpha_beta_power : float = 7.0) -> None:
         # score_fast(input_arr, elevation_arr, target)
-        score(model, transform, input_arr, elevation_arr, target, 0, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
-        score(model, transform, input_arr, elevation_arr, target, 1, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
-        score(model, transform, input_arr, elevation_arr, target, 2, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
-        score(model, transform, input_arr, elevation_arr, target, 3, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
-        score(model, transform, input_arr, elevation_arr, target, 4, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
+        for level in range(input_arr.shape[0]):
+            score(model, transform, input_arr, elevation_arr, target, level, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
+        # score(model, transform, input_arr, elevation_arr, target, 1, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
+        # score(model, transform, input_arr, elevation_arr, target, 2, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
+        # score(model, transform, input_arr, elevation_arr, target, 3, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
+        # score(model, transform, input_arr, elevation_arr, target, 4, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
     
     @staticmethod
     def flip(input_arr: np.ndarray, target_arr:np.ndarray) -> None:

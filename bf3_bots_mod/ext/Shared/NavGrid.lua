@@ -299,7 +299,7 @@ end
 
 function NavGrid:RaycastAndScore(Start, End, OldScore)
 
-    local hits = self.NestedRaycast(Start, End, Vec3(0.0, -1.0, 0.0), 5)
+    local hits = self.NestedRaycast(Start, End, Vec3(0.0, -1.0, 0.0), 10)
     local results = {} -- { 1: { value: 0.0, elevation: 0.0 } }
     for i, hit in pairs(hits) do
         local score = 256
