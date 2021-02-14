@@ -694,6 +694,16 @@ export class Manager {
     const response = await this.get('/v1/players/')
     return <Player[]>response.data
   }
+
+  async updateRecordedPosition (position : Vector) {
+    const response = await this.post(`/v1/project/${ManagerStore.currentProject.project_id}/record/`, position)
+    return response
+  }
+
+  async finishRecordingPosition () {
+    const response = await this.get(`/v1/project/${ManagerStore.currentProject.project_id}/finish-record/`)
+    return response
+  }
 }
 
 /**

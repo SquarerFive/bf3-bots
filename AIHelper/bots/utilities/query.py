@@ -7,6 +7,8 @@ bot_step = 0
 from . behaviour import distance
 import datetime
 
+import pytz
+
 def create_or_update_bot(bot : dict):
     b : models.Bot = models.Bot.objects.filter(player_id = bot['player_id']).first()
     if not b:
@@ -78,9 +80,9 @@ def create_or_update_bot_model(b : models.Bot, bot: dict):
         #    b.target = int(bot['requested_target_id'])
         b.overidden_target = int(bot['requested_target_id'])
 
-        delta = datetime.datetime.now().replace(tzinfo=b.last_transform_update.tzinfo) - b.last_transform_update
+        delta = datetime.datetime.now().replace(tzinfo=pytz.UTC) - b.last_transform_update.replace(tzinfo=pytz.UTC)
         if delta.total_seconds() > 8:
-            b.last_transform_update = datetime.datetime.now()
+            b.last_transform_update = datetime.datetime.now().replace(tzinfo=pytz.UTC)
             if 'trans' in list(b.last_transform.keys()):
                 if distance(bot['transform']['trans']['x'], 0, bot['transform']['trans']['z'], 
                     b.last_transform['trans']['x'], 0, b.last_transform['trans']['z']) < 0.8:

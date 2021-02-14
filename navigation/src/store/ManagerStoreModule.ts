@@ -1,7 +1,7 @@
 import { storeInstance } from './index'
 import { Action, getModule, Module, Mutation, VuexModule } from 'vuex-module-decorators'
 
-import { Level, Profile, Project } from './models'
+import { Level, Profile, Project, Transform } from './models'
 
 @Module({
   dynamic: true,
@@ -31,6 +31,13 @@ export class ManagerStoreModule extends VuexModule {
 
     availableLevels: Level[] = []
     shouldShowBotSettings = false
+
+    currentPlayerTransform : Transform = {
+      forward: { x: 0, y: 0, z: 0 },
+      left: { x: 0, y: 0, z: 0 },
+      up: { x: 0, y: 0, z: 0 },
+      trans: { x: 0, y: 0, z: 0 }
+    }
 
     @Mutation
     SET_LOGGEDIN (newLoggedIn: boolean) {
@@ -111,6 +118,16 @@ export class ManagerStoreModule extends VuexModule {
     @Action
     setShouldShowBotSettings (newShouldShowBotSettings : boolean) {
       this.SET_SHOULD_SHOW_BOT_SETTINGS(newShouldShowBotSettings)
+    }
+
+    @Mutation
+    SET_CURRENT_PLAYER_TRANSFORM (newTransform : Transform) {
+      this.currentPlayerTransform = newTransform
+    }
+
+    @Action
+    setCurrentPlayerTransform (newTransform : Transform) {
+      this.SET_CURRENT_PLAYER_TRANSFORM(newTransform)
     }
 }
 

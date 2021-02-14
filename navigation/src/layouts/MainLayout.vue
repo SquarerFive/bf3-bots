@@ -14,6 +14,7 @@
           icon="menu"
           aria-label="Menu"
           style="font-size: 12px; margin-top: -18px"
+          :disable="!isLoggedIn"
           @click="drawerClick()"
         />
 
@@ -29,7 +30,8 @@
           style="font-size: 12px; margin-top: -18px"
         >
         </q-toolbar-title>
-        <q-btn push dense color="warning" text-color="dark" label="Show bot configuration" style="font-size: 11px; margin-top: -18px; padding: 0px; margin-right: 5px;" @click="toggleBotConfiguration"/>
+        <q-btn push dense :loading="isRecordingSaving" :disable="!isLoggedIn || currentProjectName === 'default project'" :color="isRecording ? 'red' : 'warning'" text-color="dark" label="Record" style="font-size: 11px; margin-top: -18px; padding: 0px; margin-right: 5px;" @click="onToggleRecording"/>
+        <q-btn push dense :disable="!isLoggedIn" color="warning" text-color="dark" label="Show bot configuration" style="font-size: 11px; margin-top: -18px; padding: 0px; margin-right: 5px;" @click="toggleBotConfiguration"/>
         <q-btn push dense color="warning" text-color="dark" label="Switch input to game." style="font-size: 11px; margin-top: -18px; padding: 0px; margin-right: 5px;" @click="switchInputToGame"/>
         <p style="font-size: 11px" v-if="managerStore">
           Project: {{managerStore.currentProject.name}}
@@ -111,6 +113,7 @@ export default class MainLayout extends Vue {
   essentialLinks = linksData;
 
   managerStore : ManagerStoreModule | null = null;
+  isRecording = false
 
   mounted () {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -163,6 +166,36 @@ export default class MainLayout extends Vue {
   get isLoggedIn () : boolean {
     return ManagerStore.loggedIn
     // return (<State>(this.$store.state)).manager.logged_in;
+  }
+
+  get currentProjectName () : string {
+    if (ManagerStore) {
+      console.log('GET PROJECT NAME', ManagerStore.currentProject.name)
+      return ManagerStore.currentProject.name
+    }
+    return ''
+  }
+
+  recordingHandle : NodeJS.Timeout | null = null
+  isRecordingSaving = false
+  onToggleRecording () {
+    if (this.isLoggedIn) {
+      if (this.isRecording) {
+        this.isRecording = false
+        if (this.recordingHandle) {
+          clearInterval(this.recordingHandle)
+          this.recordingHandle = null
+          this.isRecordingSaving = true
+          window.GameSyncManager.finishRecordingPosition().then(() => { this.isRecordingSaving = false }).catch(err => { console.error(err); this.isRecordingSaving = false })
+        }
+      } else {
+        this.isRecording = true
+        this.recordingHandle = setInterval(() => {
+          console.log('Hello World')
+          window.GameSyncManager.updateRecordedPosition(window.GameSyncManager.currentPosition).catch(err => { console.error(err) })
+        }, 500)
+      }
+    }
   }
 }
 </script>

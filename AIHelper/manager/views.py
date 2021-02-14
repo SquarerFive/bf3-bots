@@ -1,3 +1,4 @@
+from django.http.response import HttpResponsePermanentRedirect
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
@@ -36,6 +37,8 @@ from django.db import connection
 from background_task import background
 from .tasks import manager_compute
 import time
+
+import pytz
 
 # Globals [to avoid poo memory, cache it here until the level changes]
 class GlobalCache:
@@ -497,7 +500,7 @@ def manager_update_level(request: Request, project_id : int) -> Response:
     level_model : navigation_models.Level = level.models.Level.objects.filter(name=level_name, project_id=project_id).first()
     if level_model:
         level_object = global_cache.get_object(project_id, level_model.level_id)
-        ts = time.time()
+        
         friendly_faction_kit_collection : models.SoldierKitCollection = models.SoldierKitCollection.objects.filter(project_id=project_id, level_id=level_model.level_id, faction=0).first()
         enemy_faction_kit_collection : models.SoldierKitCollection = models.SoldierKitCollection.objects.filter(project_id=project_id, level_id=level_model.level_id, faction=1).first()
         players = bots_models.Player.objects.all()
@@ -505,6 +508,7 @@ def manager_update_level(request: Request, project_id : int) -> Response:
         
         for objective in data['objectives']:
             navigation_query.add_objective(objective)
+        ts = time.time()
         p_array = []
         for player in data['players']:
             player_m = players.filter(player_id=player['player_id']).first()
@@ -520,27 +524,28 @@ def manager_update_level(request: Request, project_id : int) -> Response:
         b_array = []
         for bot in data['bots']:
             bot_model = bots.filter(bot_index=bot['bot_index']).first()
-            active_collection = friendly_faction_kit_collection if bot['team'] == 0 else enemy_faction_kit_collection
-            kits = [
-                models.SoldierKit.objects.filter(collection_id=active_collection.id, collection_slot=0).first(),
-                models.SoldierKit.objects.filter(collection_id=active_collection.id, collection_slot=1).first(),
-                models.SoldierKit.objects.filter(collection_id=active_collection.id, collection_slot=2).first(),
-                models.SoldierKit.objects.filter(collection_id=active_collection.id, collection_slot=3).first(),
-            ]
-            kit = kits[random.randint(0,3)]
-            bot['kit'] = {
-                'primary_weapon': kit.primary_weapon[random.randint(0, len(kit.primary_weapon))-1] if len(kit.primary_weapon) > 0 else None,
-                'secondary_weapon': kit.secondary_weapon[random.randint(0, len(kit.secondary_weapon))-1] if len(kit.secondary_weapon) > 0 else None,
-                'primary_gadget': kit.primary_gadget[random.randint(0, len(kit.primary_gadget))-1] if len(kit.primary_gadget) > 0 else None,
-                'secondary_gadget': kit.secondary_gadget[random.randint(0, len(kit.secondary_gadget))-1] if len(kit.secondary_gadget) > 0 else None,
-                'melee': kit.melee[random.randint(0, len(kit.melee))-1] if len(kit.melee) > 0 else None,
-                'unlocks': kit.appearance[random.randint(0, len(kit.melee))-1] if len(kit.appearance) > 0 else None,
-                'kit_asset': kit.kit_asset
-            }
+            
             if (bot_model):
                 bots_query.create_or_update_bot_model(bot_model, bot)
                 b_array.append(bot_model)
             else:
+                active_collection = friendly_faction_kit_collection if bot['team'] == 0 else enemy_faction_kit_collection
+                kits = [
+                    models.SoldierKit.objects.filter(collection_id=active_collection.id, collection_slot=0).first(),
+                    models.SoldierKit.objects.filter(collection_id=active_collection.id, collection_slot=1).first(),
+                    models.SoldierKit.objects.filter(collection_id=active_collection.id, collection_slot=2).first(),
+                    models.SoldierKit.objects.filter(collection_id=active_collection.id, collection_slot=3).first(),
+                ]
+                kit = kits[random.randint(0,3)]
+                bot['kit'] = {
+                    'primary_weapon': kit.primary_weapon[random.randint(0, len(kit.primary_weapon))-1] if len(kit.primary_weapon) > 0 else None,
+                    'secondary_weapon': kit.secondary_weapon[random.randint(0, len(kit.secondary_weapon))-1] if len(kit.secondary_weapon) > 0 else None,
+                    'primary_gadget': kit.primary_gadget[random.randint(0, len(kit.primary_gadget))-1] if len(kit.primary_gadget) > 0 else None,
+                    'secondary_gadget': kit.secondary_gadget[random.randint(0, len(kit.secondary_gadget))-1] if len(kit.secondary_gadget) > 0 else None,
+                    'melee': kit.melee[random.randint(0, len(kit.melee))-1] if len(kit.melee) > 0 else None,
+                    'unlocks': kit.appearance[random.randint(0, len(kit.melee))-1] if len(kit.appearance) > 0 else None,
+                    'kit_asset': kit.kit_asset
+                }
                 bots_query.create_or_update_bot(bot)
             # behaviour.compute(bot['bot_index'], level_object, bots_models.Bot, bots_models.Player, navigation_models.Objective, int(bot['requested_target_id'])!=-2, int(bot['requested_target_id']))
         bots_models.Bot.objects.bulk_update(b_array, ['transform', 'health', 'in_vehicle', 'team', 'order', 'action', 'bot_index', 'alive', 'squad', 'overidden_target', 'last_transform', 'last_transform_update', 'stuck'])
@@ -1033,3 +1038,42 @@ def manager_get_players(request : Request) -> Response:
         data[idx]['is_human'] = bots_models.Bot.objects.filter(player_id=player['player_id']).first() == None
 
     return Response(data)
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication, SessionAuthentication])
+@permission_classes([IsAuthenticated])
+def manager_record_player_path(request : Request, project_id : int) -> Response:
+    data = request.data
+    models.ProjectTaskJSON.objects.create(name='RecordPathTask', data=data, project_id=project_id, task_id = random.randint(0, 989988))
+    return Response('Success')
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication, SessionAuthentication])
+@permission_classes([IsAuthenticated])
+def manager_on_recorded_path(request : Request, project_id : int) -> Response:
+    global global_cache
+    active_state : models.BF3GameManager = models.BF3GameManager.objects.first()
+    if active_state:
+        level_object = global_cache.get_object(active_state.active_project_id, active_state.active_level_id)
+        if level_object:
+            # do something here
+            for task in models.ProjectTaskJSON.objects.filter(name='RecordPathTask').all():
+                task : models.ProjectTaskJSON = task
+                x = task.data['x']
+                elevation = task.data['y']
+                z = task.data['z']
+                grid_pos = level_object.transform.transform_to_grid((x, z))
+                best_layer = level_object.get_best_navmesh_level((grid_pos[0], grid_pos[1], elevation))
+                if isinstance(global_cache.level_model.recorded_paths, list):
+                    global_cache.level_model.recorded_paths.append({
+                        'x': grid_pos[0], 'y': grid_pos[1], 'elevation': elevation, 'layer': best_layer
+                    })
+                    global_cache.level_model.save()
+                else:
+                    global_cache.level_model.recorded_paths = []
+                    global_cache.level_model.save()
+
+        models.ProjectTaskJSON.objects.filter(name='RecordPathTask').delete()
+        with connection.cursor() as cursor:
+            cursor.execute('vacuum;')
+        return Response("Success")

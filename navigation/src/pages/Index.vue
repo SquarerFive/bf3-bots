@@ -90,7 +90,7 @@ import { Todo, Meta } from 'components/models'
 import ExampleComponent from 'components/ClassComponent.vue'
 import { Component } from 'vue-property-decorator'
 import MapEditor from 'components/MapEditor.vue'
-import { Manager } from '../store/models'
+// import { Manager } from '../store/models'
 import Vue from 'vue'
 import { ManagerStore } from 'src/store/ManagerStoreModule'
 
@@ -256,7 +256,7 @@ export default class PageIndex extends Vue {
       this.activeNavToolClass = this.showNavtools ? 'navtools-card' : 'navtools-card-xtoggled'
     })
 
-    window.GameSyncManager = new Manager(this)
+    // window.GameSyncManager = new Manager(this)
   }
 }
 </script>

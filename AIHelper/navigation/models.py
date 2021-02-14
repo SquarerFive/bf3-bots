@@ -34,6 +34,7 @@ class Level(models.Model):
 
     friendly_kit = models.ForeignKey(SoldierKitCollection, on_delete=models.CASCADE, related_name='friendly_kit', null=True)
     enemy_kit = models.ForeignKey(SoldierKitCollection, on_delete=models.CASCADE, related_name='enemy_kit', null=True)
+    recorded_paths = models.JSONField(default=list, null=True, blank=True)
 
 class Project(models.Model):
     project_id = models.IntegerField(default = 0)

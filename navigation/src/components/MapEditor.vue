@@ -361,11 +361,11 @@ export default class MapEditor extends Vue {
       console.log('update map')
       if (this.playerFeatures) {
         this.playerFeatures.clearLayers()
-        this.manager.getPlayers().then(result => {
-          this.players = result
-        }).catch(err => {
-          console.error(err)
-        })
+        // this.manager.getPlayers().then(result => {
+        //   this.players = result
+        // }).catch(err => {
+        //   console.error(err)
+        // })
         this.players.forEach(player => {
           if (this.manager && this.playerFeatures) {
             const gridPos = this.manager.projectToGrid(player.transform.trans, this.level)

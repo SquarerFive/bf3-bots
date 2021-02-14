@@ -42,6 +42,23 @@ class Level:
 
     def classify_costs(self, elevation_based : bool = False, elevation_alpha_power : float = 0.05, elevation_alpha_beta : float = 1.5, elevation_alpha_beta_power : float = 7.0):
         scorecard.Scorecard.score(self.model, self.transform, self.data, self.elevation, self.costs, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
+        if isinstance(self.model.recorded_paths, list):
+            for path in self.model.recorded_paths:
+                level = path['layer']
+                min_elevation = np.min(self.elevation[level])
+                max_elevation = np.max(self.elevation[level])
+                x = path['x']
+                y = path['y']
+                for ox in range(-4, 5):
+                    for oy in range(-4, 5):
+                        ix = x + ox
+                        iy = y + oy
+                        if ix < self.elevation[level].shape[0] and iy < self.elevation[level].shape[1]:
+                            elevation_alpha = scorecard.remap(self.elevation[level][x][y], min_elevation, max_elevation, 0.0, 1.0)
+                            elevation_alpha = math.pow(math.pow(elevation_alpha, elevation_alpha_power)*elevation_alpha_beta, elevation_alpha_beta_power)*10
+                            elevation_value = scorecard.remap(elevation_alpha, 0.0, 1.0, min_elevation, max_elevation)
+                            self.costs[level][x][y] = 1 + max(elevation_value*0.25, 1.0)
+               
 
     def get_best_navmesh_level(self, position : Tuple[int, int, float]):
         d = math.inf
