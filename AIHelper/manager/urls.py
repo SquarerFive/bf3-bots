@@ -31,6 +31,7 @@ urlpatterns = [
     path("project/<int:project_id>/finish-record/", views.manager_on_recorded_path, name='manager-finish-record'),
     path("project/<int:project_id>/export/", views.manager_export_project, name='manager-export-project'),
     path("project/<int:project_id>/level/", views.manager_get_levels, name='manager-get-levels'),
+    path("project/<int:project_id>/level/<int:level_id>/add-spawn-point/<int:faction>/", views.manager_add_spawn_point, name='manager-add-spawn-point'),
     path("project/<int:project_id>/level/<int:level_id>/", views.manager_get_level, name='manager-get-level'),
     path("project/<int:project_id>/level/<int:level_id>/render/<int:raster_type>/<int:raster_layer>/", views.manager_render_level, name='manager-render-level'),
     path("project/<int:project_id>/level/add/", views.manager_add_level, name="manager-add-level"),

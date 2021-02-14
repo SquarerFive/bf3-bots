@@ -1078,5 +1078,25 @@ def manager_on_recorded_path(request : Request, project_id : int) -> Response:
                 cursor.execute('vacuum;')
             print("Rasterizing")
             level_object.classify_costs(just_paths=True, elevation_based = True, elevation_alpha_power=2.0, elevation_alpha_beta=1.5, elevation_alpha_beta_power=1.0)
+            global_cache.save_object()
             return Response("Success")
     return Response("Could not find active state or level", status=404)
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication, SessionAuthentication])
+@permission_classes([IsAuthenticated])
+def manager_add_spawn_point(request : Request, project_id : int, level_id : int, faction : int) -> Response:
+    global global_cache
+    if level_id == 99999999999999:
+        level_id = models.BF3GameManager.objects.first().active_level_id
+    print(request.data)
+    
+    level_object = global_cache.get_object(project_id, level_id)
+    if level_object:
+        spnts = global_cache.level_model.spawn_points_friendly if faction == 0 else global_cache.level_model.spawn_points_enemy
+        if isinstance(spnts, list):
+            spnts.append(request.data)
+        else:
+            spnts = [request.data]
+        global_cache.level_model.save()
+    return Response("Cannot find level.", status=404)

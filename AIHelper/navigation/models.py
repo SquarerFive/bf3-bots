@@ -36,6 +36,10 @@ class Level(models.Model):
     enemy_kit = models.ForeignKey(SoldierKitCollection, on_delete=models.CASCADE, related_name='enemy_kit', null=True)
     recorded_paths = models.JSONField(default=list, null=True, blank=True)
 
+    spawn_points_friendly = models.JSONField(default = list, null = True, blank = True) # f0
+    spawn_points_enemy = models.JSONField(default = list, null = True, blank = True) # f1
+    use_spawn_points = models.BooleanField(default=False)
+
 class Project(models.Model):
     project_id = models.IntegerField(default = 0)
     name = models.TextField(default = "no-map-name")

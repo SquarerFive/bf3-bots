@@ -30,6 +30,10 @@
           style="font-size: 12px; margin-top: -18px"
         >
         </q-toolbar-title>
+        <div class="row">
+          <q-btn push dense  :disable="!isLoggedIn || currentProjectName === 'default project'" :color="spawnPointFaction === '0' ? 'blue' : 'red'" text-color="dark" :label="spawnPointFaction" style="font-size: 11px; margin-top: -18px; padding: 0px; margin-right: 0px; border-radius: 0" @click="onToggleSpawnPointFaction"/>
+          <q-btn push dense :loading="isAddingSpawnPoint" :disable="!isLoggedIn || currentProjectName === 'default project'" :color="'warning'" text-color="dark" label="Add Spawn Point" style="font-size: 11px; margin-top: -18px; padding: 0px; margin-right: 5px; border-radius: 0" @click="onAddSpawnPoint"/>
+        </div>
         <q-btn push dense :loading="isRecordingSaving" :disable="!isLoggedIn || currentProjectName === 'default project'" :color="isRecording ? 'red' : 'warning'" text-color="dark" label="Record" style="font-size: 11px; margin-top: -18px; padding: 0px; margin-right: 5px;" @click="onToggleRecording"/>
         <q-btn push dense :disable="!isLoggedIn" color="warning" text-color="dark" label="Show bot configuration" style="font-size: 11px; margin-top: -18px; padding: 0px; margin-right: 5px;" @click="toggleBotConfiguration"/>
         <q-btn push dense color="warning" text-color="dark" label="Switch input to game." style="font-size: 11px; margin-top: -18px; padding: 0px; margin-right: 5px;" @click="switchInputToGame"/>
@@ -114,6 +118,8 @@ export default class MainLayout extends Vue {
 
   managerStore : ManagerStoreModule | null = null;
   isRecording = false
+  spawnPointFaction = '0'
+  isAddingSpawnPoint = false
 
   mounted () {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -196,6 +202,24 @@ export default class MainLayout extends Vue {
         }, 500)
       }
     }
+  }
+
+  onToggleSpawnPointFaction () {
+    if (this.spawnPointFaction === '0') {
+      this.spawnPointFaction = '1'
+    } else {
+      this.spawnPointFaction = '0'
+    }
+  }
+
+  onAddSpawnPoint () {
+    this.isAddingSpawnPoint = true
+    window.GameSyncManager.addSpawnPoint(window.GameSyncManager.currentPosition, parseInt(this.spawnPointFaction)).then(() => {
+      this.isAddingSpawnPoint = false
+    }).catch(err => {
+      this.isAddingSpawnPoint = false
+      console.error(err)
+    })
   }
 }
 </script>

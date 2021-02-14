@@ -704,6 +704,11 @@ export class Manager {
     const response = await this.get(`/v1/project/${ManagerStore.currentProject.project_id}/finish-record/`)
     return response
   }
+
+  async addSpawnPoint (position : Vector, faction : number) {
+    const response = await this.post(`/v1/project/${ManagerStore.currentProject.project_id}/level/99999999999999/add-spawn-point/${faction}/`, position)
+    return response
+  }
 }
 
 /**

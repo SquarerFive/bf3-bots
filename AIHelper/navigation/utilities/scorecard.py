@@ -145,6 +145,14 @@ def flip_scorecard(array, new_array):
             #new_array[v-y][x] = array[x][y]
             new_array[y][x] = array[x][y]     
 
+@njit
+def distance(x1 : float, y1 : float, z1 : float,  x2 : float, y2 : float, z2 : float ) -> float:
+    return math.sqrt(
+        math.pow(x2-x1, 2)+
+        math.pow(y2-y1, 2)+
+        math.pow(z2-z1, 2)
+    )
+
 # score our grid, 
 
 class Scorecard:
