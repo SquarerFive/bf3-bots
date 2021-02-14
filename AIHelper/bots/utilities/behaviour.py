@@ -9,7 +9,7 @@ from numba import njit
 import math
 
 from . import orders
-
+import random
 # It's important to note, that these thread are still attached to the main thread. 
 
 global_behaviour_thread : Union[ThreadPool, None] = None # ThreadPool(threads=2, config=TaskPoolConfig(10.0, 5.0))
@@ -62,7 +62,9 @@ def get_nearest_enemy(target : models.Bot, enemies : List[models.BasePlayer]) ->
         if distance_to_enemy < nearest_distance and enemy.alive:
             nearest_distance = distance_to_enemy
             nearest_enemy = enemy
-    
+    if nearest_enemy != None and target != None:
+        if abs(target.transform['trans']['y'] - nearest_enemy.transform['trans']['y']) > 5:
+            nearest_enemy = None
     return (nearest_enemy, nearest_distance)
 
 def compute(bot_id : int, current_level : Level, BotModels : models.Bot, PlayerModels : models.Player, ObjectiveModels : navigation_models.Objective, override_target = False, override_target_id = -2):
@@ -190,7 +192,13 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
 
         closest_enemy, distance_to_enemy = get_nearest_enemy(bot, enemies)
         bot_grid_pos = current_level.transform.transform_to_grid((bot.transform['trans']['x'], bot.transform['trans']['z']))
-
+        d = random.randrange(-2.0, 2.0)
+        bot_forward_grid_pos = current_level.transform.transform_to_grid(
+            (
+                bot.transform['trans']['x'] + (bot.transform['forward']['x']*d),
+                bot.transform['trans']['z'] + (bot.transform['forward']['z']*d)
+            )
+        )
         if bot.stuck:
             back = [bot.transform['forward']['x']*-5, bot.transform['forward']['y']*-5, bot.transform['forward']['z']*-5]
             target = bot.transform['trans']['x'] + back[0], bot.transform['trans']['y'] + back[1], bot.transform['trans']['z'] + back[2]
@@ -224,7 +232,7 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                 bot.order = orders.BotOrdersEnum.ENEMY
                 # bot.action = orders.BotActionEnum.ATTACK
                 bot.path = current_level.astar(
-                    bot_grid_pos,
+                    bot_forward_grid_pos,
                     enemy_grid_pos,
                     elevation=bot.transform['trans']['y']
                 )
@@ -246,7 +254,7 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                 end =  current_level.transform.transform_to_grid((float(closest_objective.transform['trans']['x']) , float(closest_objective.transform['trans']['z'])))
                 
                 path = current_level.astar(
-                    current_level.transform.transform_to_grid((bot.transform['trans']['x'], bot.transform['trans']['z'])),
+                    bot_forward_grid_pos,
                     end,
                     elevation=bot.transform['trans']['y']
                 )
@@ -264,7 +272,7 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                     # print('valid path to get in vehicle')
                     end =  current_level.transform.transform_to_grid((float(target.transform['trans']['x']) , float(target.transform['trans']['z'])))
                     bot.path = current_level.astar(
-                            bot_grid_pos,
+                            bot_forward_grid_pos,
                             end,
                             elevation=bot.transform['trans']['y']
                         )
