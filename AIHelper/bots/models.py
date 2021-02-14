@@ -26,7 +26,7 @@ class BasePlayer(models.Model):
 class Bot(BasePlayer):
     bot_index = models.IntegerField(default = 1) # index in botManager table
     action = models.IntegerField(default=2)
-    order  = models.IntegerField(default=1)
+    order  = models.IntegerField(default=2)
     path = models.JSONField(default=dict, blank=True, null=True)
     target = models.IntegerField(default = -1)
     overidden_target = models.IntegerField(default = -2)

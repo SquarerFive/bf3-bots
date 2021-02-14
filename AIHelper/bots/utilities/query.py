@@ -56,7 +56,7 @@ def create_or_update_bot_model(b : models.Bot, bot: dict):
             name=name, 
             team=bot['team'], 
             #action=bot['action'], 
-            order = bot['order'], 
+            order = 2, #bot['order'], 
             health = bot['health'], 
             in_vehicle=bot['in_vehicle'], 
             transform=bot['transform'], 

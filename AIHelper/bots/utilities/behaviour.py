@@ -81,15 +81,20 @@ def compute(bot_id : int, current_level : Level, BotModels : models.Bot, PlayerM
     # print("Compute", bot.action, int(orders.BotActionEnum.ATTACK), closest_objective, closest_enemy, objectives)
     if bot.alive:
         if bot.action == int(orders.BotActionEnum.ATTACK):
+            if bot.target == bot.player_id:
+                bot.target = -1
+            if models.Player.objects.filter(team = bot.team, player_id = bot.player_id).first():
+                bot.target = -1
             if (closest_enemy and distance_to_enemy < 120 or override_target) and not bot.in_vehicle: # TODO: change this to x within viewing angle of y 
                 # print(bot.in_vehicle)
                 # print("attack enemy")
                 # print('test')
                 enemy_grid_pos =  current_level.transform.transform_to_grid((float(closest_enemy.transform['trans']['x']) , float(closest_enemy.transform['trans']['z'])))
                 if override_target and models.Player.objects.filter(player_id=override_target_id).first():
-                    if not models.Player.objects.filter(player_id=override_target_id).first().alive:
+                    if not models.Player.objects.filter(player_id=override_target_id).first().alive or models.Player.objects.filter(player_id=override_target_id).first().team == bot.team:
                         override_target = False
                         bot.overidden_target = -2
+                
 
                 # Not a great method, as this opens up the change that the bot will target a friendly.
                 if not override_target:
@@ -104,6 +109,7 @@ def compute(bot_id : int, current_level : Level, BotModels : models.Bot, PlayerM
                     enemy_grid_pos
                 )
                 #print("path")
+                
                 if type(bot.path ) == type(None):
                     bot.path = []
                 else:
@@ -193,6 +199,9 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
             bot.path = current_level.astar(
                 bot_grid_pos, target_grid_pos, elevation=bot.transform['trans']['y']
             )
+            if models.Player.objects.filter(team = bot.team, player_id = bot.player_id).first():
+                bot.target = -1
+
            
 
         elif bot.action == int(orders.BotActionEnum.ATTACK):
@@ -208,7 +217,10 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                     bot.target = closest_enemy.player_id
                 else:
                     bot.target = override_target
-
+                if bot.player_id == bot.target:
+                    bot.target = -1
+                if bot.team == models.Player.objects.filter(player_id = bot.target).first().team:
+                    bot.target = -1
                 bot.order = orders.BotOrdersEnum.ENEMY
                 # bot.action = orders.BotActionEnum.ATTACK
                 bot.path = current_level.astar(

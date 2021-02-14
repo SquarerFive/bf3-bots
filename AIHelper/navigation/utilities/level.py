@@ -53,17 +53,21 @@ class Level:
                 p = 1
                 if idx > 0:
                     p = math.floor(math.pow(scorecard.distance(x,y,1, self.model.recorded_paths[idx-1]['x'], self.model.recorded_paths[idx-1]['y'], 1), 1))
-                print("Using radius:", p)
+                    if p > 10:
+                        p = 2
+                # print("Using radius:", p)
                 for ox in range(-p, p):
                     for oy in range(-p, p):
                         ix = x + ox
                         iy = y + oy
+                        self.elevation[level][ix][iy] = path['elevation']
                         if ix < self.elevation[level].shape[0] and iy < self.elevation[level].shape[1]:
                             elevation_alpha = scorecard.remap(self.elevation[level][ix][iy], min_elevation, max_elevation, 0.0, 1.0)
                             elevation_alpha = math.pow(math.pow(elevation_alpha, elevation_alpha_power)*elevation_alpha_beta, elevation_alpha_beta_power)*10
                             elevation_value = scorecard.remap(elevation_alpha, 0.0, 1.0, min_elevation, max_elevation)
                             self.costs[level][ix][iy] = 1 + max(elevation_value*0.25, 1.0)
-               
+            scorecard.Scorecard.score(self.model, self.transform, self.data, self.elevation, self.costs, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power, True)
+
 
     def get_best_navmesh_level(self, position : Tuple[int, int, float]):
         d = math.inf
