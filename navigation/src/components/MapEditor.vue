@@ -571,12 +571,12 @@ export default class MapEditor extends Vue {
             const c = this.buildingItemsLayers[i].addLayer(layer)
             c.setStyle({ color: this.forceGetFeatureColour(1) })
             // this.buildingItemsLayers[i].setStyle({ color: this.getFeatureColour(1) })
-            console.log('adding building layer', layer)
+            console.log('adding building layer', layer, i)
           })
         }
         const structureLayersJSON = this.manager.importFeatureCollectionJSON(this.level.structures, this.level)
         for (let i = 0; i < structureLayersJSON.length; ++i) {
-          structureLayers[i].forEach(layer => {
+          structureLayersJSON[i].forEach(layer => {
             this.buildingItemsJSONLayers[i].addLayer(layer)
             // this.buildingItemsJSONLayers[i].setStyle({ color: this.getFeatureColour(1) })
           })

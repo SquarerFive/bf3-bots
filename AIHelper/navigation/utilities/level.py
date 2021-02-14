@@ -47,7 +47,7 @@ class Level:
         d = math.inf
         l = 1
         for level in range(self.elevation.shape[0]):
-            c = (self.elevation[level][position[0]][position[1]] - position[2])
+            c = abs(self.elevation[level][position[0]][position[1]] - position[2])
             if c < d:
                 d = c
                 l = level
@@ -200,9 +200,14 @@ class Level:
                 wxy = self.transform.transform_to_world(p)
                 world_paths.append({
                     "x": wxy[0],
-                    "y": elevation, #self.elevation[1][p[0]][p[1]]+1,
+                    "y": self.elevation[best_level][p[0]][p[1]]+1,
                     "z": wxy[1]
                 })
+                if idx > 1 and idx < len(path)-1:
+                    if abs(world_paths[idx]['y']-world_paths[idx-1]['y']) > 2.0:
+                        print("finding depth path")
+                        world_paths += self.astar(p, end, elevation=world_paths[idx-1]['y'])
+                        break
                 if idx > 50:
                     break
         else:

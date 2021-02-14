@@ -543,7 +543,7 @@ export class Manager {
                         if (this) {
                           const newPos = this.projectToGrid(
                             {
-                              x: level.transform.height - pt[i][j][k].lat,
+                              x: (level.transform.height - pt[i][j][k].lat) - level.transform.height,
                               z: pt[i][j][k].lng,
                               y: 0
                             },
@@ -578,9 +578,12 @@ export class Manager {
                 const pt : LatLng[] = <LatLng[]>points
                 for (let i = 0; i < pt.length; ++i) {
                   if (this) {
-                    const newPos = this.projectToWorld(
-                      pt[i].lng,
-                      pt[i].lat,
+                    const newPos = this.projectToGrid(
+                      {
+                        x: (level.transform.height - pt[i].lat),
+                        z: pt[i].lng,
+                        y: 0
+                      },
                       level
                     )
                     pt[i] = new LatLng(newPos[0], newPos[1])

@@ -26,22 +26,24 @@ def score_fast(
     max_elevation = elevation_arr[level].max()
     for x in prange(input_arr.shape[1]):
         for y in prange(input_arr.shape[2]):
-            if roads_mask[x][y]:
-                elevation_alpha = remap(elevation_arr[level][x][y], min_elevation, max_elevation, 0.0, 1.0)
-                elevation_alpha = math.pow(math.pow(elevation_alpha, elevation_alpha_power)*elevation_alpha_beta, elevation_alpha_beta_power)*10
-                elevation_value = remap(elevation_alpha, 0.0, 1.0, min_elevation, max_elevation)
-                if elevation_arr[level][x][y] > 0.0:
-                    target[level][x][y] = 1 + max(elevation_value*0.25, 1.0)
-                else:
-                    target[level][x][y] = math.inf
-            if structures_mask[x][y]:
-                elevation_alpha = remap(elevation_arr[level][x][y], min_elevation, max_elevation, 0.0, 1.0)
-                elevation_alpha = math.pow(math.pow(elevation_alpha, elevation_alpha_power)*elevation_alpha_beta, elevation_alpha_beta_power)*10
-                elevation_value = remap(elevation_alpha, 0.0, 1.0, min_elevation, max_elevation)
-                if elevation_arr[level][x][y] > 0.0:
-                    target[level][x][y] = 1 + max(elevation_value*2.25, 1.0)
-                else:
-                    target[level][x][y] = math.inf
+            if roads_mask[x][y] or structures_mask[x][y]:
+                if roads_mask[x][y]:
+                    elevation_alpha = remap(elevation_arr[level][x][y], min_elevation, max_elevation, 0.0, 1.0)
+                    elevation_alpha = math.pow(math.pow(elevation_alpha, elevation_alpha_power)*elevation_alpha_beta, elevation_alpha_beta_power)*10
+                    elevation_value = remap(elevation_alpha, 0.0, 1.0, min_elevation, max_elevation)
+                    if elevation_arr[level][x][y] > 0.0:
+                        target[level][x][y] = 1 + max(elevation_value*0.25, 1.0)
+                    else:
+                        target[level][x][y] = math.inf
+                if structures_mask[x][y]:
+                    elevation_alpha = remap(elevation_arr[level][x][y], min_elevation, max_elevation, 0.0, 1.0)
+                    elevation_alpha = math.pow(math.pow(elevation_alpha, elevation_alpha_power)*elevation_alpha_beta, elevation_alpha_beta_power)*10
+                    elevation_value = remap(elevation_alpha, 0.0, 1.0, min_elevation, max_elevation)
+                    if elevation_arr[level][x][y] > 0.0:
+                        target[level][x][y] = 1 + max(elevation_value*2.25, 1.0)
+                    else:
+                        target[level][x][y] = math.inf
+            
             else:
                 if level == 0 and not elevation_based:
                     if input_arr[level][x][y] == 0.0:# or roads_mask[x][y]:
@@ -89,6 +91,7 @@ def score(model: models.Level, transform : transformations.GridTransform,  input
     if model.roads:
         if isinstance(model.roads, list):
             if 'features' in list(model.roads[layer].keys()):
+                print("Valid road for layer: ", layer)
                 roads_valid = True
     if roads_valid:
         roads_data = model.roads[layer]['features']

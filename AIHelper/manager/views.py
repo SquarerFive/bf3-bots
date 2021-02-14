@@ -472,7 +472,9 @@ def manager_start_all_tasks(request: Request, project_id : int) -> Response:
 @permission_classes([IsAuthenticated])
 def manager_add_level_feature(request: Request, project_id : int, level_id : int, feature_type: str):
     global global_cache
-    level_model : navigation_models.Level = navigation_query.models.Level.objects.filter(project_id=project_id, level_id=level_id).first()
+    global_cache.get_object(project_id, level_id)
+    level_model = global_cache.level_model
+    # level_model : navigation_models.Level = navigation_query.models.Level.objects.filter(project_id=project_id, level_id=level_id).first()
     if feature_type == 'road':
         level_model.roads = json.loads(request.body.decode('utf-8'))
         level_model.save()
@@ -480,8 +482,8 @@ def manager_add_level_feature(request: Request, project_id : int, level_id : int
     if feature_type == 'structure':
         level_model.structures = json.loads(request.body.decode('utf-8'))
         level_model.save()
-        print("Added structure")
-        
+        print("Added structure", level_model.structures)
+    global_cache.save_object()
     return Response('Success')
 
 @api_view(['POST'])
@@ -593,6 +595,7 @@ def manager_recalculate_costs(request : Request, project_id : int, level_id : in
     if level_object:
         level_object.classify_costs(elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
         global_cache.save_object()
+        print("Saving")
         return Response("Success!")
     return Response("Failed to find level!", status=404)
 

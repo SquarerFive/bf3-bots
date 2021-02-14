@@ -94,6 +94,7 @@ class Command(BaseCommand):
                     b_array = []
                     # t = []
                     for bot in bot_models.Bot.objects.all():
+                        print("Doing bot: ", bot.bot_index)
                         # thread_pool.enqueue(
                         #     # lambda : behaviour.compute(bot.bot_index, level_object, bot_models.Bot, bot_models.Player, navigation_models.Objective, True, bot.overidden_target)
                         #     lambda : behaviour.compute_model(bot, level_object, True, bot.overidden_target)

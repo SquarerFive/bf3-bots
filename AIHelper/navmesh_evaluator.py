@@ -92,13 +92,14 @@ def get_path_to(start, end):
         path = pyastar.astar_path(arr, (344, 601),  get_valid_point_in_radius(arr, 353, 631), allow_diagonal=True)
 
 
-with open("./models/Project/BF3 Bots 0.0.4/Level/XP1_004/elevation.npy", "rb") as f:
+with open("./models/Project/BF3 Bots 0.0.4/Level/MP_Subway/elevation.npy", "rb") as f:
     elevation = numpy.load(f)[0]
 
-with open("./models/Project/BF3 Bots 0.0.4/Level/XP1_004/data.npy", "rb") as f:
+with open("./models/Project/BF3 Bots 0.0.4/Level/MP_Subway/data.npy", "rb") as f:
     with open('./models/Project/BF3 Bots 0.0.4/Level/MP_Subway/elevation.npy', 'rb') as fx:
         elevation_arr = numpy.load(fx)[0]
-
+    with open('./models/Project/BF3 Bots 0.0.4/Level/MP_Subway/costs.npy', 'rb') as fx:
+        costs_arr = numpy.load(fx)[1]
     arr = numpy.load(f)[0]
     new_arr = numpy.zeros(arr.shape)
     print(new_arr.shape, arr.shape)
@@ -144,7 +145,7 @@ with open("./models/Project/BF3 Bots 0.0.4/Level/XP1_004/data.npy", "rb") as f:
     
 
     print(arr)
-    image = Image.fromarray((elevation_arr*255).astype(numpy.uint8), mode="L")
+    image = Image.fromarray((arr*255).astype(numpy.uint8), mode="L")
     image.save("test.png")
-    pyplot.imshow(elevation_arr)
+    pyplot.imshow(costs_arr)
     pyplot.show()
