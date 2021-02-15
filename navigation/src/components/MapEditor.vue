@@ -11,7 +11,10 @@
             <q-btn label="Reset Level" flat color="warning" text-color="white" style="width:50%;" @click="onClickResetLevel"/>
           </div>
           <div>
-            <q-checkbox dark label="Elevation-Based scoring" v-model="elevationBasedScoring" />
+            <q-checkbox dark label="Elevation-Based Mesh" v-model="elevationBasedScoring" @input="onElevationBasedInput" />
+          </div>
+          <div>
+            <q-checkbox dark label="VoxelDF-Based Mesh" v-model="voxelDFBasedMesh" @input="onVoxelDFInput" />
           </div>
           <q-item>
           <q-item-section>
@@ -145,6 +148,7 @@ export default class MapEditor extends Vue {
   elevationAlphaPower = '0.05'
   elevationAlphaBeta = '1.5'
   elevationAlphaBetaPower = '7.0'
+  voxelDFBasedMesh = false
 
   drawingColors = [
     '#ff7017',
@@ -615,9 +619,21 @@ export default class MapEditor extends Vue {
   onClickRecalculateCosts () {
     if (this.manager) {
       this.isRecalculating = true
-      this.manager.recalculateCosts(this.level.project_id, this.level.level_id, this.elevationBasedScoring, parseFloat(this.elevationAlphaPower), parseFloat(this.elevationAlphaBeta), parseFloat(this.elevationAlphaBetaPower)).then(() => {
+      this.manager.recalculateCosts(this.level.project_id, this.level.level_id, this.elevationBasedScoring, this.voxelDFBasedMesh, parseFloat(this.elevationAlphaPower), parseFloat(this.elevationAlphaBeta), parseFloat(this.elevationAlphaBetaPower)).then(() => {
         this.isRecalculating = false
       }).catch(err => { console.error(err); this.isRecalculating = false })
+    }
+  }
+
+  onElevationBasedInput (val : boolean) {
+    if (val) {
+      this.voxelDFBasedMesh = false
+    }
+  }
+
+  onVoxelDFInput (val : boolean) {
+    if (val) {
+      this.elevationBasedScoring = false
     }
   }
 }
