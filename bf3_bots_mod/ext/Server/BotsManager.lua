@@ -328,10 +328,12 @@ function BotsManager:OnLevelLoaded(levelName, gameMode, round, roundsPerMap)
         local encoded_data = json.encode(data)
         local result = self:PostManager('/project/'..self.project_id..'/get-level-id/', encoded_data)
         print(result.body)
-        if tostring(result.body) ~= 'error' then
-            local level_id = math.floor(tonumber(result.body))
-            self:PostManager('/project/'..self.project_id..'/level/'..tostring(level_id)..'/on-level-loaded/', '{}')
-            self:InitialiseHeartbeatSettings()
+        if tostring(result.body) ~= "error" then
+            if tonumber(result.body) ~= nil then
+                local level_id = math.floor(tonumber(result.body))
+                self:PostManager('/project/'..self.project_id..'/level/'..tostring(level_id)..'/on-level-loaded/', '{}')
+                self:InitialiseHeartbeatSettings()
+            end
         end
     end
     if #self.bots > 0 then
