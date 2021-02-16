@@ -72,7 +72,11 @@
             </q-item>
           </q-scroll-area>
         </q-list>
-
+        <q-card-section class="row">
+          <div class="col">
+          <q-checkbox v-model="confirmClear" style="margin: 0; padding:0;" /><q-btn :loading="isClearingTasks" :disable="!confirmClear" style="margin: 0; padding:0;border-radius: 0;" dense color="warning" text-color="dark" label="Clear all Tasks" @click="onClickClearAllTasks"/>
+          </div>
+        </q-card-section>
         <q-card-actions align="right">
           <q-btn flat label="OK" color="primary" v-close-popup />
         </q-card-actions>
@@ -113,6 +117,8 @@ export default class ProjectLayout extends Vue {
     currentProject : Project = defaultProject;
     tasks : ProjectTask[] = [];
     loading = false
+    confirmClear = false
+    isClearingTasks = false
 
     mounted () {
       this.manager = new Manager(this)
@@ -155,6 +161,18 @@ export default class ProjectLayout extends Vue {
         }).catch(err => {
           console.error(err)
           this.loading = false
+        })
+      }
+    }
+
+    onClickClearAllTasks () {
+      if (this.manager) {
+        this.isClearingTasks = true
+        this.manager.clearAllTasks().then(() => {
+          this.isClearingTasks = false
+        }).catch(err => {
+          this.isClearingTasks = false
+          console.error(err)
         })
       }
     }

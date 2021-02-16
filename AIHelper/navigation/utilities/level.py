@@ -3,7 +3,7 @@ from . import scorecard
 from .. import models
 
 import numpy as np
-from matplotlib import pyplot
+from matplotlib import pyplot, use
 from skimage.graph import route_through_array, shortest_path
 import math
 
@@ -31,6 +31,7 @@ class Level:
         self.data = None
         self.elevation = None
         self.costs = None
+        self.df = None
         self.costs_canvas = None
         self.costs_preview = None
         self.name = name
@@ -40,14 +41,17 @@ class Level:
 
         self.model = model
 
-    def classify_costs(self, elevation_based : bool = False, elevation_alpha_power : float = 0.05, elevation_alpha_beta : float = 1.5, elevation_alpha_beta_power : float = 7.0, just_paths = False):
+    def classify_costs(self, elevation_based : bool = False, elevation_alpha_power : float = 0.05, elevation_alpha_beta : float = 1.5, elevation_alpha_beta_power : float = 7.0, just_paths = False, use_df = False):
         if not just_paths:
-            scorecard.Scorecard.score(self.model, self.transform, self.data, self.elevation, self.costs, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
+            scorecard.Scorecard.score(self.model, self.transform, self.data, self.elevation, self.df, self.costs, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power, use_df=use_df)
         if isinstance(self.model.recorded_paths, list):
             for idx, path in enumerate(self.model.recorded_paths):
                 level = path['layer']
-                min_elevation = np.min(self.elevation[level])
-                max_elevation = np.max(self.elevation[level])
+                array_to_use = self.elevation
+                if use_df:
+                    array_to_use = self.df
+                min_elevation = np.min(array_to_use[level])
+                max_elevation = np.max(array_to_use[level])
                 x = path['x']
                 y = path['y']
                 p = 1
@@ -56,17 +60,18 @@ class Level:
                     if p > 10:
                         p = 2
                 # print("Using radius:", p)
+                
                 for ox in range(-p, p):
                     for oy in range(-p, p):
                         ix = x + ox
                         iy = y + oy
                         self.elevation[level][ix][iy] = path['elevation']
                         if ix < self.elevation[level].shape[0] and iy < self.elevation[level].shape[1]:
-                            elevation_alpha = scorecard.remap(self.elevation[level][ix][iy], min_elevation, max_elevation, 0.0, 1.0)
+                            elevation_alpha = scorecard.remap(array_to_use[level][ix][iy], min_elevation, max_elevation, 0.0, 1.0)
                             elevation_alpha = math.pow(math.pow(elevation_alpha, elevation_alpha_power)*elevation_alpha_beta, elevation_alpha_beta_power)*10
                             elevation_value = scorecard.remap(elevation_alpha, 0.0, 1.0, min_elevation, max_elevation)
                             self.costs[level][ix][iy] = 1 + max(elevation_value*0.25, 1.0)
-            scorecard.Scorecard.score(self.model, self.transform, self.data, self.elevation, self.costs, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power, True)
+            scorecard.Scorecard.score(self.model, self.transform, self.data, self.elevation, self.df, self.costs, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power, True, use_df=use_df)
 
 
     def get_best_navmesh_level(self, position : Tuple[int, int, float]):
@@ -92,6 +97,8 @@ class Level:
         self.elevation = np.zeros((10, _width, _height))
         self.costs = np.zeros((10, _width, _height))
         self.costs_canvas = np.zeros((10, _width, _height))
+
+        self.df = np.zeros((10, _width, _height))
     
     def sensecheck(self):
         try:
@@ -132,6 +139,13 @@ class Level:
     def set_data_at(self, value : int, index_x : int, index_y : int, level : int = 0):
         try:
             self.data[level][index_y-1][index_x-1] = value
+        except Exception as e:
+            print(level, index_x-1, index_y-1)
+            raise(e)
+
+    def set_df_at(self, value : float, index_x : int, index_y : int, level : int = 0):
+        try:
+            self.df[level][index_y-1][index_x-1] = value
         except Exception as e:
             print(level, index_x-1, index_y-1)
             raise(e)
@@ -232,10 +246,17 @@ class Level:
                 if idx > 1 and idx < len(path)-1:
                     if abs(world_paths[idx]['y']-world_paths[idx-1]['y']) > 5.0 and recurse_depth < 1:
                         print("finding depth path")
-                        world_paths += self.astar(path[idx+4], end, elevation=elevation, recurse_depth = recurse_depth+1)
+                        world_paths += self.astar(path[idx+2], end, elevation=elevation, recurse_depth = recurse_depth+1)
                         break
+                
                 if idx > 50:
                     break
+            for idx, wp in enumerate(world_paths):
+                if idx > 1 and idx+4 < len(path)-1:
+                    if abs(world_paths[idx+4]['y']-world_paths[idx-1]['y']) > 5.0 and recurse_depth < 1:
+                        print("finding depth path")
+                        world_paths[idx:] = self.astar(path[idx+4], end, elevation=elevation, recurse_depth = recurse_depth+1)
+                        break
         else:
             None
 

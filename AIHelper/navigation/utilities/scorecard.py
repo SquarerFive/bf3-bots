@@ -20,18 +20,20 @@ def score_fast(
     elevation_based : bool = False,
     elevation_alpha_power : float = 0.05, 
     elevation_alpha_beta : float = 1.5, 
-    elevation_alpha_beta_power : float = 7.0
+    elevation_alpha_beta_power : float = 7.0,
+    df_based : bool = False
     ):
     min_elevation = elevation_arr[level].min()
     max_elevation = elevation_arr[level].max()
     for x in prange(input_arr.shape[1]):
         for y in prange(input_arr.shape[2]):
-            if roads_mask[x][y] or structures_mask[x][y]:
+            if (roads_mask[x][y] or structures_mask[x][y]) and not df_based:
                 if roads_mask[x][y]:
                     elevation_alpha = remap(elevation_arr[level][x][y], min_elevation, max_elevation, 0.0, 1.0)
                     elevation_alpha = math.pow(math.pow(elevation_alpha, elevation_alpha_power)*elevation_alpha_beta, elevation_alpha_beta_power)*10
                     elevation_value = remap(elevation_alpha, 0.0, 1.0, min_elevation, max_elevation)
                     if elevation_arr[level][x][y] > 0.0:
+                        # print(target)
                         target[level][x][y] = 1 + max(elevation_value*0.25, 1.0)
                     else:
                         target[level][x][y] = math.inf
@@ -45,7 +47,7 @@ def score_fast(
                         target[level][x][y] = math.inf
             
             else:
-                if level == 0 and not elevation_based:
+                if level == 0 and not (elevation_based or df_based):
                     if input_arr[level][x][y] == 0.0:# or roads_mask[x][y]:
                         target[level][x][y] = 1.0 + (elevation_arr[level][x][y])
                     if input_arr[level][x][y] == 256:
@@ -57,14 +59,20 @@ def score_fast(
                         elevation_alpha = math.pow(math.pow(elevation_alpha, elevation_alpha_power)*elevation_alpha_beta, elevation_alpha_beta_power)
                         elevation_value = remap(elevation_alpha, 0.0, 1.0, min_elevation, max_elevation)
                         target[level][x][y] = 700 + elevation_value 
-                elif level > 0 or elevation_based:
-                    elevation_alpha = remap(elevation_arr[level][x][y], min_elevation, max_elevation, 0.0, 1.0)
-                    elevation_alpha = math.pow(math.pow(elevation_alpha, elevation_alpha_power)*elevation_alpha_beta, elevation_alpha_beta_power)*10
-                    elevation_value = remap(elevation_alpha, 0.0, 1.0, min_elevation, max_elevation)
-                    if elevation_arr[level][x][y] > 0.0:
-                        target[level][x][y] = 1 + max(elevation_value, 1.0)
+                elif (level > 0 or elevation_based) and not df_based:
+                    if min_elevation > 0.0 and max_elevation > 0.0:
+                        elevation_alpha = remap(elevation_arr[level][x][y], min_elevation, max_elevation, 0.0, 1.0)
+                        elevation_alpha = math.pow(math.pow(elevation_alpha, elevation_alpha_power)*elevation_alpha_beta, elevation_alpha_beta_power)*10
+                        elevation_value = remap(elevation_alpha, 0.0, 1.0, min_elevation, max_elevation)
+                        if elevation_arr[level][x][y] > 0.0:
+                            target[level][x][y] = 1 + max(elevation_value, 1.0)
+                        else:
+                            target[level][x][y] = math.inf
                     else:
                         target[level][x][y] = math.inf
+                    
+                elif df_based:
+                    target[level][x][y] = max(1.0, 1.0 + math.pow((max_elevation - elevation_arr[level][x][y]), 4.5)*25.0)
 
 @njit(parallel=True)
 def score_fast_masks(
@@ -77,13 +85,14 @@ def score_fast_masks(
     elevation_based : bool = False,
     elevation_alpha_power : float = 0.05, 
     elevation_alpha_beta : float = 1.5, 
-    elevation_alpha_beta_power : float = 7.0
+    elevation_alpha_beta_power : float = 7.0,
+    df_based : bool = False
     ):
     min_elevation = elevation_arr[level].min()
     max_elevation = elevation_arr[level].max()
     for x in prange(input_arr.shape[1]):
         for y in prange(input_arr.shape[2]):
-            if roads_mask[x][y] or structures_mask[x][y]:
+            if (roads_mask[x][y] or structures_mask[x][y]) and not df_based:
                 if roads_mask[x][y]:
                     elevation_alpha = remap(elevation_arr[level][x][y], min_elevation, max_elevation, 0.0, 1.0)
                     elevation_alpha = math.pow(math.pow(elevation_alpha, elevation_alpha_power)*elevation_alpha_beta, elevation_alpha_beta_power)*10
@@ -119,8 +128,8 @@ def get_world_array(transform : transformations.GridTransform, input_arr : np.nd
     get_world_array_fast(x_arr, y_arr, (*transform.min_point,), (*transform.max_point,), transform.width, transform.height)
     return (x_arr, y_arr)
 
-def score(model: models.Level, transform : transformations.GridTransform,  input_arr : np.ndarray, elevation_arr : np.ndarray, target : np.ndarray, layer : int = 0, elevation_based : bool = False,
-    elevation_alpha_power : float = 0.05, elevation_alpha_beta : float = 1.5, elevation_alpha_beta_power : float = 7.0, masks_only = False):
+def score(model: models.Level, transform : transformations.GridTransform,  input_arr : np.ndarray, elevation_arr : np.ndarray, distance_field_arr : np.ndarray, target : np.ndarray, layer : int = 0, elevation_based : bool = False,
+    elevation_alpha_power : float = 0.05, elevation_alpha_beta : float = 1.5, elevation_alpha_beta_power : float = 7.0, masks_only = False, use_df = False):
     roads_valid = False
     structures_valid = False
     if model.roads:
@@ -147,16 +156,24 @@ def score(model: models.Level, transform : transformations.GridTransform,  input
     else:
         structures_mask = np.full((input_arr.shape[1], input_arr.shape[2]), False, dtype=bool)
 
-    print(f"""elevationAlphaPower: {elevation_alpha_power}
+    print(f"""
+    "useDF: {use_df}
+    elevationAlphaPower: {elevation_alpha_power}
     elevationAlphaBeta: {elevation_alpha_beta}
     elevationAlphaBetaPower: {elevation_alpha_beta_power} """)
     try:
+        arr_to_use = elevation_arr
+        if use_df:
+            arr_to_use = distance_field_arr
+            arr_to_use = np.power(arr_to_use, 0.2)
         if not masks_only:
-            score_fast(input_arr, elevation_arr, target, layer,  road_mask, structures_mask, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
+            
+            score_fast(input_arr, arr_to_use, target, layer,  road_mask, structures_mask, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power, df_based=use_df)
         else:
-            score_fast_masks(input_arr, elevation_arr, target, layer,  road_mask, structures_mask, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
+            score_fast_masks(input_arr, arr_to_use, target, layer,  road_mask, structures_mask, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power, df_based=use_df)
     except Exception as e:
-        print("Failed to score, ", str(e))
+        print("Failed to score, ", str(e), target)
+        raise(e)
     structures_mask = None
     # print('mask', mask)
     # print('roads', roads, Point(-630, -450).intersects(roads))
@@ -195,11 +212,11 @@ def distance(x1 : float, y1 : float, z1 : float,  x2 : float, y2 : float, z2 : f
 
 class Scorecard:
     @staticmethod
-    def score(model : models.Level, transform : transformations.GridTransform, input_arr:np.ndarray, elevation_arr : np.ndarray, target:np.ndarray, elevation_based = False, 
-        elevation_alpha_power : float = 0.05, elevation_alpha_beta : float = 1.5, elevation_alpha_beta_power : float = 7.0, masks_only : bool = False) -> None:
+    def score(model : models.Level, transform : transformations.GridTransform, input_arr:np.ndarray, elevation_arr : np.ndarray, distance_field_arr : np.ndarray, target:np.ndarray, elevation_based = False, 
+        elevation_alpha_power : float = 0.05, elevation_alpha_beta : float = 1.5, elevation_alpha_beta_power : float = 7.0, masks_only : bool = False, use_df : bool = False) -> None:
         # score_fast(input_arr, elevation_arr, target)
         for level in range(input_arr.shape[0]):
-            score(model, transform, input_arr, elevation_arr, target, level, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power, masks_only)
+            score(model, transform, input_arr, elevation_arr, distance_field_arr, target, level, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power, masks_only, use_df)
         # score(model, transform, input_arr, elevation_arr, target, 1, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
         # score(model, transform, input_arr, elevation_arr, target, 2, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
         # score(model, transform, input_arr, elevation_arr, target, 3, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)

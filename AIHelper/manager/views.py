@@ -33,9 +33,6 @@ from manager import models
 import random
 
 from django.db import connection
-
-from background_task import background
-from .tasks import manager_compute
 import time
 
 import pytz
@@ -272,6 +269,7 @@ def push_level_block(slot : LevelBlockInterface, levelObject : level.Level):
         for level, value in enumerate(slot.values):
             levelObject.set_elevation_at(value['elevation'], slot.x, slot.y, level)
             levelObject.set_data_at(value['value'], slot.x, slot.y, level)
+            levelObject.set_df_at(value['df'], slot.x, slot.y, level)
     except Exception as e:
         print(slot.values, e)
         # levelObject.set_elevation_at(slot.values[0][0]['elevation'], slot.x, slot.y)
@@ -463,8 +461,7 @@ def manager_start_all_tasks(request: Request, project_id : int) -> Response:
     # navigation_query.encode_level(levelObject)
     global_cache.save_object()
     print('done')
-    for task in models.ProjectTaskJSON.objects.all():
-        task.delete()
+    models.ProjectTaskJSON.objects.all().delete()
     with connection.cursor() as cursor:
         cursor.execute('vacuum;')
         
@@ -528,7 +525,7 @@ def manager_update_level(request: Request, project_id : int) -> Response:
             if (bot_model):
                 bots_query.create_or_update_bot_model(bot_model, bot)
                 b_array.append(bot_model)
-            else:
+            
                 active_collection = friendly_faction_kit_collection if bot['team'] == 0 else enemy_faction_kit_collection
                 kits = [
                     models.SoldierKit.objects.filter(collection_id=active_collection.id, collection_slot=0).first(),
@@ -575,10 +572,11 @@ def manager_emit_event(request : Request) -> Response:
     return Response('Success')
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@authentication_classes([TokenAuthentication, SessionAuthentication])
+@permission_classes([IsAuthenticated])
 def manager_clear_tasks(request : Request) -> Response:
-    for task in models.ProjectTaskJSON.objects.all():
-        task.delete()
+    models.ProjectTaskJSON.objects.all().delete()
+        
 
     table_name = models.ProjectTaskJSON._meta.db_table
     with connection.cursor() as cursor:
@@ -597,8 +595,9 @@ def manager_recalculate_costs(request : Request, project_id : int, level_id : in
     elevation_alpha_power = float(request.data['elevation_alpha_power'])
     elevation_alpha_beta = float(request.data['elevation_alpha_beta'])
     elevation_alpha_beta_power = float(request.data['elevation_alpha_beta_power'])
+    use_df = bool(request.data['use_df'])
     if level_object:
-        level_object.classify_costs(elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power)
+        level_object.classify_costs(elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power, use_df=use_df)
         global_cache.save_object()
         print("Saving")
         return Response("Success!")

@@ -66,6 +66,7 @@
                         <q-item style="margin-top:50px;">
                             <q-item-section>
                                 <q-checkbox label="Elevation-based Scoring" v-model="elevationBasedScoring" dark />
+                                <q-checkbox label="DF-based Scoring" v-model="dfBasedScoring" dark />
                             </q-item-section>
                         </q-item>
                         <q-item style="margin-top: 0px" >
@@ -109,6 +110,7 @@ export default class AddLevel extends Vue {
     initializedGameSyncManager = false
     isBuilding = false
     elevationBasedScoring = false
+    dfBasedScoring = false
 
     config : LevelBuildSettings = {
       level_name: '',
@@ -118,7 +120,8 @@ export default class AddLevel extends Vue {
       iterations_y: 0,
       voxel_step_size: 32.0,
       voxel_size: 1.0,
-      elevation_based_scoring: this.elevationBasedScoring
+      elevation_based_scoring: this.elevationBasedScoring,
+      df_based_scoring: this.dfBasedScoring
     }
 
     get buildProgress () {

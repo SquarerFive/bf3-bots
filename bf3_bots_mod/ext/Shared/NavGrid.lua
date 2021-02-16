@@ -96,6 +96,7 @@ function NavGrid:__init()
     self.project_id = 0
 
     self.elevation_based_scoring = false
+    self.df_based_scoring = false
     
     
     if #cachedSpatialEntities == 0 then
@@ -222,11 +223,12 @@ end
 
 
 
-function NavGrid.CreateFromBounds(size_x, size_z, min_point, max_point, start_x, start_z, profile, project_id, width, height, elevation_based_scoring)
+function NavGrid.CreateFromBounds(size_x, size_z, min_point, max_point, start_x, start_z, profile, project_id, width, height, elevation_based_scoring, df_based_scoring)
     local self = NavGrid()
     self.profile = profile
     self.project_id = project_id
     self.elevation_based_scoring = elevation_based_scoring
+    self.df_based_scoring = df_based_scoring
     local center_position = min_point + Vec3(self.cell_size/2, self.cell_size/2, self.cell_size/2)
     center_position = Vec3(center_position.x, center_position.y+300, center_position.z)
     --local jsonContentScores = '{ "scores": ['
@@ -300,7 +302,7 @@ end
 function NavGrid:RaycastAndScore(Start, End, OldScore)
 
     local hits = self.NestedRaycast(Start, End, Vec3(0.0, -1.0, 0.0), 10)
-    local results = {} -- { 1: { value: 0.0, elevation: 0.0 } }
+    local results = {} -- { 1: { value: 0.0, elevation: 0.0, df: 0.0 } }
     for i, hit in pairs(hits) do
         local score = 256
         local elevation = -6969420
@@ -328,6 +330,12 @@ function NavGrid:RaycastAndScore(Start, End, OldScore)
             local r = {}
             r['value'] = score
             r['elevation'] = elevation
+            if self.df_based_scoring then
+                r['df'] = tonumber(self:VoxelRaycastDF(Vec3(hit.position.x, hit.position.y+0.5, hit.position.z)))
+            else
+                r['df'] = 0.0
+            end
+            -- print('DF '..r['df'])
             table.insert(results, r)
         end
     end
@@ -437,7 +445,10 @@ function NavGrid:Extend(size_x, size_z, min_point, max_point, start_x, start_z, 
     end
 
     local dataToPush = json.encode(cacheData)
-
+    if dataToPush == nil then
+        local d, error = json.encode(cacheData)
+        print('encountered error: '..error)
+    end
     local headers = {}
     local options = HttpOptions(headers, 90)
     options:SetHeader("Content-Type", "application/json")
@@ -491,6 +502,32 @@ end
 
 function NavGrid.Test()
     return ''
+end
+
+function NavGrid:VoxelRaycastDF(p)
+    local d = 9999999999
+    local angles = {
+        Vec3(p.x+6000, p.y, p.z),
+        Vec3(p.x-6000, p.y, p.z),
+        Vec3(p.x, p.y, p.z+6000),
+        Vec3(p.x, p.y, p.z-6000),
+        Vec3(p.x-6000, p.y, p.z-6000),
+        Vec3(p.x+6000, p.y, p.z-6000),
+        Vec3(p.x+6000, p.y, p.z+6000),
+        Vec3(p.x-6000, p.y, p.z+6000),
+        Vec3(p.x+6000, p.y+6000, p.z+6000),
+        Vec3(p.x+6000, p.y+6000, p.z-6000),
+        Vec3(p.x-6000, p.y+6000, p.z-6000),
+        Vec3(p.x-6000, p.y+6000, p.z+6000),
+    }
+    for _, a in pairs(angles) do
+        local ray = RaycastManager:Raycast(p, a, RayCastFlags.IsAsyncRaycast)
+        if (ray ~= nil) then
+            d = math.min(d, ray.position:Distance(p))
+        end
+    end
+
+    return d
 end
 
 function NavGrid.NestedRaycast(start_point, end_point, direction, layers)

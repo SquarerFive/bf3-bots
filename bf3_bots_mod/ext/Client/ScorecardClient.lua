@@ -55,6 +55,7 @@ function ScorecardClient:__init()
     self.height = 0
     --
     self.elevation_based_scoring = false
+    self.df_based_scoring = false
 
     NetEvents:Subscribe("OnRequestScorecardGrid", self, self.OnRequestScorecardGrid)
 	NetEvents:Subscribe("OnSetPath", self, self.OnSetPath)
@@ -128,6 +129,7 @@ function ScorecardClient:StartBuild(in_data)
         self.completed = false
     end
     self.elevation_based_scoring = in_data.elevation_based_scoring
+    self.df_based_scoring = in_data.df_based_scoring
     local headers = {}
     local options = HttpOptions(headers, 918292)
     options:SetHeader('Level', SharedUtils:GetLevelName())
@@ -304,7 +306,7 @@ function ScorecardClient:Tick(deltaTime, pass, local_player)
                 self.scorecard_grid = NavGrid.CreateFromBounds(
                     end_of_grid_x, end_of_grid_y, self.min_point, self.max_point,
                     start_of_grid_x, start_of_grid_y, self.profile, self.project_id,
-                    self.width, self.height, self.elevation_based_scoring
+                    self.width, self.height, self.elevation_based_scoring, self.df_based_scoring
                 )
             else
                 self.scorecard_grid:Extend(

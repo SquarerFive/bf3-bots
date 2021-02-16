@@ -70,7 +70,8 @@ export interface LevelBuildSettings {
   voxel_size: number
   iterations_x : number
   iterations_y : number,
-  elevation_based_scoring: boolean
+  elevation_based_scoring: boolean,
+  df_based_scoring: boolean
 }
 
 export interface LevelBuildSyncPayload {
@@ -708,6 +709,11 @@ export class Manager {
 
   async addSpawnPoint (position : Vector, faction : number) {
     const response = await this.post(`/v1/project/${ManagerStore.currentProject.project_id}/level/99999999999999/add-spawn-point/${faction}/`, position)
+    return response
+  }
+
+  async clearAllTasks () {
+    const response = await this.get('/v1/clear-tasks/')
     return response
   }
 }

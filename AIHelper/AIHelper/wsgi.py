@@ -81,26 +81,3 @@ class SocketApplication():
     def listen(self):
         with socketserver.TCPServer((self.host, self.port), SocketTCPHandler) as server:
             server.serve_forever()
-
-
-
-socket_app = SocketApplication()
-
-tr = threading.Thread(target=socket_app.listen)
-tr.start()
-
-
-#
-
-
-def my_crazy_app(environ, start_response):
-    status = '200 OK'
-    response_headers = [('Content-type','text/plain')]
-    start_response(status, response_headers)
-    return [b'Hello world!']
-
-
-#addr = '127.0.0.1', 8000
-#server = wsgi.Server(addr, application)
-#print("Starting")
-#server.start()

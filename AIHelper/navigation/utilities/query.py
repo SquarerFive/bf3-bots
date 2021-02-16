@@ -49,7 +49,9 @@ def encode_level(in_level : level.Level) -> None:
     with open(f'{l.relative_path}/elevation.npy', 'wb') as f:
         elevation : np.ndarray = in_level.elevation
         np.save(f, elevation)
-
+    with open(f'{l.relative_path}/df.npy', 'wb') as f:
+        df : np.ndarray = in_level.df
+        np.save(f, df)
     l.transform = in_level.transform.as_dict()
     l.save()
 
@@ -66,6 +68,9 @@ def decode_level(in_data : models.Level) -> Union[level.Level, None]:
         print("Succesfully imported costs with shape: ", costs.shape)
         with open(f'{path}/elevation.npy', 'rb') as f:
             elevation = np.load(f)
+        with open(f'{path}/df.npy', 'rb') as f:
+            df = np.load(f)
+
     except:
         print('--- failed to import level, recreating arrays ---')
         failed_to_import = True
@@ -84,6 +89,7 @@ def decode_level(in_data : models.Level) -> Union[level.Level, None]:
         l.data = data
         l.costs = costs
         l.elevation = elevation
+        l.df = df
     l.transform = transform
     l.project_id = in_data.project_id
     l.model = in_data
