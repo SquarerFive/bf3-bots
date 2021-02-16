@@ -1,4 +1,4 @@
-pyastar @ git+git://github.com/hjweide/pyastar.git@master#egg=pyastar
+https://github.com/hjweide/pyastar/archive/master.zip
 pathfinding==0.0.4
 numba==0.52.0
 numpy==1.18.4
