@@ -1,13 +1,13 @@
 pyastar @ git+git://github.com/hjweide/pyastar.git@master#egg=pyastar
 pathfinding==0.0.4
 numba==0.52.0
-numpy==1.20.0
+numpy==1.18.4
 scikit-image
 pytz==2020.5
 matplotlib==3.3.3
 Shapely==1.7.1
 argon2_cffi==20.1.0
-networkx==2.5
+networkx
 scipy==1.5.3
 Django==3.1.4
 argon2==0.1.10
