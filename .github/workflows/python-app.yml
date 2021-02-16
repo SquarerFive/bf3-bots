@@ -37,10 +37,10 @@ jobs:
     - name: Build AIHelper executable
       run: |
         python -m pip install pyinstaller
-        if [ -d "dist/" ]; then rm -Rf dist/; fi
-        pyinstaller --name=AIHelper AIHelper/manage.py
+        rm -rf ./dist/
+        pyinstaller --name=AIHelper ./AIHelper/manage.py
     - name: Publish AIHelper Executable
       uses: AButler/upload-release-assets@v2.0
       with:
-        files: 'dist/*'
+        files: './dist/*'
         repo-token: ${{ secrets.GITHUB_TOKEN }}
