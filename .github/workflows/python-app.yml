@@ -44,8 +44,12 @@ jobs:
       uses: JackMcKew/pyinstaller-action-windows@main
       with:
         path: ./
-    - name: Publish AIHelper Executable
-      uses: AButler/upload-release-assets@v2.0
+    - uses: actions/upload-artifact@v2
       with:
-        files: './dist/*'
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        name: AIHelper-binaries
+        path: ./dist/windows
+    # - name: Publish AIHelper Executable
+    #   uses: AButler/upload-release-assets@v2.0
+    #   with:
+    #     files: './dist/*'
+    #     repo-token: ${{ secrets.GITHUB_TOKEN }}
