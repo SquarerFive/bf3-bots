@@ -40,6 +40,6 @@ jobs:
         pyinstaller --name=AIHelper AIHelper/manage.py
     - name: Publish AIHelper Executable
       uses: AButler/upload-release-assets@v2.0
-        with:
-          files: 'dist/*'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        files: 'dist/*'
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
