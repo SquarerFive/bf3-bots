@@ -2,7 +2,7 @@ pyastar @ git+git://github.com/hjweide/pyastar.git@master#egg=pyastar
 pathfinding==0.0.4
 numba==0.52.0
 numpy==1.20.0
-scikit_image==0.18.1
+scikit-image
 pytz==2020.5
 matplotlib==3.3.3
 Shapely==1.7.1
@@ -13,4 +13,3 @@ Django==3.1.4
 argon2==0.1.10
 djangorestframework==3.12.2
 Pillow==8.1.0
-skimage==0.0
