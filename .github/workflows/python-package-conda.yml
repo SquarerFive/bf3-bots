@@ -1,6 +1,6 @@
 name: Python Package using Conda
 
-on: [push]
+# on: [push]
 
 jobs:
   build-linux:
@@ -9,6 +9,7 @@ jobs:
       max-parallel: 5
 
     steps:
+    - uses: AutoModality/action-clean@v1
     - uses: actions/checkout@v2
     - name: Set up Python 3.8
       uses: actions/setup-python@v2
