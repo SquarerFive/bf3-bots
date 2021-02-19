@@ -286,6 +286,7 @@ def push_level_block(slot : LevelBlockInterface, levelObject : level.Level):
         print(slot.values, e)
         # levelObject.set_elevation_at(slot.values[0][0]['elevation'], slot.x, slot.y)
         # levelObject.set_data_at(slot.values[0][0]['value'], slot.x, slot.y)
+    return df_sum
 
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication, SessionAuthentication])
