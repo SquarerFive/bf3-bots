@@ -53,6 +53,7 @@ function ScorecardClient:__init()
     --
     self.width = 0
     self.height = 0
+    self.voxel_size = 1.0
     --
     self.elevation_based_scoring = false
     self.df_based_scoring = false
@@ -110,6 +111,7 @@ function ScorecardClient:StartBuild(in_data)
     self.steps = tonumber(settings.voxel_step_size)
     self.step_size_x = settings.iterations_x / self.steps
     self.step_size_y = settings.iterations_y / self.steps
+    self.voxel_size = settings.voxel_size
     self.min_point = Vec3(
         tonumber(settings.start.x),
         tonumber(settings.start.y),
@@ -306,7 +308,7 @@ function ScorecardClient:Tick(deltaTime, pass, local_player)
                 self.scorecard_grid = NavGrid.CreateFromBounds(
                     end_of_grid_x, end_of_grid_y, self.min_point, self.max_point,
                     start_of_grid_x, start_of_grid_y, self.profile, self.project_id,
-                    self.width, self.height, self.elevation_based_scoring, self.df_based_scoring
+                    self.width, self.height, self.voxel_size, self.elevation_based_scoring, self.df_based_scoring
                 )
             else
                 self.scorecard_grid:Extend(

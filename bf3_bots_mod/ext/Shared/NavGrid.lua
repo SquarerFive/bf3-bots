@@ -77,7 +77,7 @@ function NavGrid:__init()
     -- store our transforms seperately
     self.grid_transforms = {}
     --
-    self.cell_size = 1.0
+    self.cell_size = 0.5
     -- sampleRadius
     self.sample_radius = self.grid_size_x * self.cell_size
     -- cached path
@@ -223,11 +223,12 @@ end
 
 
 
-function NavGrid.CreateFromBounds(size_x, size_z, min_point, max_point, start_x, start_z, profile, project_id, width, height, elevation_based_scoring, df_based_scoring)
+function NavGrid.CreateFromBounds(size_x, size_z, min_point, max_point, start_x, start_z, profile, project_id, width, height, voxel_size, elevation_based_scoring, df_based_scoring)
     local self = NavGrid()
     self.profile = profile
     self.project_id = project_id
     self.elevation_based_scoring = elevation_based_scoring
+    self.cell_size = voxel_size
     print("Creating NavGrid... Are we generating distance fields? "..tostring(df_based_scoring))
     self.df_based_scoring = df_based_scoring
     local center_position = min_point + Vec3(self.cell_size/2, self.cell_size/2, self.cell_size/2)
