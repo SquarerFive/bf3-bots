@@ -54,7 +54,7 @@
         </q-card-section>
 
         <q-card-section class="q-pt-none">
-          <q-btn :loading="loading" :disable="tasks.length === 0" @click="onClickStartAllTasks" label="Start All Tasks" color="warning" text-color="dark" />
+          <q-btn :loading="loading" @click="onClickStartAllTasks" label="Start All Tasks" color="warning" text-color="dark" />
         </q-card-section>
         <q-list>
           <q-scroll-area style="height: 200px">

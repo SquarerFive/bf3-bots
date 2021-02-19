@@ -228,6 +228,7 @@ function NavGrid.CreateFromBounds(size_x, size_z, min_point, max_point, start_x,
     self.profile = profile
     self.project_id = project_id
     self.elevation_based_scoring = elevation_based_scoring
+    print("Creating NavGrid... Are we generating distance fields? "..tostring(df_based_scoring))
     self.df_based_scoring = df_based_scoring
     local center_position = min_point + Vec3(self.cell_size/2, self.cell_size/2, self.cell_size/2)
     center_position = Vec3(center_position.x, center_position.y+300, center_position.z)

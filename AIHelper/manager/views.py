@@ -37,12 +37,22 @@ import time
 
 import pytz
 
+from django.db.backends.signals import connection_created
+from django.dispatch import receiver
+
+from tqdm import tqdm
+
+# @receiver(connection_created)
+# def connection_init(sender, connection, **kwargv):
+#     connection.cursor().execute("SET autocommit=1")
+
 # Globals [to avoid poo memory, cache it here until the level changes]
 class GlobalCache:
     def __init__(self):
         self.level_model : Union[level.models.Level, None] = None
         self.level_object : Union[level.Level, None] = None
-    
+        self.tasks = []
+
     def get_object(self, project_id : int, level_id : int):
         if self.level_object:
             if self.level_object.model.project_id == project_id and self.level_model.level_id == level_id:
@@ -265,11 +275,13 @@ class LevelBlockInterface:
 
 def push_level_block(slot : LevelBlockInterface, levelObject : level.Level):
     # print(slot.values)
+    df_sum = 0.0
     try:
         for level, value in enumerate(slot.values):
             levelObject.set_elevation_at(value['elevation'], slot.x, slot.y, level)
             levelObject.set_data_at(value['value'], slot.x, slot.y, level)
             levelObject.set_df_at(value['df'], slot.x, slot.y, level)
+            df_sum += value['df']
     except Exception as e:
         print(slot.values, e)
         # levelObject.set_elevation_at(slot.values[0][0]['elevation'], slot.x, slot.y)
@@ -283,6 +295,7 @@ def manager_add_level_block(request : Request, project_id : int):
     # list of { x: Int, y: Int, elevation: Float, values: Float[] }
     level_name = str(request.headers['Level'])
     levelModel = navigation_query.models.Level.objects.filter(project_id=project_id, name=level_name).first()
+
     #levelObject = navigation_query.decode_level(levelModel)
     if not levelModel:
         print('creating object')
@@ -299,15 +312,21 @@ def manager_add_level_block(request : Request, project_id : int):
 
 
     levelModel = navigation_query.models.Level.objects.filter(project_id=project_id, name=level_name).first()
-    d = models.ProjectTaskJSON.objects.create(
-        level_id=levelModel.level_id,
-        project_id=project_id,
-        name='NavGridBuildTask',
-        task_id=models.ProjectTaskJSON.objects.count()+1
-    )
-    d.data = data
-    d.save()
-
+    # d = models.ProjectTaskJSON.objects.create(
+    #     level_id=levelModel.level_id,
+    #     project_id=project_id,
+    #     name='NavGridBuildTask',
+    #     task_id=models.ProjectTaskJSON.objects.count()+1
+    # )
+    # d.data = data
+    # d.save()
+    global_cache.tasks.append({
+        'level_id': levelModel.level_id,
+        'project_id': project_id,
+        'name': 'NavGridBuildTask',
+        'task_id': random.randint(0, 989898),
+        'data': data
+    })
     
     # if levelObject and levelModel:
     #     for slot in data:
@@ -441,22 +460,47 @@ def manager_start_all_tasks(request: Request, project_id : int) -> Response:
     global global_cache
     print("starting tasks")
     first_task = models.ProjectTaskJSON.objects.first()
-    levelModel = navigation_query.models.Level.objects.filter(project_id=first_task.project_id, level_id=first_task.level_id).first()
+    bf3Model = models.BF3GameManager.objects.first()
+    levelModel = navigation_query.models.Level.objects.filter(project_id=bf3Model.active_project_id, level_id=bf3Model.active_level_id).first()
     # levelObject = navigation_query.decode_level(levelModel)
+    # t_models = []
+    # for task in global_cache.tasks:
+    #     d = models.ProjectTaskJSON.objects.create(
+    #         level_id=task['level_id'],
+    #         project_id=task['project_id'],
+    #         name=task['name'],
+    #         task_id=models.ProjectTaskJSON.objects.count()+1
+    #     )
+    #     d.data = task['data']
+    #     t_models.append(d)
+    # models.ProjectTaskJSON.objects.bulk_update(t_models, ['data',])
+
     levelObject = global_cache.get_object(project_id, levelModel.level_id)
     print("Level Object Info: ", levelObject.data.shape, levelObject.costs.shape, levelObject.elevation.shape)
     levelObject.sensecheck()
     global_cache.save_object()
-    for task in models.ProjectTaskJSON.objects.all():
-        if levelModel.level_id != task.level_id or levelModel.project_id != task.project_id:
+    pbar = tqdm(global_cache.tasks)
+    pbar.set_description('Running tasks')
+    i = 0
+    for task in pbar:
+        if levelModel.level_id != task['level_id'] or levelModel.project_id != task['project_id']:
             levelObject.classify_costs()
             # navigation_query.encode_level(levelObject)
             global_cache.save_object()
-            levelModel = navigation_query.models.Level.objects.filter(project_id=task.project_id, level_id=task.level_id).first()
+            levelModel = navigation_query.models.Level.objects.filter(project_id=task['project_id'], level_id=task['level_id']).first()
             # levelObject = navigation_query.decode_level(levelModel)
             levelObject = global_cache.get_object(project_id, levelModel.level_id)
-        for slot in task.data:
-            push_level_block(LevelBlockInterface(slot), levelObject)
+        j = 0
+        # data_pbar = tqdm(task['data'])
+        # data_pbar.set_description('Processing task data')
+        df_sum = 0.0
+        for slot in task['data']:
+            df_sum += push_level_block(LevelBlockInterface(slot), levelObject)
+            
+            j+= 1
+        pbar.set_description(f'Processing task data | DF Sum: {df_sum}')
+        i += 1
+    global_cache.tasks.clear()
     levelObject.classify_costs()
     # navigation_query.encode_level(levelObject)
     global_cache.save_object()

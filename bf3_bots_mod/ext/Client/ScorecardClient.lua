@@ -128,8 +128,8 @@ function ScorecardClient:StartBuild(in_data)
         self.current_step = 0
         self.completed = false
     end
-    self.elevation_based_scoring = in_data.elevation_based_scoring
-    self.df_based_scoring = in_data.df_based_scoring
+    self.elevation_based_scoring = settings.elevation_based_scoring
+    self.df_based_scoring = settings.df_based_scoring
     local headers = {}
     local options = HttpOptions(headers, 918292)
     options:SetHeader('Level', SharedUtils:GetLevelName())

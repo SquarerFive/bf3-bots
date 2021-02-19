@@ -65,8 +65,8 @@
                         </q-item>
                         <q-item style="margin-top:50px;">
                             <q-item-section>
-                                <q-checkbox label="Elevation-based Scoring" v-model="elevationBasedScoring" dark />
-                                <q-checkbox label="DF-based Scoring" v-model="dfBasedScoring" dark />
+                                <q-checkbox label="Elevation-based Scoring" v-model="config.elevation_based_scoring" dark />
+                                <q-checkbox label="DF-based Scoring" v-model="config.df_based_scoring" dark />
                             </q-item-section>
                         </q-item>
                         <q-item style="margin-top: 0px" >

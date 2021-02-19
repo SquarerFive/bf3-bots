@@ -428,6 +428,7 @@ export class Manager {
     newConfig.iterations_y = Math.ceil((maxPoint.z - newConfig.start.z) / newConfig.voxel_size)
     newConfig.end = maxPoint
     newConfig.level_name = this.currentFBLevelName
+    console.log(inBuildConfig)
     // this.buildProgress = 0.5
     return newConfig
   }

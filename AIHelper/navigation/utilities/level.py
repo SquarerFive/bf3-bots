@@ -67,10 +67,12 @@ class Level:
                         iy = y + oy
                         self.elevation[level][ix][iy] = path['elevation']
                         if ix < self.elevation[level].shape[0] and iy < self.elevation[level].shape[1]:
-                            elevation_alpha = scorecard.remap(array_to_use[level][ix][iy], min_elevation, max_elevation, 0.0, 1.0)
-                            elevation_alpha = math.pow(math.pow(elevation_alpha, elevation_alpha_power)*elevation_alpha_beta, elevation_alpha_beta_power)*10
-                            elevation_value = scorecard.remap(elevation_alpha, 0.0, 1.0, min_elevation, max_elevation)
-                            self.costs[level][ix][iy] = 1 + max(elevation_value*0.25, 1.0)
+                            if array_to_use[level][x][y] > 0:
+                                elevation_alpha = scorecard.remap(array_to_use[level][ix][iy], min_elevation, max_elevation, 0.0, 1.0)
+                                elevation_alpha = math.pow(math.pow(elevation_alpha, elevation_alpha_power)*elevation_alpha_beta, elevation_alpha_beta_power)*10
+                                elevation_value = scorecard.remap(elevation_alpha, 0.0, 1.0, min_elevation, max_elevation)
+                                self.costs[level][ix][iy] = 1 + max(elevation_value*0.25, 1.0)
+                            
             scorecard.Scorecard.score(self.model, self.transform, self.data, self.elevation, self.df, self.costs, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power, True, use_df=use_df)
 
 
