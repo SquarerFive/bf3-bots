@@ -24,7 +24,7 @@ This mod is currently in early development. Feel free to contribute but there is
 - Variable response times
     - The interval where the paths and actions of the bots can be set by using the `--interval` parameter for `startcomputetask`.
 
-## Version 0.0.39 : Changelogs + Features
+## Version 0.0.4a1 : Changelogs + Features
 - Fixed: [#16](https://github.com/SquarerFive/bf3-bots/issues/16), [#15](https://github.com/SquarerFive/bf3-bots/issues/15), [#9](https://github.com/SquarerFive/bf3-bots/issues/9), and several bugs. Full Changelist:
 ```
 Layered navmesh seemed to only be valid for layer 0.
@@ -42,6 +42,15 @@ Added csv tools to import and export dumped VEXT assets.
 Database is now vacuumed after all tasks are deleted.
 Create new arrays during the import if the nav-mesh on disk is corrupt.
 Added bot driving interpolation, and vehicleController.
+Added a level distance field mesh generator.
+Added hybrid pathfinding (DFAstar++ for indoor maps).
+Fixed invalid access to friendly/enemy kit collection on a new level.
+Fixed custom spawner from attempting to generate an index with a range of 0.
+Added elevation-based and DF-based generation options.
+Added project JSON export.
+Voxel-size now takes effect on the nav-mesh generation.
+Level add-block now caches into memory rather than writing onto disk (causing the database to lock).
+Added path-recorder.
 ```
 - Loadout manager, each slot contains all possible weapons - where one is randomly selected when the AI is spawned. Loadouts are set individually for each map and faction, for new maps a loadout can easily be cloned from an existing map or faction. Customize the attachments for each of the weapons.
 ![Loadout Screen](./docs/images/loadout_screen.png)
@@ -57,6 +66,7 @@ Asset manager, where you may add a weapon from the left into the selected list, 
 - Battlefield 3 and Venice Unleashed
 
 ## Installation
+NOTICE: These binaries will be available on the 0.0.4 release.
 0. You will need to open up two instances of CMD/Powershell for this.
 1. Start the AI Server ```./dist/AIHelper/AIHelper.exe runserver --noreload```
 2. Start the AI compute background task: ```./dist/AIHelper/AIHelper.exe startcomputetask```
