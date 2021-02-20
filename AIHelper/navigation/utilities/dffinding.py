@@ -199,11 +199,11 @@ class DFFinder:
         costs_so_far[start] = float32(math.inf)
         
         queue.put(start, float32(0))
-        i = int32(0)
+        #i = int32(0)
         while not queue.empty():
             current = queue.get()
-            if i % 10 == 0:
-                print('['+str(i)+'] - Distance to goal: '+str(int(self._hfdistance(current, end))))
+            #if i % 10 == 0:
+            #    print('['+str(i)+'] - Distance to goal: '+str(int(self._hfdistance(current, end))))
 
             if current == end:
                 break
@@ -225,12 +225,15 @@ class DFFinder:
                     priority = float32(self._hfdistance(next, end)) #float32(self._hdistance(self.graph[next], self.graph[end]))
                     queue.put(next, priority)
                     came_from[next] = current
-            i += 1
+            #i += 1
+
         return self.build_path(came_from, start, end)
 
-    def build_path(self, came_from :types.Tuple((int32, int32, int32)), start : types.Tuple((int32, int32, int32)), end : types.Tuple((int32, int32, int32))):
+    def build_path(self, came_from :types.DictType(types.Tuple((int32, int32, int32)), types.Tuple((int32, int32, int32))), start : types.Tuple((int32, int32, int32)), end : types.Tuple((int32, int32, int32))):
         current = end
         path = typed.List.empty_list(ptv)
+        if current not in came_from:
+            return path
         while current != start:
             path.append(current)
             current = came_from[current]

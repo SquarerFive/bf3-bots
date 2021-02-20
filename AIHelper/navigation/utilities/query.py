@@ -87,9 +87,11 @@ def decode_level(in_data : models.Level) -> Union[level.Level, None]:
     l = level.Level(in_data.name)
     if not failed_to_import:
         l.data = data
-        l.costs = costs
-        l.elevation = elevation
-        l.df = df
+        l.costs = costs.astype(np.float32)
+        l.elevation = elevation.astype(np.float32)
+        l.df = df.astype(np.float32)
+        l.create_dffinder()
+
     l.transform = transform
     l.project_id = in_data.project_id
     l.model = in_data

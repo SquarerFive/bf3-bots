@@ -205,7 +205,7 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
             target_grid_pos = current_level.transform.transform_to_grid((target[0], target[2]))
 
             bot.path = current_level.astar(
-                bot_grid_pos, target_grid_pos, elevation=bot.transform['trans']['y']
+                bot_grid_pos, target_grid_pos, elevation=bot.transform['trans']['y'], target_elevation = bot.transform['trans']['y']
             )
             if models.Player.objects.filter(team = bot.team, player_id = bot.player_id).first():
                 bot.target = -1
@@ -227,14 +227,21 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                     bot.target = override_target
                 if bot.player_id == bot.target:
                     bot.target = -1
+                    return
                 if bot.team == models.Player.objects.filter(player_id = bot.target).first().team:
                     bot.target = -1
+                    return
                 bot.order = orders.BotOrdersEnum.ENEMY
                 # bot.action = orders.BotActionEnum.ATTACK
+
+                # In-case it's overidden
+                closest_enemy = models.Player.objects.filter(player_id = bot.target).first()
+                enemy_grid_pos =  current_level.transform.transform_to_grid((float(closest_enemy.transform['trans']['x']) , float(closest_enemy.transform['trans']['z'])))
                 bot.path = current_level.astar(
                     bot_forward_grid_pos,
                     enemy_grid_pos,
-                    elevation=bot.transform['trans']['y']
+                    elevation=bot.transform['trans']['y'],
+                    target_elevation = closest_enemy.transform['trans']['y']
                 )
                 #print("path")
                 if type(bot.path ) == type(None):
@@ -256,7 +263,8 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                 path = current_level.astar(
                     bot_forward_grid_pos,
                     end,
-                    elevation=bot.transform['trans']['y']
+                    elevation=bot.transform['trans']['y'],
+                    target_elevation = closest_objective.transform['trans']['y']
                 )
                 bot.path = path
                 # print("path: ", bot.path)
@@ -274,7 +282,8 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                     bot.path = current_level.astar(
                             bot_forward_grid_pos,
                             end,
-                            elevation=bot.transform['trans']['y']
+                            elevation=bot.transform['trans']['y'],
+                            target_elevation = target.transform['trans']['y']
                         )
                     if type(bot.path ) == type(None):
                             bot.path = []

@@ -16,12 +16,15 @@ import math
 # from pathfinding.finder.bi_a_star import BiAStarFinder
 
 from . import astar
+from . import dffinding
 
 from typing import Tuple, Union
 import copy
 import pyastar
 
 import datetime
+
+from numba import int32, float32
 
 class Level:
     def __init__(self, name, transform : Union[tuple, None] = None, data: list = [], model : Union[None, models.Level] = None):
@@ -40,7 +43,11 @@ class Level:
         self.project_id = 0
 
         self.model = model
+        self.dffinder = None
 
+    def create_dffinder(self):
+        self.dffinder = dffinding.DFFinder(self.costs, self.elevation, 32)
+    
     def classify_costs(self, elevation_based : bool = False, elevation_alpha_power : float = 0.05, elevation_alpha_beta : float = 1.5, elevation_alpha_beta_power : float = 7.0, just_paths = False, use_df = False):
         if not just_paths:
             scorecard.Scorecard.score(self.model, self.transform, self.data, self.elevation, self.df, self.costs, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power, use_df=use_df)
@@ -176,7 +183,7 @@ class Level:
                     found = True
                     final_pos = [j, i]
                     min_s = score
-            #if found:
+            #   if found:
             #    break
         return final_pos
 
@@ -191,28 +198,15 @@ class Level:
     #     path = [(p[1], p[0]) for p in path]
     #     return path
 
-    def find_path_safe(self, start: tuple, end: tuple, level : int = 0) -> list:
-        #print(self.costs)
-        #grid = self.grid
-        #grid.cleanup()
-        #start = grid.node(start[0], start[1])
-        #end = grid.node(end[0], end[1])
-        #finder = AStarFinder(diagonal_movement=DiagonalMovement.always)
-        #path, runs = finder.find_path(start, end, grid)
-        # print(start, end)
-        #print(self.costs[start[0]][start[1]])
-        #print(self.costs[end[0]][end[1]])
-        # print(self.costs[start[0]][[start[1]]])
-        # print(self.costs[end[0]][[end[1]]])
-        #path = astar.astar(self.costs, start, end)
-        #print('astar: ', start, end)
-        path = pyastar.astar_path(self.costs[level], start, end, allow_diagonal=True)
-        #print(path)
-        # path = [(p[1], p[0]) for p in path]
-        # grid.__del
+    def find_path_safe(self, start: tuple, end: tuple, level : int = 0, target_level : int = 0) -> list:
+        
+        if self.dffinder:
+            path = self.dffinder.find((int32(start[0]), int32(start[1]), int32(level)), (int32(end[0]), int32(end[1]), int32(target_level)))
+        else:
+            path = pyastar.astar_path(self.costs[level], start, end, allow_diagonal=True)
         return path
 
-    def astar(self, start : tuple, end : tuple, safe=True , all : bool = False, elevation : Union[float, None] = None, recurse_depth : int = 0) -> list:
+    def astar(self, start : tuple, end : tuple, safe=True , all : bool = False, elevation : Union[float, None] = None, target_elevation : Union[float, None] = 0.0, recurse_depth : int = 0) -> list:
         # print("running astar  ", start, end)
         # print("size of data: ", self.data.shape)
         #path, cost = route_through_arrays(self.costs, start, end, fully_connected=False, geometric=True) # astar(self.data, start, end)
@@ -222,13 +216,14 @@ class Level:
         # return []
         # print('finding path', start, end)
         best_level =  self.get_best_navmesh_level((start[0], start[1], elevation))
+        target_best_level = self.get_best_navmesh_level((end[0], end[1], target_elevation))
         print('best navmesh level: ', best_level)
         if (start[0] > 0 and start[0] < self.costs.shape[1] and start[1] > 0 and start[1] < self.costs.shape[2]
             and end[0] > 0 and end[0] < self.costs.shape[1] and end[1] > 0 and end[1] < self.costs.shape[2]):
                 print("Start elevation at {} - {}:".format(str(start), elevation), self.elevation[best_level][start[0]][start[1]])
                 path = self.find_path_safe(
                     self.get_valid_point_in_radius(self.costs, start[0], start[1], 5), 
-                    self.get_valid_point_in_radius(self.costs, end[0], end[1], 5), best_level)
+                    self.get_valid_point_in_radius(self.costs, end[0], end[1], 5), best_level, target_best_level)
         else:
             print("Outside of map")
             return []
@@ -245,20 +240,22 @@ class Level:
                     "y": self.elevation[best_level][p[0]][p[1]]+1,
                     "z": wxy[1]
                 })
-                if idx > 1 and idx < len(path)-1:
-                    if abs(world_paths[idx]['y']-world_paths[idx-1]['y']) > 5.0 and recurse_depth < 1:
-                        print("finding depth path")
-                        world_paths += self.astar(path[idx+2], end, elevation=elevation, recurse_depth = recurse_depth+1)
-                        break
-                
-                if idx > 50:
-                    break
-            for idx, wp in enumerate(world_paths):
-                if idx > 1 and idx+4 < len(path)-1:
-                    if abs(world_paths[idx+4]['y']-world_paths[idx-1]['y']) > 5.0 and recurse_depth < 1:
-                        print("finding depth path")
-                        world_paths[idx:] = self.astar(path[idx+4], end, elevation=elevation, recurse_depth = recurse_depth+1)
-                        break
+                # if not self.dffinder:
+                # if idx > 1 and idx < len(path)-1:
+                #     if abs(world_paths[idx]['y']-world_paths[idx-1]['y']) > 5.0 and recurse_depth < 1:
+                #         print("finding depth path")
+                #         world_paths += self.astar(path[idx+2], end, elevation=elevation, recurse_depth = recurse_depth+1)
+                #         break
+                # 
+                # if idx > 50:
+                #     break
+            if not self.dffinder:
+                for idx, wp in enumerate(world_paths):
+                    if idx > 1 and idx+4 < len(path)-1:
+                        if abs(world_paths[idx+4]['y']-world_paths[idx-1]['y']) > 5.0 and recurse_depth < 1:
+                            print("finding depth path")
+                            world_paths[idx:] = self.astar(path[idx+4], end, elevation=elevation, recurse_depth = recurse_depth+1)
+                            break
         else:
             None
 
