@@ -83,7 +83,7 @@ def create_or_update_bot_model(b : models.Bot, bot: dict):
         b.overidden_target = int(bot['requested_target_id'])
 
         delta = datetime.datetime.now().replace(tzinfo=pytz.UTC) - b.last_transform_update.replace(tzinfo=pytz.UTC)
-        if delta.total_seconds() > 8:
+        if delta.total_seconds() > 1:
             b.last_transform_update = datetime.datetime.now().replace(tzinfo=pytz.UTC)
             if 'trans' in list(b.last_transform.keys()):
                 if distance(bot['transform']['trans']['x'], 0, bot['transform']['trans']['z'], 
