@@ -63,6 +63,8 @@ def create_or_update_bot_model(b : models.Bot, bot: dict):
             bot_index=bot['bot_index'],
             alive=bot['alive'],
             selected_kit = bot['kit'])
+        print("Creating bot as it does not exist")
+        b.save()
     else:
         b.transform = bot['transform']
         b.health = bot['health']

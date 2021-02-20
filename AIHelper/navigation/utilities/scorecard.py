@@ -72,7 +72,7 @@ def score_fast(
                         target[level][x][y] = math.inf
                     
                 elif df_based:
-                    target[level][x][y] = max(1.0, 1.0 + math.pow((max_elevation - elevation_arr[level][x][y]), 4.5)*25.0)
+                    target[level][x][y] = max(1.0, 1.0 + math.pow((max_elevation - elevation_arr[level][x][y]), 4.0))
 
 @njit(parallel=True)
 def score_fast_masks(
@@ -109,6 +109,8 @@ def score_fast_masks(
                         target[level][x][y] = 1 + max(elevation_value*2.25, 1.0)
                     else:
                         target[level][x][y] = math.inf
+            if df_based and structures_mask[x][y]:
+                target[level][x][y] = target[level][x][y]*2
 
 @njit(parallel=True)
 def get_world_array_fast(x_arr: np.ndarray, y_arr : np.ndarray, min_point : tuple, max_point : tuple, width: float, height: float):

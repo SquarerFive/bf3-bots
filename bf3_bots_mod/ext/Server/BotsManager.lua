@@ -910,7 +910,9 @@ function BotsManager:GetNearestSpawnPointFromTranslation(Translation, Team)
             table.insert(optimalPoints, p)
         end
     end
-    
+    if #optimalPoints <= 1 then
+        return Translation
+    end
     minTranslation = optimalPoints[math.random(1, #optimalPoints)]
 
     if minTranslation:Distance(Translation) > 50 then

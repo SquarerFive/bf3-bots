@@ -134,7 +134,9 @@ class DFFinder:
         return self.elevation[key[2]][key[0]][key[1]]
 
     def _is_within_threshold(self, key):
-        return self.values[key[2]][key[0]][key[1]] < float32(32.0) and self.values[key[2]][key[0]][key[1]] > float32(0.0) #and key[2] > 0
+        if self._ingrid(key):
+            return self.values[key[2]][key[0]][key[1]] < float32(32.0) and self.values[key[2]][key[0]][key[1]] > float32(0.0) #and key[2] > 0
+        return False
 
     def _hfdistance(self, key1, key2):
         return math.sqrt(
@@ -148,7 +150,7 @@ class DFFinder:
     def _cost(self, key1, key2, key3):
         return math.pow(abs((self._get_elevation(key3)-((self._get_elevation(key2)+self._get_elevation(key1))/2))), 2)+abs(
             self._get_value(key2)-self._get_value(key1)
-        )
+        )#+abs(self._get_elevation(key2)-self._get_elevation(key1))
 
 
     def _addtolookup(self, node, lookup):
@@ -185,8 +187,8 @@ class DFFinder:
 
     def find(self, start : Tuple[int, int, int], end : Tuple[int, int, int]) -> List[Tuple[int, int, int]]:
         queue = PriorityQueue()
-        start = (int32(start[0]), int32(start[1]), int32(start[2]))
-        end = (int32(end[0]), int32(end[1]), int32(end[2]))
+        start = self.ensure_point_valid((int32(start[0]), int32(start[1]), int32(start[2])))
+        end = self.ensure_point_valid((int32(end[0]), int32(end[1]), int32(end[2])))
 
         null_ptv = (int32(-1), int32(-1), int32(-1))
 
@@ -199,13 +201,17 @@ class DFFinder:
         costs_so_far[start] = float32(math.inf)
         
         queue.put(start, float32(0))
-        #i = int32(0)
-        while not queue.empty():
+        current = start
+        just_started=  True
+        i = int32(0)
+        while (not queue.empty()) and i < 5000:
             current = queue.get()
+
             #if i % 10 == 0:
             #    print('['+str(i)+'] - Distance to goal: '+str(int(self._hfdistance(current, end))))
 
             if current == end:
+                # print("Current is end")
                 break
             x = current[0]
             y = current[1]
@@ -217,7 +223,7 @@ class DFFinder:
             for next in neighbours:
                 if not self._ingrid(next): continue
                 if not self._is_within_threshold(next): continue
-
+                # print("Sampling neighbours")
                 new_cost = costs_so_far[current] + self._cost(current, next, end)
                  #self._hdistance(self.graph[current], self.graph[next])
                 if next not in costs_so_far or new_cost < costs_so_far[next]:
@@ -225,14 +231,29 @@ class DFFinder:
                     priority = float32(self._hfdistance(next, end)) #float32(self._hdistance(self.graph[next], self.graph[end]))
                     queue.put(next, priority)
                     came_from[next] = current
-            #i += 1
+            i += 1
 
         return self.build_path(came_from, start, end)
+
+    def ensure_point_valid(self, point):
+        k = point
+        max_tries = 900
+        tries = 0
+        while (not self._is_within_threshold(k)) and tries < max_tries:
+            for x in range(-25, 25):
+                for y in range(-25, 25):
+                    if self._ingrid((int32(k[0]+x), int32(k[1]+y), int32(k[2]))) and self._is_within_threshold((int32(k[0]+x), int32(k[1]+y), int32(k[2]))):
+                        k = (int32(k[0]+x), int32(k[1]+y), int32(k[2]))
+                        break
+                    #print(k)
+            tries += 1
+        return k
 
     def build_path(self, came_from :types.DictType(types.Tuple((int32, int32, int32)), types.Tuple((int32, int32, int32))), start : types.Tuple((int32, int32, int32)), end : types.Tuple((int32, int32, int32))):
         current = end
         path = typed.List.empty_list(ptv)
         if current not in came_from:
+            # print("Could not find path", came_from)
             return path
         while current != start:
             path.append(current)
@@ -250,15 +271,16 @@ if __name__ == "__main__":
 
     df = np.power(df, 0.2)
     df = np.max(df[1]) - df
-    df = np.power(df, 4.5)
+    df = np.power(df, 4.0)
     df = df.astype(np.float32)
     elevation = elevation.astype(np.float32)
 
     finder = DFFinder(df, elevation, 32)
     #print(finder.graph)
-    start = (507, 1145, 1)
+    # (461, 947, 1) (518, 1004, 1)
+    start = (461, 947, 1)
     # start = (1145, 407, 1)
-    end = (652, 1149, 1)
+    end = (518, 1004, 1)
     # print(df[start[2]][start[0]][start[1]])
     print("FINDING PATH....")
     path = finder.find(start, end)

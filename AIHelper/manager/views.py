@@ -540,6 +540,7 @@ def manager_update_level(request: Request, project_id : int) -> Response:
     data = json.loads(request.body.decode('utf-8'))
     level_name = str(request.headers['Level'])
     level_model : navigation_models.Level = level.models.Level.objects.filter(name=level_name, project_id=project_id).first()
+    
     if level_model:
         level_object = global_cache.get_object(project_id, level_model.level_id)
         
@@ -564,6 +565,7 @@ def manager_update_level(request: Request, project_id : int) -> Response:
         
         bots = bots_models.Bot.objects.all()
         b_array = []
+        # print("doing bots, ", data['bots'])
         for bot in data['bots']:
             bot_model = bots.filter(bot_index=bot['bot_index']).first()
             
@@ -572,23 +574,44 @@ def manager_update_level(request: Request, project_id : int) -> Response:
                 b_array.append(bot_model)
             
                 active_collection = friendly_faction_kit_collection if bot['team'] == 0 else enemy_faction_kit_collection
-                kits = [
-                    models.SoldierKit.objects.filter(collection_id=active_collection.id, collection_slot=0).first(),
-                    models.SoldierKit.objects.filter(collection_id=active_collection.id, collection_slot=1).first(),
-                    models.SoldierKit.objects.filter(collection_id=active_collection.id, collection_slot=2).first(),
-                    models.SoldierKit.objects.filter(collection_id=active_collection.id, collection_slot=3).first(),
-                ]
-                kit = kits[random.randint(0,3)]
-                bot['kit'] = {
-                    'primary_weapon': kit.primary_weapon[random.randint(0, len(kit.primary_weapon))-1] if len(kit.primary_weapon) > 0 else None,
-                    'secondary_weapon': kit.secondary_weapon[random.randint(0, len(kit.secondary_weapon))-1] if len(kit.secondary_weapon) > 0 else None,
-                    'primary_gadget': kit.primary_gadget[random.randint(0, len(kit.primary_gadget))-1] if len(kit.primary_gadget) > 0 else None,
-                    'secondary_gadget': kit.secondary_gadget[random.randint(0, len(kit.secondary_gadget))-1] if len(kit.secondary_gadget) > 0 else None,
-                    'melee': kit.melee[random.randint(0, len(kit.melee))-1] if len(kit.melee) > 0 else None,
-                    'unlocks': kit.appearance[random.randint(0, len(kit.melee))-1] if len(kit.appearance) > 0 else None,
-                    'kit_asset': kit.kit_asset
-                }
-                bots_query.create_or_update_bot(bot)
+                if active_collection:
+                    kits = [
+                        models.SoldierKit.objects.filter(collection_id=active_collection.id, collection_slot=0).first(),
+                        models.SoldierKit.objects.filter(collection_id=active_collection.id, collection_slot=1).first(),
+                        models.SoldierKit.objects.filter(collection_id=active_collection.id, collection_slot=2).first(),
+                        models.SoldierKit.objects.filter(collection_id=active_collection.id, collection_slot=3).first(),
+                    ]
+                    kit = kits[random.randint(0,3)]
+                    bot['kit'] = {
+                        'primary_weapon': kit.primary_weapon[random.randint(0, len(kit.primary_weapon))-1] if len(kit.primary_weapon) > 0 else None,
+                        'secondary_weapon': kit.secondary_weapon[random.randint(0, len(kit.secondary_weapon))-1] if len(kit.secondary_weapon) > 0 else None,
+                        'primary_gadget': kit.primary_gadget[random.randint(0, len(kit.primary_gadget))-1] if len(kit.primary_gadget) > 0 else None,
+                        'secondary_gadget': kit.secondary_gadget[random.randint(0, len(kit.secondary_gadget))-1] if len(kit.secondary_gadget) > 0 else None,
+                        'melee': kit.melee[random.randint(0, len(kit.melee))-1] if len(kit.melee) > 0 else None,
+                        'unlocks': kit.appearance[random.randint(0, len(kit.melee))-1] if len(kit.appearance) > 0 else None,
+                        'kit_asset': kit.kit_asset
+                    }
+                    # bots_query.create_or_update_bot(bot)
+            else:
+                active_collection = friendly_faction_kit_collection if bot['team'] == 0 else enemy_faction_kit_collection
+                if active_collection:
+                    kits = [
+                        models.SoldierKit.objects.filter(collection_id=active_collection.id, collection_slot=0).first(),
+                        models.SoldierKit.objects.filter(collection_id=active_collection.id, collection_slot=1).first(),
+                        models.SoldierKit.objects.filter(collection_id=active_collection.id, collection_slot=2).first(),
+                        models.SoldierKit.objects.filter(collection_id=active_collection.id, collection_slot=3).first(),
+                    ]
+                    kit = kits[random.randint(0,3)]
+                    bot['kit'] = {
+                        'primary_weapon': kit.primary_weapon[random.randint(0, len(kit.primary_weapon))-1] if len(kit.primary_weapon) > 0 else None,
+                        'secondary_weapon': kit.secondary_weapon[random.randint(0, len(kit.secondary_weapon))-1] if len(kit.secondary_weapon) > 0 else None,
+                        'primary_gadget': kit.primary_gadget[random.randint(0, len(kit.primary_gadget))-1] if len(kit.primary_gadget) > 0 else None,
+                        'secondary_gadget': kit.secondary_gadget[random.randint(0, len(kit.secondary_gadget))-1] if len(kit.secondary_gadget) > 0 else None,
+                        'melee': kit.melee[random.randint(0, len(kit.melee))-1] if len(kit.melee) > 0 else None,
+                        'unlocks': kit.appearance[random.randint(0, len(kit.melee))-1] if len(kit.appearance) > 0 else None,
+                        'kit_asset': kit.kit_asset
+                    }
+                    bots_query.create_or_update_bot(bot)
             # behaviour.compute(bot['bot_index'], level_object, bots_models.Bot, bots_models.Player, navigation_models.Objective, int(bot['requested_target_id'])!=-2, int(bot['requested_target_id']))
         bots_models.Bot.objects.bulk_update(b_array, ['transform', 'health', 'in_vehicle', 'team', 'order', 'action', 'bot_index', 'alive', 'squad', 'overidden_target', 'last_transform', 'last_transform_update', 'stuck'])
         data = {

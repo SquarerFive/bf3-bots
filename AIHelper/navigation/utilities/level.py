@@ -44,9 +44,15 @@ class Level:
 
         self.model = model
         self.dffinder = None
+        self.mdf = None
 
     def create_dffinder(self):
-        self.dffinder = dffinding.DFFinder(self.costs, self.elevation, 32)
+        # self.mdf = np.power(self.df, 0.2)
+        # self.mdf = np.max(self.mdf[1]) - self.mdf
+        # self.mdf = np.power(self.mdf, 4.0)
+        # self.mdf = self.mdf.astype(np.float32)
+        elevation = self.elevation.astype(np.float32)
+        self.dffinder = dffinding.DFFinder(self.costs, elevation, 38)
     
     def classify_costs(self, elevation_based : bool = False, elevation_alpha_power : float = 0.05, elevation_alpha_beta : float = 1.5, elevation_alpha_beta_power : float = 7.0, just_paths = False, use_df = False):
         if not just_paths:
@@ -166,7 +172,22 @@ class Level:
             self.transform.width = self.costs.shape[0]
             self.transform.height = self.costs.shape[1]
 
-    def get_valid_point_in_radius(self, arr : np.ndarray, x: int, y : int, radius: float = 10.0) -> list:
+    
+
+    def get_valid_point_in_radius(self, arr : np.ndarray, x: int, y : int, radius: float = 10.0, level = 0) -> list:
+        if type(self.mdf)!=type(None) and self.dffinder:
+           
+            pos = (int32(x), int32(y), int32(level))
+            pos =  self.dffinder.ensure_point_valid(pos)
+            # max_tries = 900
+            # tries = 0
+            # while (not self.dffinder._is_within_threshold(pos)) and tries < max_tries:
+            #     for i in range(-5, 5):
+            #         for j in range(-5, 5):
+            #             pos = (int32(pos[0]+i), int32(pos[1]+j), pos[2])
+            #     tries += 1
+            return (pos[0], pos[1])
+
         if arr[0][x][y] == 1.0:
             return (x,y)
         offsets = [(-1, 0), (1, 0), (-1, -1), (1, -1), (-1, 1), (1, 1), (0, -1), (0, 1)]
@@ -199,12 +220,18 @@ class Level:
     #     return path
 
     def find_path_safe(self, start: tuple, end: tuple, level : int = 0, target_level : int = 0) -> list:
-        
+        path = []
+        used_dffinder = False
         if self.dffinder:
+            
             path = self.dffinder.find((int32(start[0]), int32(start[1]), int32(level)), (int32(end[0]), int32(end[1]), int32(target_level)))
-        else:
+            used_dffinder = True
+            
+        if not self.dffinder:
             path = pyastar.astar_path(self.costs[level], start, end, allow_diagonal=True)
-        return path
+            used_dffinder = False
+        print("Finding at: ", (int32(start[0]), int32(start[1]), int32(level)), (int32(end[0]), int32(end[1]), int32(target_level)), used_dffinder)
+        return path, used_dffinder
 
     def astar(self, start : tuple, end : tuple, safe=True , all : bool = False, elevation : Union[float, None] = None, target_elevation : Union[float, None] = 0.0, recurse_depth : int = 0) -> list:
         # print("running astar  ", start, end)
@@ -217,11 +244,11 @@ class Level:
         # print('finding path', start, end)
         best_level =  self.get_best_navmesh_level((start[0], start[1], elevation))
         target_best_level = self.get_best_navmesh_level((end[0], end[1], target_elevation))
-        print('best navmesh level: ', best_level)
+        # print('best navmesh level: ', best_level)
         if (start[0] > 0 and start[0] < self.costs.shape[1] and start[1] > 0 and start[1] < self.costs.shape[2]
             and end[0] > 0 and end[0] < self.costs.shape[1] and end[1] > 0 and end[1] < self.costs.shape[2]):
-                print("Start elevation at {} - {}:".format(str(start), elevation), self.elevation[best_level][start[0]][start[1]])
-                path = self.find_path_safe(
+                # print("Start elevation at {} - {}:".format(str(start), elevation), self.elevation[best_level][start[0]][start[1]])
+                path, udffinder = self.find_path_safe(
                     self.get_valid_point_in_radius(self.costs, start[0], start[1], 5), 
                     self.get_valid_point_in_radius(self.costs, end[0], end[1], 5), best_level, target_best_level)
         else:
@@ -235,11 +262,19 @@ class Level:
             for idx, p in enumerate(path):
                 # self.costs_preview[p[0]][p[1]] = 0.5
                 wxy = self.transform.transform_to_world(p)
-                world_paths.append({
-                    "x": wxy[0],
-                    "y": self.elevation[best_level][p[0]][p[1]]+1,
-                    "z": wxy[1]
-                })
+                if self.dffinder and udffinder:
+                    # print(p, udffinder)
+                    world_paths.append({
+                        "x": wxy[0],
+                        "y": float(self.elevation[p[2]][p[0]][p[1]]),
+                        "z": wxy[1]
+                    })
+                else:
+                    world_paths.append({
+                        "x": wxy[0],
+                        "y": float(self.elevation[best_level][p[0]][p[1]]+1),
+                        "z": wxy[1]
+                    })
                 # if not self.dffinder:
                 # if idx > 1 and idx < len(path)-1:
                 #     if abs(world_paths[idx]['y']-world_paths[idx-1]['y']) > 5.0 and recurse_depth < 1:

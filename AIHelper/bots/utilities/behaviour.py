@@ -10,6 +10,8 @@ import math
 
 from . import orders
 import random
+from numba import int32, float32
+
 # It's important to note, that these thread are still attached to the main thread. 
 
 global_behaviour_thread : Union[ThreadPool, None] = None # ThreadPool(threads=2, config=TaskPoolConfig(10.0, 5.0))
@@ -203,18 +205,41 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
             back = [bot.transform['forward']['x']*-5, bot.transform['forward']['y']*-5, bot.transform['forward']['z']*-5]
             target = bot.transform['trans']['x'] + back[0], bot.transform['trans']['y'] + back[1], bot.transform['trans']['z'] + back[2]
             target_grid_pos = current_level.transform.transform_to_grid((target[0], target[2]))
+            if current_level.dffinder:
+                valid_pos =  current_level.dffinder.ensure_point_valid((bot_grid_pos[0], bot_grid_pos[1], current_level.get_best_navmesh_level(
+                    (target_grid_pos[0], target_grid_pos[1], bot.transform['trans']['y'])
+                )))
+                best_level = current_level.get_best_navmesh_level(
+                    (bot_grid_pos[0], bot_grid_pos[1], bot.transform['trans']['y']))
 
-            bot.path = current_level.astar(
-                bot_grid_pos, target_grid_pos, elevation=bot.transform['trans']['y'], target_elevation = bot.transform['trans']['y']
-            )
+                elevation = current_level.elevation[best_level][bot_grid_pos[0]][bot_grid_pos[1]]
+                target_elevation = current_level.elevation[valid_pos[2]][valid_pos[0]][valid_pos[1]]
+                path = [
+                    (*current_level.transform.transform_to_world(bot_grid_pos), float(elevation)),
+                    (*current_level.transform.transform_to_world(valid_pos), float(target_elevation))
+                ]
+                bot.path = []
+                for p in path:
+                    bot.path.append(
+                        {
+                            'x': p[0],
+                            'y': p[2],
+                            'z': p[1]
+                        }
+                    )
+                # bot.stuck = False
+            else:
+                bot.path = current_level.astar(
+                    bot_grid_pos, target_grid_pos, elevation=bot.transform['trans']['y'], target_elevation = bot.transform['trans']['y']
+                )
             if models.Player.objects.filter(team = bot.team, player_id = bot.player_id).first():
                 bot.target = -1
 
            
 
         elif bot.action == int(orders.BotActionEnum.ATTACK):
-            if (closest_enemy and distance_to_enemy < 120 or override_target) and not bot.in_vehicle: # TODO: change this to x within viewing angle of y 
-                enemy_grid_pos =  current_level.transform.transform_to_grid((float(closest_enemy.transform['trans']['x']) , float(closest_enemy.transform['trans']['z'])))
+            if False: #(closest_enemy and distance_to_enemy < 120 or override_target) and not bot.in_vehicle: # TODO: change this to x within viewing angle of y 
+                # enemy_grid_pos =  current_level.transform.transform_to_grid((float(closest_enemy.transform['trans']['x']) , float(closest_enemy.transform['trans']['z'])))
                 if override_target and models.Player.objects.filter(player_id=overidden_target).first():
                     if not models.Player.objects.filter(player_id=overidden_target).first().alive:
                         override_target = False
@@ -236,6 +261,11 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
 
                 # In-case it's overidden
                 closest_enemy = models.Player.objects.filter(player_id = bot.target).first()
+                if not closest_enemy:
+                    bot.order = 2
+                    bot.action = 2
+                    bot.target = -1
+                    return
                 enemy_grid_pos =  current_level.transform.transform_to_grid((float(closest_enemy.transform['trans']['x']) , float(closest_enemy.transform['trans']['z'])))
                 bot.path = current_level.astar(
                     bot_forward_grid_pos,
