@@ -7,6 +7,8 @@ import math
 from numba.experimental import jitclass
 from numba import float32, int32
 from numba import types, typed
+import heapq
+
 
 kv_ty = (types.Tuple((types.int32, types.int32, types.int32)), types.Tuple((types.float32, types.float32, types.int32, types.int32, types.int32)))
 gl = (types.Tuple((types.Tuple((int32, int32, int32)), int32)))
@@ -14,16 +16,46 @@ gl = (types.Tuple((types.Tuple((int32, int32, int32)), int32)))
 pt = types.List(types.Tuple((int32, int32, int32)))
 ptv = types.Tuple((int32, int32, int32))
 ptvp = types.Tuple((types.Tuple((int32, int32, int32)), int32))
+
+ptp = types.Tuple((float32, ptv))
+cmt = (ptv, float32)
+pdt = (ptv, ptv)
+
 spec = [
     ('graph', types.DictType(*kv_ty)),
     ('path', types.ListType(ptv)),
     ('nodes', types.ListType(ptvp)),
     ('keys', types.ListType(ptv)),
     ('closed_nodes', types.ListType(ptvp)),
-    ('graph_lookup', types.ListType(gl))
+    ('graph_lookup', types.ListType(gl)),
+    ('values', float32[:, :, :]),
+    ('elevation', float32[:, :, :]),
+    
 ]
+# Ref: https://www.redblobgames.com/pathfinding/a-star/implementation.html
+binary_heap_spec = [
+    ('elements', types.ListType(ptp))
+]
+@jitclass(binary_heap_spec)
+class PriorityQueue:
+    def __init__(self):
+        self.elements = typed.List.empty_list(ptp)
 
-# @jitclass(spec)
+    def empty(self) -> bool:
+        return not len(self.elements) > 0
+
+    def put(self, item : types.Tuple((int32, int32, int32)), priority : float32):
+        elem = list(self.elements)
+        heapq.heappush(elem, (priority, item))
+        self.elements = typed.List(elem)
+    
+    def get(self) -> types.Tuple((int32, int32, int32)):
+        elem = list(self.elements)
+        v = heapq.heappop(elem)[1]
+        self.elements = typed.List(elem)
+        return v
+
+@jitclass(spec)
 class DFFinder:
     def __init__(self, values : np.ndarray, elevation : np.ndarray, threshold : float32 = 3.0):
         self.graph = typed.Dict.empty(*kv_ty)
@@ -32,15 +64,17 @@ class DFFinder:
         self.keys = typed.List.empty_list(ptv)
         self.closed_nodes = typed.List.empty_list(ptvp)
         self.graph_lookup = typed.List.empty_list(gl)
-        for level in range(values.shape[0]):
-            for x in range(values.shape[1]):
-                for y in range(values.shape[2]):
-                    value = float32(values[level][x][y])
-                    if value < threshold:
-                        self.graph[(x, y, level)] = (value, float32(elevation[level][x][y]), int32(x), int32(y), int32(level))
-                        key = (int32(x), int32(y), int32(level))
-                        self.keys.append(key)
-                        self.graph_lookup.append((key, int32(-1)))
+        self.values = values
+        self.elevation = elevation
+        # for level in range(values.shape[0]):
+        #     for x in range(values.shape[1]):
+        #         for y in range(values.shape[2]):
+        #             value = float32(values[level][x][y])
+        #             if value < threshold:
+        #                 self.graph[(x, y, level)] = (value, float32(elevation[level][x][y]), int32(x), int32(y), int32(level))
+        #                 key = (int32(x), int32(y), int32(level))
+        #                 self.keys.append(key)
+        #                 self.graph_lookup.append((key, int32(-1)))
     
     def _haskey(self, key) -> bool:
         return key in self.keys
@@ -53,6 +87,11 @@ class DFFinder:
             math.pow(math.pow(n2[0]-n1[0], 2), 1.0)+
             math.pow(n2[1]-n1[1], 2)
         )
+
+    def _ingrid(self, key) -> bool:
+        return key[0] >= 0 and key[0] <= self.elevation.shape[1] \
+            and key[1] >= 0 and key[1] <= self.elevation.shape[2] \
+                and key[2] >= 0 and key[2] <= self.elevation.shape[0]
 
     def _sort_node(self, in_nodes : List[Tuple[Tuple[int32, int32, int32], int32]], goal : Tuple[int32, int32, int32]):
         sorted_nodes = typed.List.empty_list(ptvp)
@@ -72,7 +111,7 @@ class DFFinder:
                 open_nodes.remove(min_node)
                 if len(open_nodes) > 0:
                     min_ = v
-                    min_node = open_nodes[i]
+                    min_node = open_nodes[0]
                 i = 0
         return sorted_nodes
             
@@ -83,7 +122,34 @@ class DFFinder:
         return (n1[2] == destination[2] and n1[3] == destination[3] and n1[4] == destination[4]) or self._hdistance(n1, destination) < 10.0
 
     def _getindex(self, node, lookup):
-        return int32(lookup.index(node))
+        for index, n in enumerate(lookup):
+            if n[0] == node[0]:
+                return index
+        return -1
+
+    def _get_value(self, key):
+        return self.values[key[2]][key[0]][key[1]]
+
+    def _get_elevation(self, key):
+        return self.elevation[key[2]][key[0]][key[1]]
+
+    def _is_within_threshold(self, key):
+        return self.values[key[2]][key[0]][key[1]] < float32(32.0) and self.values[key[2]][key[0]][key[1]] > float32(0.0) #and key[2] > 0
+
+    def _hfdistance(self, key1, key2):
+        return math.sqrt(
+            math.pow((self._get_value(key2)-self._get_value(key1)), 2)+
+            
+            math.pow((key2[0]- key1[0]), 2)+
+            math.pow((key2[1]- key1[1]), 2)+
+            math.pow(self._get_elevation(key2)-self._get_elevation(key1), 4)
+        )
+    
+    def _cost(self, key1, key2, key3):
+        return math.pow(abs((self._get_elevation(key3)-((self._get_elevation(key2)+self._get_elevation(key1))/2))), 2)+abs(
+            self._get_value(key2)-self._get_value(key1)
+        )
+
 
     def _addtolookup(self, node, lookup):
         found = False
@@ -94,9 +160,9 @@ class DFFinder:
                 fidx = idx
                 break
         if found == True:
-            self.graph_lookup[fidx] = node
+            lookup[fidx] = node
         else:
-            self.graph_lookup.append(node)
+            lookup.append(node)
         
         return node
     
@@ -107,91 +173,84 @@ class DFFinder:
             return False
         return n1 == n2
 
-    def find(self, start : Tuple[int, int, int], end : Tuple[int, int, int]) -> List[Tuple[int, int, int]]:
-        self.path = typed.List.empty_list(ptv)
-        self.nodes : list = typed.List.empty_list(ptvp)
-        parent_graph_lookup = self.graph_lookup.copy()
-        self.closed_nodes = typed.List.empty_list(ptvp)
-        
-        current_node = ((int32(start[0]), int32(start[1]), int32(start[2])), int32(-1))
-        start_node = ((int32(start[0]), int32(start[1]), int32(start[2])), int32(-1))
-        goal_node = ((int32(end[0]), int32(end[1]), int32(end[2])), int32(-1))
-        self.nodes.append(current_node)
-        while len(self.nodes) > 0:
-            self.nodes = self._sort_node(self.nodes, end)
-            
-            current_node = self.nodes.pop(0)
-            self.closed_nodes.append(current_node)
-            if self._isatdestination(self.graph[current_node[0]], self.graph[goal_node[0]]):
-                while not (self.node_eq(current_node, goal_node) and current_node != None):
-                    # print(current_node)
-                    self.path.append(current_node[0])
-                    current_node = (parent_graph_lookup[current_node[1]])
-                return self.path.reverse()
-        
-            x = current_node[0][0]
-            y = current_node[0][1]
-            level = current_node[0][2]
-    
-            neighbours = [(x-1, y, level), (x+1, y, level), (x, y-1, level), (x, y+1, level), (x, y, level-1), (x, y, level+1)]
-    
-            for next in neighbours:
-                if not self._haskey(next):
-                    continue
-                neighbour = self._addtolookup((next, self._getindex(current_node, parent_graph_lookup)), parent_graph_lookup)
-    
-                if neighbour in self.closed_nodes:
-                    continue
-                
-                should_add = True
-                for node in self.nodes:
-                    if node == neighbour and self._hdistance(self.graph[neighbour[0]], self.graph[goal_node[0]]) >= self._hdistance(self.graph[node[0]], self.graph[goal_node[0]]):
-                        should_add = False
-                        break
-                if should_add:
-                    self.nodes.append(neighbour)
+    def nodes_getmin(self, nodes, goal):
+        min_distance = self._hdistance(self.graph[nodes[0][0]], self.graph[goal[0]])
+        min_index = 0
+        for index, node in enumerate(nodes):
+            d = self._hdistance(self.graph[node[0]], self.graph[goal[0]])
+            if d < min_distance:
+                min_distance = d
+                min_index=  index
+        return nodes.pop(min_index)
 
-            # min_distance = self._hdistance(current_node, end_node)
-            # for x in range(current_node[2]-radius, current_node[2]+radius):
-            #     for y in range(current_node[3]-radius, current_node[3]+radius):
-            #         for l in range(current_node[4]-1, current_node[4]+1):
-            #             
-            #             key = (int32(x), int32(y), int32(l))
-            #             if not self._haskey(key): continue
-            #             n = self.graph[key]
-            #             if n != None:
-            #                 d = self._hdistance(n, end_node)
-            #                 if d < min_distance:
-            #                     min_distance = d
-            #                     min_node = n
-            #                     min_key = key
-            #                     self.nodes.append((min_node[2], min_node[3], min_node[4]))
-            #         if self._haskey(min_key):
-            #             current_node = self.graph[min_key]
-            #             self.closed_nodes.append(min_key)
-            #             print('valid key '+ str(int32(self._hdistance(current_node, end_node))))
-            #     # path.append((current_node[2], current_node[3], current_node[4]))
-        #print("Done gathering points")
-        #min_distance = self._hdistance(self.graph[start], self.graph[end])
-        #for node in self.nodes:
-        #    n = self.graph[node]
-        #    d = self._hdistance(n, end_node)
-        #    if d < min_distance:
-        #        self.path.append(node)
-#
-        ##print("Found path!!!", self.path, [(p[0], p[1]) for p in self.path])\
-        #return self.path
-        return self.path
+    def find(self, start : Tuple[int, int, int], end : Tuple[int, int, int]) -> List[Tuple[int, int, int]]:
+        queue = PriorityQueue()
+        start = (int32(start[0]), int32(start[1]), int32(start[2]))
+        end = (int32(end[0]), int32(end[1]), int32(end[2]))
+
+        null_ptv = (int32(-1), int32(-1), int32(-1))
+
+        self.path = typed.List.empty_list(ptv)
+        
+        
+        came_from = typed.Dict.empty(*pdt)
+        came_from[start] = null_ptv
+        costs_so_far = typed.Dict.empty(*cmt)
+        costs_so_far[start] = float32(math.inf)
+        
+        queue.put(start, float32(0))
+        i = int32(0)
+        while not queue.empty():
+            current = queue.get()
+            if i % 10 == 0:
+                print('['+str(i)+'] - Distance to goal: '+str(int(self._hfdistance(current, end))))
+
+            if current == end:
+                break
+            x = current[0]
+            y = current[1]
+            level = current[2]
+            neighbours = [(int32(x-1), int32(y), int32(level)), (int32(x+1), int32(y), int32(level)), 
+                (int32(x), int32(y-1), int32(level)), (int32(x), int32(y+1), int32(level)), (int32(x), int32(y), int32(level-1)),
+                    (int32(x), int32(y), int32(level+1))]
+
+            for next in neighbours:
+                if not self._ingrid(next): continue
+                if not self._is_within_threshold(next): continue
+
+                new_cost = costs_so_far[current] + self._cost(current, next, end)
+                 #self._hdistance(self.graph[current], self.graph[next])
+                if next not in costs_so_far or new_cost < costs_so_far[next]:
+                    costs_so_far[next] = new_cost
+                    priority = float32(self._hfdistance(next, end)) #float32(self._hdistance(self.graph[next], self.graph[end]))
+                    queue.put(next, priority)
+                    came_from[next] = current
+            i += 1
+        return self.build_path(came_from, start, end)
+
+    def build_path(self, came_from :types.Tuple((int32, int32, int32)), start : types.Tuple((int32, int32, int32)), end : types.Tuple((int32, int32, int32))):
+        current = end
+        path = typed.List.empty_list(ptv)
+        while current != start:
+            path.append(current)
+            current = came_from[current]
+        path.append(start)
+        return path
+
 
 if __name__ == "__main__":
     with open("./models/Project/BF3 Bots 0.0.4/Level/MP_Subway/df.npy", "rb") as f:
         df = np.load(f)
     with open("./models/Project/BF3 Bots 0.0.4/Level/MP_Subway/elevation.npy", "rb") as f:
         elevation = np.load(f)
+
+
     df = np.power(df, 0.2)
     df = np.max(df[1]) - df
     df = np.power(df, 4.5)
     df = df.astype(np.float32)
+    elevation = elevation.astype(np.float32)
+
     finder = DFFinder(df, elevation, 32)
     #print(finder.graph)
     start = (507, 1145, 1)
@@ -200,5 +259,11 @@ if __name__ == "__main__":
     # print(df[start[2]][start[0]][start[1]])
     print("FINDING PATH....")
     path = finder.find(start, end)
+    # path = find(finder, start, end)
     print(path)
-    # print("Found path!!!", [(p[0], p[1]) for p in path])
+    print("Found path!!!", [(p[0], p[1]) for p in path])
+    with open('./path.txt', 'w') as f:
+        f.write('[')
+        for p in path:
+            f.write(f'({p[0]}, {p[1]}, {p[2]}),')
+        f.write(']')
