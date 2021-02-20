@@ -42,7 +42,9 @@ end
 
 function BotsManager:InitialiseHeartbeatSettings()
     local initialHeartbeatData = self:GetManager('/initialise-heartbeat/')
+    print("Initializing heartbeat...")
     if (initialHeartbeatData.body ~= nil) then
+        
         print(initialHeartbeatData.body)
         local data = json.decode(initialHeartbeatData.body)
         self.use_spawn_points = data.use_spawn_points
@@ -921,6 +923,20 @@ function BotsManager:GetNearestSpawnPointFromTranslation(Translation, Team)
     return minTranslation
 end
 
+function BotsManager:GetRandomSpawnPoint(Team)
+    local spawnPoints = {}
+    if (Team == 1) then
+        spawnPoints = self.friendly_spawn_points
+    else
+        spawnPoints = self.enemy_spawn_points
+    end
+    if #spawnPoints > 1 then
+        return spawnPoints[math.random(1, #spawnPoints)]
+    else
+        return nil
+    end
+end
+
 function BotsManager:SpawnBotAroundTransform(Transform, bot)
     --US
     local soldierBlueprint = ResourceManager:SearchForInstanceByGuid(Guid('261E43BF-259B-41D2-BF3B-9AE4DDA96AD2'))
@@ -983,6 +999,7 @@ end
 function BotsManager:RespawnBot(bot)
     -- first priority is to spawn on squadmate
     local has_spawned_on_squadmate = false
+    local has_spawned_on_objective = false
     local players_in_squad = PlayerManager:GetPlayersBySquad(bot.player_controller.teamId, bot.player_controller.squadId)
     local alive_players_in_squad = {}
     if #players_in_squad > 0 then
@@ -1012,12 +1029,24 @@ function BotsManager:RespawnBot(bot)
                 local successfulSpawn = bot.player_controller:Spawn(choice, false)
                 if (not successfulSpawn) then
                     self:SpawnBotAroundTransform(choice.transform , bot)
+                    has_spawned_on_objective = true
                 else
                     print("Successfully spawned on entity")
+                    has_spawned_on_objective = true
                 end
                 -- self:SpawnBotAtEntity(choice, bot)
                 bot.target = nil
             end
+        end
+    end
+
+    if (not (has_spawned_on_objective and has_spawned_on_squadmate)) then
+        local choice = self:GetRandomSpawnPoint(bot.player_controller.teamId)
+        if choice ~= nil then
+            self:SpawnBotAroundTransform(LinearTransform(
+                Vec3(-1.0, 0.0, 0.0), Vec3(0.0, 1.0, 0.0), Vec3(0.0, 0.0, 1.0),
+                choice
+            ), bot)
         end
     end
 end

@@ -189,9 +189,10 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
     if bot.alive and 'trans' in list(bot.transform.keys()):
         objectives : List[navigation_models.Objective] = get_target_objectives(bot.team, navigation_models.Objective)
         closest_objective, distance_to_objective = get_nearest_objective(bot, objectives)
+        any_objectives = navigation_models.Objective.objects.count() > 0
 
         enemies : List[models.BasePlayer] = list(models.Bot.objects.exclude(team=bot.team).all()) + list(models.Player.objects.exclude(team=bot.team).all())
-
+        current_level_model : navigation_models.Level = navigation_models.Level.objects.filter(level_id = current_level.model.level_id, project_id = current_level.model.project_id).first()
         closest_enemy, distance_to_enemy = get_nearest_enemy(bot, enemies)
         bot_grid_pos = current_level.transform.transform_to_grid((bot.transform['trans']['x'], bot.transform['trans']['z']))
         d = random.randrange(-2.0, 2.0)
@@ -238,7 +239,7 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
            
 
         elif bot.action == int(orders.BotActionEnum.ATTACK):
-            if False: #(closest_enemy and distance_to_enemy < 120 or override_target) and not bot.in_vehicle: # TODO: change this to x within viewing angle of y 
+            if (closest_enemy and distance_to_enemy < 15) and not bot.in_vehicle: # TODO: change this to x within viewing angle of y 
                 # enemy_grid_pos =  current_level.transform.transform_to_grid((float(closest_enemy.transform['trans']['x']) , float(closest_enemy.transform['trans']['z'])))
                 if override_target and models.Player.objects.filter(player_id=overidden_target).first():
                     if not models.Player.objects.filter(player_id=overidden_target).first().alive:
@@ -266,6 +267,12 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                     bot.action = 2
                     bot.target = -1
                     return
+                if not closest_enemy.alive:
+                    bot.order = 2
+                    bot.action = 2
+                    bot.target = -1
+                    return
+                    
                 enemy_grid_pos =  current_level.transform.transform_to_grid((float(closest_enemy.transform['trans']['x']) , float(closest_enemy.transform['trans']['z'])))
                 bot.path = current_level.astar(
                     bot_forward_grid_pos,
@@ -281,7 +288,7 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                         bot.path = []
                 # bot.save()
 
-            elif closest_objective:
+            elif closest_objective and any_objectives:
                 # print('no enemy, but close objective')
                 bot.path = []
                 
@@ -303,7 +310,22 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                     bot.order = orders.BotOrdersEnum.FRIENDLY
                     bot.action = orders.BotActionEnum.GET_OUT
                 # bot.save()
-            
+            elif not any_objectives:
+                targets : list = current_level_model.spawn_points_friendly
+                target = targets[random.randint(0, len(targets)-1)]
+                target_grid_pos = current_level.transform.transform_to_grid(
+                    (
+                        target['x'], target['z']
+                    )
+                )
+                print("Random point", bot_grid_pos, target_grid_pos, target)
+                bot.path = current_level.astar(
+                    bot_grid_pos, 
+                    target_grid_pos,
+                    elevation = bot.transform['trans']['y'],
+                    target_elevation = target['y']
+                )
+
             elif bot.action == 6 and not bot.in_vehicle:
                 target = models.Player.objects.filter(player_id=bot.target).first() or models.Bot.objects.filter(player_id=bot.target).first()
                 if target:

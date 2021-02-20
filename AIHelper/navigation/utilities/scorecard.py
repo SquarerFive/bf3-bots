@@ -168,7 +168,9 @@ def score(model: models.Level, transform : transformations.GridTransform,  input
         if use_df:
             arr_to_use = distance_field_arr
             arr_to_use = np.power(arr_to_use, 0.2)
-        if not masks_only:
+            arr_to_use = np.max(arr_to_use[1]) - arr_to_use
+            arr_to_use = np.power(arr_to_use, 4.0)
+        if not masks_only and not use_df:
             
             score_fast(input_arr, arr_to_use, target, layer,  road_mask, structures_mask, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power, df_based=use_df)
         else:
