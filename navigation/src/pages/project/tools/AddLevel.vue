@@ -60,7 +60,7 @@
                                 <q-input filled dark v-model="config.voxel_step_size" label="Step Size" hint="Having lower values would result in less iterations, but may crash the game." />
                             </q-item-section>
                             <q-item-section>
-                                <q-input filled dark v-model="config.voxel_size" label="Voxel Size" hint="Smaller values here would result in a higher-resolution navmesh. " />
+                                <q-input filled dark v-model="config.voxel_size" label="Voxel Size" hint="Smaller values here would result in a higher-resolution navmesh." />
                             </q-item-section>
                         </q-item>
                         <q-item style="margin-top:50px;">
