@@ -263,9 +263,9 @@ class DFFinder:
 
 
 if __name__ == "__main__":
-    with open("./models/Project/BF3 Bots 0.0.4/Level/MP_Subway/df.npy", "rb") as f:
+    with open("./models/Project/BF3 Bots 0.0.4/Level/MP_017/df.npy", "rb") as f:
         df = np.load(f)
-    with open("./models/Project/BF3 Bots 0.0.4/Level/MP_Subway/elevation.npy", "rb") as f:
+    with open("./models/Project/BF3 Bots 0.0.4/Level/MP_017/elevation.npy", "rb") as f:
         elevation = np.load(f)
 
 
@@ -278,9 +278,9 @@ if __name__ == "__main__":
     finder = DFFinder(df, elevation, 32)
     #print(finder.graph)
     # (461, 947, 1) (518, 1004, 1)
-    start = (461, 947, 1)
+    start = (99, 342, 0)
     # start = (1145, 407, 1)
-    end = (518, 1004, 1)
+    end = (57, 407, 0)
     # print(df[start[2]][start[0]][start[1]])
     print("FINDING PATH....")
     path = finder.find(start, end)

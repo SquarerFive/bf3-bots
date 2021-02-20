@@ -54,16 +54,17 @@ class GridTransform:
         self.height = height
     
     def transform_to_world(self, xy : tuple) -> tuple:
-        nx = remap(xy[0], 0, self.width, 0.0, 1.0)
-        ny = remap(xy[1], 0, self.height, 0.0, 1.0)
-        # nx = 1.0 - nx
+        
+        nx = remap(xy[0], 0, self.width, self.min_point[0], self.max_point[0])
+        ny = remap(xy[1], 0, self.height, self.min_point[1], self.max_point[1])
+        #nx = 1.0 - nx
         # ny = 1.0 - ny
         # first, 0 to width = min_point.x to max_point.x 
         wx = remap(nx, 0, 1.0, self.min_point[0], self.max_point[0])
         # 0 to height, min_point.y to max_point.y
         wy = remap(ny, 0, 1.0, self.min_point[1], self.max_point[1])
-
-        return (wy, wx)
+        
+        return (nx, ny)
         
     def transform_to_grid(self, wxy : tuple) -> tuple:
         #print(wxy)

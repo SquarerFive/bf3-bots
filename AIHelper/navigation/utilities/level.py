@@ -52,6 +52,7 @@ class Level:
         # self.mdf = np.power(self.mdf, 4.0)
         # self.mdf = self.mdf.astype(np.float32)
         elevation = self.elevation.astype(np.float32)
+        
         self.dffinder = dffinding.DFFinder(self.costs, elevation, 38)
     
     def classify_costs(self, elevation_based : bool = False, elevation_alpha_power : float = 0.05, elevation_alpha_beta : float = 1.5, elevation_alpha_beta_power : float = 7.0, just_paths = False, use_df = False):
@@ -93,10 +94,11 @@ class Level:
         d = math.inf
         l = 1
         for level in range(self.elevation.shape[0]):
-            c = abs(self.elevation[level][position[0]][position[1]] - position[2])
-            if c < d:
-                d = c
-                l = level
+            if position[0] >= 0 and position[0] < self.elevation.shape[1] and position[1] >= 0 and position[1] < self.elevation.shape[2]:
+                c = abs(self.elevation[level][position[0]][position[1]] - position[2])
+                if c < d:
+                    d = c
+                    l = level
         if l > 9:
             l = min(9, l)
         return l
@@ -252,7 +254,7 @@ class Level:
                     self.get_valid_point_in_radius(self.costs, start[0], start[1], 5), 
                     self.get_valid_point_in_radius(self.costs, end[0], end[1], 5), best_level, target_best_level)
         else:
-            print("Outside of map")
+            print("Outside of map", start, end)
             return []
         #print('got path')
         #path = astar(self.costs, start, end)
@@ -263,7 +265,9 @@ class Level:
                 # self.costs_preview[p[0]][p[1]] = 0.5
                 wxy = self.transform.transform_to_world(p)
                 if self.dffinder and udffinder:
-                    # print(p, udffinder)
+                    # print(p, udffinder)\
+                    wxy = self.transform.transform_to_world((int32(p[0]), int32(p[1])))
+
                     world_paths.append({
                         "x": wxy[0],
                         "y": float(self.elevation[p[2]][p[0]][p[1]]),
