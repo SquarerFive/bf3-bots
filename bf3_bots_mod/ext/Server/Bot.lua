@@ -81,6 +81,9 @@ function Bot:__init()
     self.provides_ammo = false
     self.provides_ammo_slot = -1
     --
+    self.provides_health = false
+    self.provides_health_slot = -1
+    --
     self.delta_time = 0.0
     --
     self.botVehicleController = BotVehicleController.Create()
@@ -810,17 +813,23 @@ function Bot:SpawnBot(transform, pose, soldierBP, kit, unlocks, spawnEntity)
             local primaryGadget = nil
             if self.selected_kit.primary_gadget ~= nil then
                 primaryGadget = ResourceManager:SearchForDataContainer(self.selected_kit.primary_gadget.path)
-                if self.selected_kit.primary_gadget.name == 'Ammo Bag' then
+                if self.selected_kit.primary_gadget.name == 'U_Ammobag' then
                     self.provides_ammo = true
                     self.provides_ammo_slot = 2
+                elseif self.selected_kit.primary_gadget.name == 'U_Medkit' then
+                    self.provides_health = true
+                    self.provides_health_slot = 2
                 end
             end
             local secondaryGadget = nil
             if self.selected_kit.secondary_gadget ~= nil then
                 secondaryGadget = ResourceManager:SearchForDataContainer(self.selected_kit.secondary_gadget.path)
-                if self.selected_kit.secondary_gadget.name == 'Ammo Bag' then
+                if self.selected_kit.secondary_gadget.name == 'U_Ammobag' then
                     self.provides_ammo = true
                     self.provides_ammo_slot = 5
+                elseif self.selected_kit.secondary_gadget.name == 'U_Medkit' then
+                    self.provides_health = true
+                    self.provides_health_slot = 2
                 end
             end
             local melee = nil

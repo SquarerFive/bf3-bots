@@ -15,3 +15,4 @@ class BotActionEnum(IntEnum):
     GOTO = 5
     GET_IN = 6
     GET_OUT = 7
+    PROVIDE = 8
