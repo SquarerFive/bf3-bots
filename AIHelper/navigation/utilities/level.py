@@ -273,10 +273,10 @@ class Level:
         if type(path) != type(None):
             for idx, p in enumerate(path):
                 # self.costs_preview[p[0]][p[1]] = 0.5
-                wxy = self.transform.transform_to_world(p)
+                wxy = self.transform.transform_to_world((int32(p[1]), int32(p[0])))
                 if self.dffinder and udffinder:
                     # print(p, udffinder)\
-                    wxy = self.transform.transform_to_world((int32(p[0]), int32(p[1])))
+                    wxy = self.transform.transform_to_world((int32(p[1]), int32(p[0])))
 
                     world_paths.append({
                         "x": wxy[0],

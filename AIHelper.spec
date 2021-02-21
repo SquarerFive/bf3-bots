@@ -4,12 +4,12 @@ block_cipher = None
 
 
 a = Analysis(['AIHelper\\manage.py'],
-             pathex=['./bf3-bots'],
+             pathex=['H:\\Repositories\\bf3-bots'],
              binaries=[],
              datas=[],
              hiddenimports=[],
              hookspath=[],
-             runtime_hooks=[],
+             runtime_hooks=['./AIHelper/pyi_rth_django.py'],
              excludes=[],
              win_no_prefer_redirects=False,
              win_private_assemblies=False,

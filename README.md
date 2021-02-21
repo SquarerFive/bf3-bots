@@ -50,7 +50,7 @@ Asset manager, where you may add a weapon from the left into the selected list, 
 
 
 ## ✨ Master Branch: Features
-- Conquest, TDM and Domination support. 
+- Conquest, Conquest Assault, TDM and Domination support. 
     - Rush, CTF will soon be supported
 - Multi-layer navigation mesh.
 - DFAstar++ (highly optimized solution), and AStar pathfinding. Falling back to the latter if distance fields are not generated.
