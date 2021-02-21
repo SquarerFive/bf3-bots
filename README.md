@@ -5,51 +5,13 @@ This mod is currently in development, some features may not function as intended
 
 
 
-## ✨ Version 0.0.4a2 : Changelogs + Features
-- Fixed: [#16](https://github.com/SquarerFive/bf3-bots/issues/16), [#15](https://github.com/SquarerFive/bf3-bots/issues/15), [#9](https://github.com/SquarerFive/bf3-bots/issues/9), and several bugs. Full Changelist:
-```
-Layered navmesh seemed to only be valid for layer 0.
-Nav-mesh dimensions were inconrrect after adding a new level.
-Improved the performance on AIServer by 12000%. Where it should now be in sync with the game.
-Improved AI reaction times and moved compute tasks over to the startcomputetask command. Reaction times can be set using the --interval parameter.
-Added the ability to set attachments for primary and secondary weapons on the bots.
-Improved feedback within many UI elements, to let the user know whether a task is being run.
-Bots now trace back if they are stuck on some object.
-Exposed nav-mesh calculation parameters in the map editor.
-AIServer is now distributable via an executable package.
-Re-enabled vegetation.
-Added filters to the asset browser.
-Added csv tools to import and export dumped VEXT assets.
-Database is now vacuumed after all tasks are deleted.
-Create new arrays during the import if the nav-mesh on disk is corrupt.
-Added bot driving interpolation, and vehicleController.
-Added a level distance field mesh generator.
-Added hybrid pathfinding (DFAstar++ for indoor maps).
-Fixed invalid access to friendly/enemy kit collection on a new level.
-Fixed custom spawner from attempting to generate an index with a range of 0.
-Added elevation-based and DF-based generation options.
-Added project JSON export.
-Voxel-size now takes effect on the nav-mesh generation.
-Level add-block now caches into memory rather than writing onto disk (causing the database to lock).
-Added path-recorder.
-Added custom spawner (for TDM).
-Added EmitActionAsync.
-Bots now supply each-other ammo or health if ammo/health is below a certain threshold.
-Stop bots from attacking if the direct path (forward from the bot) is colliding with the distance field mesh. They will instead navigate around the obstructing object.
-Built navmesh for Noshahr Canals TDM.
-```
-- Loadout manager, each slot contains all possible weapons - where one is randomly selected when the AI is spawned. Loadouts are set individually for each map and faction, for new maps a loadout can easily be cloned from an existing map or faction. Customize the attachments for each of the weapons.
-![Loadout Screen](./docs/images/loadout_screen.png)
-Asset manager, where you may add a weapon from the left into the selected list, this being all possible weapons the bot could spawn with.
-![Asset Viewer](./docs/images/asset_viewer.png)
-- AI Infantry Combat and Vehicle Driving
-- Automated nav-mesh generation
-![Add level prompt](./docs/images/add-level-0-0-4.png)
-- WIP Interior/Subsurface Navigation
-- Working server bullet damage
+## ✨ Released: [Version 0.0.4](https://github.com/SquarerFive/bf3-bots/releases/tag/0.0.4)
 
+## ✨ Main: [Version 0.0.4dev](https://github.com/SquarerFive/bf3-bots/tree/main)
 
 ## ✨ Master Branch: Features
+- AI Teamwork
+    - Bots can provide each other ammo or health (when they are at a critical state).
 - Conquest, Conquest Assault, TDM and Domination support. 
     - Rush, CTF will soon be supported
 - Multi-layer navigation mesh.
