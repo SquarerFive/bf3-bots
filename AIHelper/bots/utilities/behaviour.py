@@ -307,9 +307,10 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                     (*bot_grid_pos, bot_best_level),
                     (*enemy_grid_pos, enemy_best_level)
                 )
-                if cost > 4:
+                # print("Cost: ", cost)
+                if cost > 50:
                     bot.target = -1
-                    print("Cost more than 8, not attacking until at path")
+                    print("Cost more than 50, not attacking until at path")
 
                 bot.path = current_level.astar(
                     bot_forward_grid_pos,

@@ -4,9 +4,10 @@ AI mod for BF3, reviving the Battlefield 2 experience.
 This mod is currently in early development. Feel free to contribute but there is no guaruntee that the mod will be stable if you plan on using it (I will only be providing support for those who wish to contribute at the moment).
 
 ## Master Branch: Features
-- Conquest and Domination support. 
-    - Rush, CTF and TDM will soon be supported
-- Multi-layer navigation mesh, recursive pathfinding.
+- Conquest, TDM and Domination support. 
+    - Rush, CTF will soon be supported
+- Multi-layer navigation mesh.
+- DFAstar++ (highly optimized solution), and AStar pathfinding. Falling back to the latter if distance fields are not generated.
 - Multiple tools to determine navigable parts of the map (all of these can work together):
     - Automated score-based navmesh generation (fast).
     - Path recorder, where the player can record their movements which modify the bias value on the nav mesh.
@@ -24,7 +25,7 @@ This mod is currently in early development. Feel free to contribute but there is
 - Variable response times
     - The interval where the paths and actions of the bots can be set by using the `--interval` parameter for `startcomputetask`.
 
-## Version 0.0.4a1 : Changelogs + Features
+## Version 0.0.4a2 : Changelogs + Features
 - Fixed: [#16](https://github.com/SquarerFive/bf3-bots/issues/16), [#15](https://github.com/SquarerFive/bf3-bots/issues/15), [#9](https://github.com/SquarerFive/bf3-bots/issues/9), and several bugs. Full Changelist:
 ```
 Layered navmesh seemed to only be valid for layer 0.
@@ -51,6 +52,11 @@ Added project JSON export.
 Voxel-size now takes effect on the nav-mesh generation.
 Level add-block now caches into memory rather than writing onto disk (causing the database to lock).
 Added path-recorder.
+Added custom spawner (for TDM).
+Added EmitActionAsync.
+Bots now supply each-other ammo or health if ammo/health is below a certain threshold.
+Stop bots from attacking if the direct path (forward from the bot) is colliding with the distance field mesh. They will instead navigate around the obstructing object.
+Built navmesh for Noshahr Canals TDM.
 ```
 - Loadout manager, each slot contains all possible weapons - where one is randomly selected when the AI is spawned. Loadouts are set individually for each map and faction, for new maps a loadout can easily be cloned from an existing map or faction. Customize the attachments for each of the weapons.
 ![Loadout Screen](./docs/images/loadout_screen.png)
@@ -66,7 +72,8 @@ Asset manager, where you may add a weapon from the left into the selected list, 
 - Battlefield 3 and Venice Unleashed
 
 ## Installation
-NOTICE: These binaries will be available on the 0.0.4 release.
+NOTICE: These binaries will be available on the 0.0.4 release. **(currently version is 0.0.4alpha2)**
+
 0. You will need to open up two instances of CMD/Powershell for this.
 1. Start the AI Server ```./dist/AIHelper/AIHelper.exe runserver --noreload```
 2. Start the AI compute background task: ```./dist/AIHelper/AIHelper.exe startcomputetask```

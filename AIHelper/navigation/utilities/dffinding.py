@@ -252,7 +252,7 @@ class DFFinder:
         came_from = typed.Dict.empty(*pdt)
         came_from[start] = null_ptv
         costs_so_far = typed.Dict.empty(*cmt)
-        costs_so_far[start] = float32(math.inf)
+        costs_so_far[start] = self._hfdistance(start, end)
         
         queue.put(start, float32(0))
         current = start
@@ -327,7 +327,7 @@ class DFFinder:
             return cost
         while current != start:
             if costs_so_far[current] < float32(math.inf):
-                cost += self.values[current[2]][current[0]][current[1]]
+                cost += costs_so_far[current] #self.values[current[2]][current[0]][current[1]]
             current = came_from[current]
         
         return cost
