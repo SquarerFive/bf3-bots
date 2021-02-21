@@ -554,6 +554,12 @@ def manager_update_level(request: Request, project_id : int) -> Response:
     
     if level_model:
         level_object = global_cache.get_object(project_id, level_model.level_id)
+        settings : models.BF3GameManager = models.BF3GameManager.objects.first()
+        if settings.active_level_id != level_model.level_id or settings.active_project_id != level_model.project_id:
+            settings.active_project_id = level_model.project_id
+            settings.active_level_id = level_model.level_id
+            settings.reload = True
+            settings.save()
         
         friendly_faction_kit_collection : models.SoldierKitCollection = models.SoldierKitCollection.objects.filter(project_id=project_id, level_id=level_model.level_id, faction=0).first()
         enemy_faction_kit_collection : models.SoldierKitCollection = models.SoldierKitCollection.objects.filter(project_id=project_id, level_id=level_model.level_id, faction=1).first()
@@ -1198,6 +1204,9 @@ def manager_get_active_level_minimal(request : Request) -> Response:
     global_cache.get_object(settings.active_project_id, settings.active_level_id)
     data =  serializers.LevelMinimalSerializer(navigation_models.Level.objects.filter(
         level_id = settings.active_level_id, project_id = settings.active_project_id).first()).data
-        
+    settings.reload = True
+    settings.save()
+    bots_models.Bot.objects.all().delete()
+    bots_models.Player.objects.all().delete()
     print(data)
     return Response(data)

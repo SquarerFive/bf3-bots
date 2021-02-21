@@ -83,7 +83,14 @@ class Command(BaseCommand):
         # thread_pool.start()
         while True:
             
-            currentGameManager = models.BF3GameManager.objects.first()
+            currentGameManager : models.BF3GameManager = models.BF3GameManager.objects.first()
+            if currentGameManager.reload:
+                level_object = global_cache.get_object(
+                    currentGameManager.active_project_id,
+                    currentGameManager.active_level_id
+                )
+                currentGameManager.reload = False
+                currentGameManager.save()
             ts = time.time()
             if currentGameManager:
                 level_object = global_cache.get_object(
