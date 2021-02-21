@@ -113,7 +113,7 @@ function ScorecardClient:StartBuild(in_data)
     self.step_size_x = settings.iterations_x / self.steps
     self.step_size_y = settings.iterations_y / self.steps
     self.voxel_size = settings.voxel_size
-    self.layers = settings.layers
+    self.layers = tonumber(settings.layers)
     self.min_point = Vec3(
         tonumber(settings.start.x),
         tonumber(settings.start.y),
