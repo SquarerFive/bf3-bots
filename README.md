@@ -1,29 +1,9 @@
 # bf3-bots
-AI mod for BF3, reviving the Battlefield 2 experience.
+AI mod for BF3, this is an attempt to recreate BF2-like bots.
 
-This mod is currently in early development. Feel free to contribute but there is no guaruntee that the mod will be stable if you plan on using it (I will only be providing support for those who wish to contribute at the moment).
+This mod is currently in development, some features may not function as intended (such as project export).
 
-## Master Branch: Features
-- Conquest, TDM and Domination support. 
-    - Rush, CTF will soon be supported
-- Multi-layer navigation mesh.
-- DFAstar++ (highly optimized solution), and AStar pathfinding. Falling back to the latter if distance fields are not generated.
-- Multiple tools to determine navigable parts of the map (all of these can work together):
-    - Automated score-based navmesh generation (fast).
-    - Path recorder, where the player can record their movements which modify the bias value on the nav mesh.
-    - Map Editor, draw vector features to determine what areas are navigable and what aren't. Fairly similiar logic to the path recorder.
-    - Automated voxel DF based navmesh generation (slow, but generates a more precise mesh).
-    - Automated voxel depth based navmesh generation (fast).
-- Work in progress vehicle controller, quite simple logic to allow the bots to get in a vehicle and drive to an objective by smoothly following a path.
-- Loadout and asset manager, you may define what weapons, gadgets, melee and appearance related items are available for each slot in each kit. These can also differ for each map.
-- Custom spawn points
-    - Spawn points can be added for each team which the bot spawner will attempt to use. Otherwise they are spawned randomly around an objective.
-- Runtime bot configuration
-    - Modify the accuracy and aim offset of the bots, where the changes will propagate instantly.
-- Extensible framework [need to document]
-    - The behaviour of the bots are separated into "orders" and "actions", the tasks can be assigned to each of the actions. 
-- Variable response times
-    - The interval where the paths and actions of the bots can be set by using the `--interval` parameter for `startcomputetask`.
+
 
 ## Version 0.0.4a2 : Changelogs + Features
 - Fixed: [#16](https://github.com/SquarerFive/bf3-bots/issues/16), [#15](https://github.com/SquarerFive/bf3-bots/issues/15), [#9](https://github.com/SquarerFive/bf3-bots/issues/9), and several bugs. Full Changelist:
@@ -68,6 +48,29 @@ Asset manager, where you may add a weapon from the left into the selected list, 
 - WIP Interior/Subsurface Navigation
 - Working server bullet damage
 
+
+## Master Branch: Features
+- Conquest, TDM and Domination support. 
+    - Rush, CTF will soon be supported
+- Multi-layer navigation mesh.
+- DFAstar++ (highly optimized solution), and AStar pathfinding. Falling back to the latter if distance fields are not generated.
+- Multiple tools to determine navigable parts of the map (all of these can work together):
+    - Automated score-based navmesh generation (fast).
+    - Path recorder, where the player can record their movements which modify the bias value on the nav mesh.
+    - Map Editor, draw vector features to determine what areas are navigable and what aren't. Fairly similiar logic to the path recorder.
+    - Automated voxel DF based navmesh generation (slow, but generates a more precise mesh).
+    - Automated voxel depth based navmesh generation (fast).
+- Work in progress vehicle controller, quite simple logic to allow the bots to get in a vehicle and drive to an objective by smoothly following a path.
+- Loadout and asset manager, you may define what weapons, gadgets, melee and appearance related items are available for each slot in each kit. These can also differ for each map.
+- Custom spawn points
+    - Spawn points can be added for each team which the bot spawner will attempt to use. Otherwise they are spawned randomly around an objective.
+- Runtime bot configuration
+    - Modify the accuracy and aim offset of the bots, where the changes will propagate instantly.
+- Extensible framework [need to document]
+    - The behaviour of the bots are separated into "orders" and "actions", the tasks can be assigned to each of the actions. 
+- Variable response times
+    - The interval where the paths and actions of the bots can be set by using the `--interval` parameter for `startcomputetask`.
+
 ## Requirements
 - Battlefield 3 and Venice Unleashed
 
@@ -99,10 +102,3 @@ It is recommended to use a resolution above 1280x720.
 - Build it by running `quasar dev`, where the built site is located in /dist/spa/
 - When compiling it with vuicc, you will need to point it to that folder.
 
-
-## Features
-- Flexible nav-mesh, it can be generated using a single command or use an existing one from the repo.
-- Current support for up to 64 bots. (and this will increase as the mod becomes more optimized)
-- AI Vehicle Interaction.
-- Agnostic combat, AI see each other as normal players and will attack enemies regardless of whether they are human or bot.
-- Conquest : AI attacks enemy objectives.
