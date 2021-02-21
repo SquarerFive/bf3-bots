@@ -4,7 +4,8 @@ from .models import Level, Objective, Profile, Project
 
 @admin.register(Level)
 class LevelAdmin(admin.ModelAdmin):
-    fields = ("name","transform", "project_id", "date_created", "date_modified", "level_id", "roads", "structures", "recorded_paths", "spawn_points_friendly", "spawn_points_enemy", "use_spawn_points")
+    fields = ("name","transform", "project_id", "date_created", "date_modified", "level_id", "roads", "structures", "recorded_paths", "spawn_points_friendly", "spawn_points_enemy", "use_spawn_points",
+        "has_distance_field", "layers")
 
 @admin.register(Objective)
 class ObjectiveAdmin(admin.ModelAdmin):

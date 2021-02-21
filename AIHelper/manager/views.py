@@ -309,7 +309,7 @@ def manager_add_level_block(request : Request, project_id : int):
         global_cache.level_model.layers = layers
         global_cache.level_model.has_distance_field = use_df
         levelObject.project_id = project_id
-        levelObject.pre_process_data()
+        levelObject.pre_process_data(layers)
         navigation_query.encode_level(levelObject)
         levelModel = navigation_query.models.Level.objects.filter(project_id=project_id, name=level_name).first()
     
@@ -391,11 +391,12 @@ def manager_clear_level_data(request : Request, project_id : int) -> Response:
     transformObj = level.transformations.GridTransform(transform[0], transform[1], transform[2], transform[3])
     use_df = str(request.headers['Has-DF']).lower().strip() == 'true'
     layers = int(request.headers['Layers'])
-    print('clearing level')
+    print('clearing level', 'has levels:', layers)
     if levelObject:
         levelObject.transform = transformObj
         global_cache.level_model.layers = layers
         global_cache.level_model.has_distance_field = use_df
+        global_cache.level_model.save()
         levelObject.pre_process_data(layers)
         # navigation_query.encode_level(levelObject)
         global_cache.save_object()
