@@ -990,39 +990,41 @@ function Bot:SpawnBot(transform, pose, soldierBP, kit, unlocks, spawnEntity)
                 meleeSlot.weapon = SoldierWeaponUnlockAsset(melee)
                 customization.weapons:add(meleeSlot)
             end
-        else
-            local weapon = ResourceManager:SearchForInstanceByGuid(Guid('96FC0A67-DEA2-4061-B955-E173A8DBB00D'))
-
-            local weapon0    = ResourceManager:SearchForDataContainer('Weapons/M416/U_M416')
-	        local weaponAtt0 = ResourceManager:SearchForDataContainer('Weapons/M416/U_M416_ACOG')
-            local weaponAtt1 = ResourceManager:SearchForDataContainer('Weapons/M416/U_M416_Silencer')
-            
-	        local weapon1    = ResourceManager:SearchForDataContainer('Weapons/XP1_L85A2/U_L85A2')
-	        local weaponAtt2 = ResourceManager:SearchForDataContainer('Weapons/XP1_L85A2/U_L85A2_RX01')
-            local weaponAtt3 = ResourceManager:SearchForDataContainer('Weapons/XP1_L85A2/U_L85A2_Silencer')
-            
-            local weaponSlotAssetPrimary = UnlockWeaponAndSlot()
-            weaponSlotAssetPrimary.slot = 0
-            weaponSlotAssetPrimary.weapon = SoldierWeaponUnlockAsset(weapon0)
-            -- weaponSlotAssetPrimary.unlockAssets = { weaponAtt0, weaponAtt1 }
-
-            local weaponSlotAssetSecondary = UnlockWeaponAndSlot()
-            weaponSlotAssetSecondary.slot = 0
-            weaponSlotAssetSecondary.weapon = SoldierWeaponUnlockAsset(weapon0)
-            -- weaponSlotAssetSecondary.unlockAssets = { weaponAtt0, weaponAtt1 }
-            
-            customization.weapons:add(weaponSlotAssetPrimary)
-            customization.weapons:add(weaponSlotAssetSecondary)
-            local myPlayer = PlayerManager:GetPlayerById(0)
-            -- self.player_controller:SelectUnlockAssets(kit, myPlayer.visualUnlocks)
-            -- self.player_controller:SelectWeapon(
-            --     WeaponSlot.WeaponSlot_0, weapon0, {weaponAtt0, weaponAtt1}
-            -- )
-            -- self.player_controller:SelectWeapon(
-            --     WeaponSlot.WeaponSlot_1, weapon1, {weaponAtt2, weaponAtt3}
-            -- )
-            print(myPlayer.selectedUnlocks[2])
-            print(myPlayer.weapons[2])
+        -- else
+        --     
+        --     local weapon = ResourceManager:SearchForInstanceByGuid(Guid('96FC0A67-DEA2-4061-B955-E173A8DBB00D'))
+        --     
+        --     local weapon0    = ResourceManager:SearchForDataContainer('Weapons/M416/U_M416')
+	    --     local weaponAtt0 = ResourceManager:SearchForDataContainer('Weapons/M416/U_M416_ACOG')
+        --     local weaponAtt1 = ResourceManager:SearchForDataContainer('Weapons/M416/U_M416_Silencer')
+        --     
+	    --     local weapon1    = ResourceManager:SearchForDataContainer('Weapons/XP1_L85A2/U_L85A2')
+	    --     local weaponAtt2 = ResourceManager:SearchForDataContainer('Weapons/XP1_L85A2/U_L85A2_RX01')
+        --     local weaponAtt3 = ResourceManager:SearchForDataContainer('Weapons/XP1_L85A2/U_L85A2_Silencer')
+        --     
+        --     local weaponSlotAssetPrimary = UnlockWeaponAndSlot()
+        --     weaponSlotAssetPrimary.slot = 0
+        --     weaponSlotAssetPrimary.weapon = SoldierWeaponUnlockAsset(weapon0)
+        --     -- weaponSlotAssetPrimary.unlockAssets = { weaponAtt0, weaponAtt1 }
+-- 
+        --     local weaponSlotAssetSecondary = UnlockWeaponAndSlot()
+        --     weaponSlotAssetSecondary.slot = 0
+        --     weaponSlotAssetSecondary.weapon = SoldierWeaponUnlockAsset(weapon0)
+        --     -- weaponSlotAssetSecondary.unlockAssets = { weaponAtt0, weaponAtt1 }
+        --     
+        --     customization.weapons:add(weaponSlotAssetPrimary)
+        --     customization.weapons:add(weaponSlotAssetSecondary)
+        --     local myPlayer = PlayerManager:GetPlayerById(0)
+        --     -- self.player_controller:SelectUnlockAssets(kit, myPlayer.visualUnlocks)
+        --     -- self.player_controller:SelectWeapon(
+        --     --     WeaponSlot.WeaponSlot_0, weapon0, {weaponAtt0, weaponAtt1}
+        --     -- )
+        --     -- self.player_controller:SelectWeapon(
+        --     --     WeaponSlot.WeaponSlot_1, weapon1, {weaponAtt2, weaponAtt3}
+        --     -- )
+        --     print(myPlayer.selectedUnlocks[2])
+        --     print(myPlayer.weapons[2])
+            return nil
         end
         self.set_unlocks = false
         
