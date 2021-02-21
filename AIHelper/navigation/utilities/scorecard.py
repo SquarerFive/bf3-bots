@@ -124,6 +124,14 @@ def get_world_array_fast(x_arr: np.ndarray, y_arr : np.ndarray, min_point : tupl
     # print(x_arr)
     # print(y_arr)
 
+# Copy A into B
+@njit(parallel = True)
+def copy_into(a : np.ndarray, b : np.ndarray):
+    for z in prange(a.shape[0]):
+        for x in prange(a.shape[1]):
+            for y in prange(a.shape[2]):
+                b[z][x][y] = a[z][x][y]
+
 def get_world_array(transform : transformations.GridTransform, input_arr : np.ndarray) -> tuple:
     x_arr = np.zeros((input_arr.shape[1], input_arr.shape[2]), dtype=np.float32)
     y_arr = np.zeros((input_arr.shape[1], input_arr.shape[2]), dtype=np.float32)
@@ -166,11 +174,14 @@ def score(model: models.Level, transform : transformations.GridTransform,  input
     try:
         arr_to_use = elevation_arr
         if use_df:
-            arr_to_use = distance_field_arr
+            print("Copying array into input")
+            arr_to_use = distance_field_arr.copy()
             arr_to_use = np.power(arr_to_use, 0.2)
             arr_to_use = np.max(arr_to_use[1]) - arr_to_use
             arr_to_use = np.power(arr_to_use, 4.0)
-        if not masks_only and not use_df:
+            copy_into(arr_to_use, target)
+            
+        if not (masks_only and use_df):
             
             score_fast(input_arr, arr_to_use, target, layer,  road_mask, structures_mask, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power, df_based=use_df)
         else:

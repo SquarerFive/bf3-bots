@@ -97,7 +97,7 @@ function NavGrid:__init()
 
     self.elevation_based_scoring = false
     self.df_based_scoring = false
-    
+    self.layers = 10
     
     if #cachedSpatialEntities == 0 then
         local ToLookFor = "ServerVegetationTreeEntity"
@@ -223,12 +223,13 @@ end
 
 
 
-function NavGrid.CreateFromBounds(size_x, size_z, min_point, max_point, start_x, start_z, profile, project_id, width, height, voxel_size, elevation_based_scoring, df_based_scoring)
+function NavGrid.CreateFromBounds(size_x, size_z, min_point, max_point, start_x, start_z, profile, project_id, width, height, voxel_size, elevation_based_scoring, df_based_scoring, layers)
     local self = NavGrid()
     self.profile = profile
     self.project_id = project_id
     self.elevation_based_scoring = elevation_based_scoring
     self.cell_size = voxel_size
+    self.layers = layers
     print("Creating NavGrid... Are we generating distance fields? "..tostring(df_based_scoring))
     self.df_based_scoring = df_based_scoring
     local center_position = min_point + Vec3(self.cell_size/2, self.cell_size/2, self.cell_size/2)
@@ -296,6 +297,8 @@ function NavGrid.CreateFromBounds(size_x, size_z, min_point, max_point, start_x,
     options:SetHeader("Max-Y", tostring(max_point.z))
     options:SetHeader("Level", SharedUtils:GetLevelName())
     options:SetHeader("Authorization", "Token " .. self.profile.token)
+    options:SetHeader("Has-DF", tostring(self.df_based_scoring))
+    options:SetHeader("Layers", tostring(self.layers))
     local result = Net:PostHTTPAsync('http://127.0.0.1:8000/v1/project/'..tostring(math.floor(self.project_id))..'/level/add-block/', dataToPush, options, self, self.OnPostBlock)
 
     return self
@@ -303,7 +306,7 @@ end
 
 function NavGrid:RaycastAndScore(Start, End, OldScore)
 
-    local hits = self.NestedRaycast(Start, End, Vec3(0.0, -1.0, 0.0), 10)
+    local hits = self.NestedRaycast(Start, End, Vec3(0.0, -1.0, 0.0), self.layers)
     local results = {} -- { 1: { value: 0.0, elevation: 0.0, df: 0.0 } }
     for i, hit in pairs(hits) do
         local score = 256
@@ -463,6 +466,8 @@ function NavGrid:Extend(size_x, size_z, min_point, max_point, start_x, start_z, 
     options:SetHeader("Max-Y", tostring(max_point.z))
     options:SetHeader("Level", SharedUtils:GetLevelName())
     options:SetHeader("Authorization", "Token " .. self.profile.token)
+    options:SetHeader("Has-DF", tostring(self.df_based_scoring))
+    options:SetHeader("Layers", tostring(self.layers))
     local result = Net:PostHTTPAsync('http://127.0.0.1:8000/v1/project/'..tostring(math.floor(self.project_id))..'/level/add-block/', dataToPush, options, self, self.OnPostBlock)
     --jsonContentScores = jsonContentScores.." ]}"
     --table.insert(self.encoded_scores, jsonContentScores)

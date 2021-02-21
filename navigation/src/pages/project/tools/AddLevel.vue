@@ -69,6 +69,11 @@
                                 <q-checkbox label="DF-based Scoring" v-model="config.df_based_scoring" dark />
                             </q-item-section>
                         </q-item>
+                        <q-item style="margin-top: 0px; margin-bottom: 0">
+                            <q-item-section>
+                                <q-input filled dark v-model="config.layers" label="Layers" hint="Number of layers to generate." />
+                            </q-item-section>
+                        </q-item>
                         <q-item style="margin-top: 0px" >
                             <q-btn @click="calculateSettings" color="warning" text-color="dark" label="Calculate Settings"/>
                         </q-item>
@@ -121,7 +126,8 @@ export default class AddLevel extends Vue {
       voxel_step_size: 32.0,
       voxel_size: 1.0,
       elevation_based_scoring: this.elevationBasedScoring,
-      df_based_scoring: this.dfBasedScoring
+      df_based_scoring: this.dfBasedScoring,
+      layers: 10
     }
 
     get buildProgress () {

@@ -49,9 +49,10 @@ def encode_level(in_level : level.Level) -> None:
     with open(f'{l.relative_path}/elevation.npy', 'wb') as f:
         elevation : np.ndarray = in_level.elevation
         np.save(f, elevation)
-    with open(f'{l.relative_path}/df.npy', 'wb') as f:
-        df : np.ndarray = in_level.df
-        np.save(f, df)
+    if l.has_distance_field:
+        with open(f'{l.relative_path}/df.npy', 'wb') as f:
+            df : np.ndarray = in_level.df
+            np.save(f, df)
     l.transform = in_level.transform.as_dict()
     l.save()
 
@@ -68,8 +69,9 @@ def decode_level(in_data : models.Level) -> Union[level.Level, None]:
         print("Succesfully imported costs with shape: ", costs.shape)
         with open(f'{path}/elevation.npy', 'rb') as f:
             elevation = np.load(f)
-        with open(f'{path}/df.npy', 'rb') as f:
-            df = np.load(f)
+        if in_data.has_distance_field:
+            with open(f'{path}/df.npy', 'rb') as f:
+                df = np.load(f)
 
     except:
         print('--- failed to import level, recreating arrays ---')
@@ -89,8 +91,9 @@ def decode_level(in_data : models.Level) -> Union[level.Level, None]:
         l.data = data
         l.costs = costs.astype(np.float32)
         l.elevation = elevation.astype(np.float32)
-        l.df = df.astype(np.float32)
-        l.create_dffinder()
+        if in_data.has_distance_field:
+            l.df = df.astype(np.float32)
+            l.create_dffinder()
 
     l.transform = transform
     l.project_id = in_data.project_id

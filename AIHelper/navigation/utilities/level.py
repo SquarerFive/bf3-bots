@@ -53,7 +53,7 @@ class Level:
         # self.mdf = self.mdf.astype(np.float32)
         elevation = self.elevation.astype(np.float32)
         
-        self.dffinder = dffinding.DFFinder(np.flip(self.costs), elevation, 38)
+        self.dffinder = dffinding.DFFinder(self.costs, elevation, 38)
     
     def classify_costs(self, elevation_based : bool = False, elevation_alpha_power : float = 0.05, elevation_alpha_beta : float = 1.5, elevation_alpha_beta_power : float = 7.0, just_paths = False, use_df = False):
         if not just_paths:
@@ -105,17 +105,17 @@ class Level:
 
 
     # Call this after initialising Level
-    def pre_process_data(self):
+    def pre_process_data(self, layers : int = 10):
         _width = self.transform.width+1
         _height = self.transform.height + 1
 
         print("Creating arrays with size: ", _width, _height)
-        self.data = np.zeros((10, _width, _height))
-        self.elevation = np.zeros((10, _width, _height))
-        self.costs = np.zeros((10, _width, _height))
-        self.costs_canvas = np.zeros((10, _width, _height))
+        self.data = np.zeros((layers, _width, _height))
+        self.elevation = np.zeros((layers, _width, _height))
+        self.costs = np.zeros((layers, _width, _height))
+        self.costs_canvas = np.zeros((layers, _width, _height))
 
-        self.df = np.zeros((10, _width, _height))
+        self.df = np.zeros((layers, _width, _height))
     
     def sensecheck(self):
         try:
@@ -276,7 +276,7 @@ class Level:
                 wxy = self.transform.transform_to_world(p)
                 if self.dffinder and udffinder:
                     # print(p, udffinder)\
-                    wxy = self.transform.transform_to_world((int32(p[1]), int32(p[0])))
+                    wxy = self.transform.transform_to_world((int32(p[0]), int32(p[1])))
 
                     world_paths.append({
                         "x": wxy[0],

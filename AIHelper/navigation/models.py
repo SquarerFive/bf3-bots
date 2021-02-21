@@ -40,6 +40,9 @@ class Level(models.Model):
     spawn_points_enemy = models.JSONField(default = list, null = True, blank = True) # f1
     use_spawn_points = models.BooleanField(default=False)
 
+    has_distance_field = models.BooleanField(default = True)
+    layers = models.IntegerField(default = 10)
+
 class Project(models.Model):
     project_id = models.IntegerField(default = 0)
     name = models.TextField(default = "no-map-name")

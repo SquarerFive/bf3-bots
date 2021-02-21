@@ -304,6 +304,10 @@ def manager_add_level_block(request : Request, project_id : int):
             (float(request.headers['Max-X'].replace("'", "") ), float(request.headers['Max-Y'].replace("'", ""))),
             int(float(str(request.headers['Size-X']).replace("'", ""))),
             int(float(str(request.headers['Size-Y']).replace("'","") ))), None)
+        use_df = str(request.headers['Has-DF']).lower().strip() == 'true'
+        layers = int(request.headers['Layers'])
+        global_cache.level_model.layers = layers
+        global_cache.level_model.has_distance_field = use_df
         levelObject.project_id = project_id
         levelObject.pre_process_data()
         navigation_query.encode_level(levelObject)
@@ -385,10 +389,14 @@ def manager_clear_level_data(request : Request, project_id : int) -> Response:
             int(float(str(request.headers['Size-X']).replace("'", ""))),
             int(float(str(request.headers['Size-Y']).replace("'","") )))
     transformObj = level.transformations.GridTransform(transform[0], transform[1], transform[2], transform[3])
+    use_df = str(request.headers['Has-DF']).lower().strip() == 'true'
+    layers = int(request.headers['Layers'])
     print('clearing level')
     if levelObject:
         levelObject.transform = transformObj
-        levelObject.pre_process_data()
+        global_cache.level_model.layers = layers
+        global_cache.level_model.has_distance_field = use_df
+        levelObject.pre_process_data(layers)
         # navigation_query.encode_level(levelObject)
         global_cache.save_object()
     else:
@@ -408,6 +416,8 @@ def manager_reset_level_data(request : Request, project_id : int, level_id : int
         for objective in navigation_models.Objective.objects.all():
             objective.delete()
         return Response("Level reset successful")
+    else:
+        pass
     return Response("Level not found.", status=404)
 
 @api_view(['POST'])

@@ -57,6 +57,7 @@ function ScorecardClient:__init()
     --
     self.elevation_based_scoring = false
     self.df_based_scoring = false
+    self.layers = 10
 
     NetEvents:Subscribe("OnRequestScorecardGrid", self, self.OnRequestScorecardGrid)
 	NetEvents:Subscribe("OnSetPath", self, self.OnSetPath)
@@ -112,6 +113,7 @@ function ScorecardClient:StartBuild(in_data)
     self.step_size_x = settings.iterations_x / self.steps
     self.step_size_y = settings.iterations_y / self.steps
     self.voxel_size = settings.voxel_size
+    self.layers = settings.layers
     self.min_point = Vec3(
         tonumber(settings.start.x),
         tonumber(settings.start.y),
@@ -142,6 +144,8 @@ function ScorecardClient:StartBuild(in_data)
     options:SetHeader("Min-Y", tostring(self.min_point.z))
     options:SetHeader("Max-X", tostring(self.max_point.x))
     options:SetHeader("Max-Y", tostring(self.max_point.z))
+    options:SetHeader("Layers", tostring(self.layers))
+    options:SetHeader("Has-DF", tostring(self.df_based_scoring))
     local url = 'http://127.0.0.1:8000/v1/project/'..tostring(math.floor(self.project_id))..'/level/reset/rasters/'
     local result = Net:PostHTTPAsync(url, '', options, self, self.OnLevelRastersReset)
     print(result)
@@ -320,7 +324,7 @@ function ScorecardClient:Tick(deltaTime, pass, local_player)
                 self.scorecard_grid = NavGrid.CreateFromBounds(
                     end_of_grid_x, end_of_grid_y, self.min_point, self.max_point,
                     start_of_grid_x, start_of_grid_y, self.profile, self.project_id,
-                    self.width, self.height, self.voxel_size, self.elevation_based_scoring, self.df_based_scoring
+                    self.width, self.height, self.voxel_size, self.elevation_based_scoring, self.df_based_scoring, self.layers
                 )
             else
                 self.scorecard_grid:Extend(

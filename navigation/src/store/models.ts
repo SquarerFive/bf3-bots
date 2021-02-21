@@ -71,7 +71,8 @@ export interface LevelBuildSettings {
   iterations_x : number
   iterations_y : number,
   elevation_based_scoring: boolean,
-  df_based_scoring: boolean
+  df_based_scoring: boolean,
+  layers: number
 }
 
 export interface LevelBuildSyncPayload {
