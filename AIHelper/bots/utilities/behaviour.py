@@ -206,7 +206,7 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
             back = [bot.transform['forward']['x']*-5, bot.transform['forward']['y']*-5, bot.transform['forward']['z']*-5]
             target = bot.transform['trans']['x'] + back[0], bot.transform['trans']['y'] + back[1], bot.transform['trans']['z'] + back[2]
             target_grid_pos = current_level.transform.transform_to_grid((target[0], target[2]))
-            if current_level.dffinder:
+            if False:#current_level.dffinder:
                 valid_pos =  current_level.dffinder.ensure_point_valid((bot_grid_pos[0], bot_grid_pos[1], current_level.get_best_navmesh_level(
                     (target_grid_pos[0], target_grid_pos[1], bot.transform['trans']['y'])
                 )))
@@ -217,7 +217,7 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                 target_elevation = current_level.elevation[valid_pos[2]][valid_pos[0]][valid_pos[1]]
                 path = [
                     (*current_level.transform.transform_to_world(bot_grid_pos), float(elevation)),
-                    (*current_level.transform.transform_to_world(valid_pos), float(target_elevation))
+                    #(*current_level.transform.transform_to_world(valid_pos), float(target_elevation))
                 ]
                 bot.path = []
                 for p in path:
@@ -235,11 +235,31 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                 )
             if models.Player.objects.filter(team = bot.team, player_id = bot.player_id).first():
                 bot.target = -1
+            bot.order = 2
+            bot.action = 2
 
-           
+        
+        elif bot.action == int(orders.BotActionEnum.PROVIDE_AMMO) or bot.action == int(orders.BotActionEnum.PROVIDE_HEALTH):
+            player_provider : models.Player = models.Player.objects.filter(player_id = bot.target).first()
+            if player_provider:
+                player_grid_pos = current_level.transform.transform_to_grid((player_provider.transform['trans']['x'], player_provider.transform['trans']['z']))
+                if distance(
+                    bot.transform['trans']['x'], bot.transform['trans']['y'], bot.transform['trans']['z'],
+                    player_provider.transform['trans']['x'], player_provider.transform['trans']['y'], player_provider.transform['trans']['z']
+                ) < 1.5:
+                    bot.order = 2
+                    bot.action = 2
+                    pass
+                else:
+                    bot.path = current_level.astar(
+                        bot_grid_pos,
+                        player_grid_pos,
+                        elevation = bot.transform['trans']['y'],
+                        target_elevation = player_provider.transform['trans']['y'],
+                    )
 
         elif bot.action == int(orders.BotActionEnum.ATTACK):
-            if (closest_enemy and distance_to_enemy < 15) and not bot.in_vehicle: # TODO: change this to x within viewing angle of y 
+            if (closest_enemy and distance_to_enemy < 30) and not bot.in_vehicle: # TODO: change this to x within viewing angle of y 
                 # enemy_grid_pos =  current_level.transform.transform_to_grid((float(closest_enemy.transform['trans']['x']) , float(closest_enemy.transform['trans']['z'])))
                 if override_target and models.Player.objects.filter(player_id=overidden_target).first():
                     if not models.Player.objects.filter(player_id=overidden_target).first().alive:
@@ -274,6 +294,23 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                     return
                     
                 enemy_grid_pos =  current_level.transform.transform_to_grid((float(closest_enemy.transform['trans']['x']) , float(closest_enemy.transform['trans']['z'])))
+
+                bot_best_level = current_level.get_best_navmesh_level(
+                    (*bot_grid_pos, bot.transform['trans']['y'])
+                )
+                enemy_best_level = current_level.get_best_navmesh_level(
+                    (*enemy_grid_pos, closest_enemy.transform['trans']['y'])
+                )
+
+                # print("Total cost to enemy: ", 
+                cost = current_level.get_cost_to(
+                    (*bot_grid_pos, bot_best_level),
+                    (*enemy_grid_pos, enemy_best_level)
+                )
+                if cost > 4:
+                    bot.target = -1
+                    print("Cost more than 8, not attacking until at path")
+
                 bot.path = current_level.astar(
                     bot_forward_grid_pos,
                     enemy_grid_pos,

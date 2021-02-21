@@ -53,7 +53,7 @@ class Level:
         # self.mdf = self.mdf.astype(np.float32)
         elevation = self.elevation.astype(np.float32)
         
-        self.dffinder = dffinding.DFFinder(self.costs, elevation, 38)
+        self.dffinder = dffinding.DFFinder(np.flip(self.costs), elevation, 38)
     
     def classify_costs(self, elevation_based : bool = False, elevation_alpha_power : float = 0.05, elevation_alpha_beta : float = 1.5, elevation_alpha_beta_power : float = 7.0, just_paths = False, use_df = False):
         if not just_paths:
@@ -235,6 +235,16 @@ class Level:
         print("Finding at: ", (int32(start[0]), int32(start[1]), int32(level)), (int32(end[0]), int32(end[1]), int32(target_level)), used_dffinder)
         return path, used_dffinder
 
+    def get_cost_to(self, start : Tuple[int, int, int], end : Tuple[int, int, int]):
+        start_v = self.get_valid_point_in_radius(self.costs, start[0], start[1], 5)
+        end_v = self.get_valid_point_in_radius(self.costs, end[0], end[1], 5)
+
+        start = (start_v[0], start_v[1], start[2])
+        end = (end_v[0], end_v[1], end[2])
+        if self.dffinder:
+            return self.dffinder.find_costs(start, end)
+        return 99.0
+
     def astar(self, start : tuple, end : tuple, safe=True , all : bool = False, elevation : Union[float, None] = None, target_elevation : Union[float, None] = 0.0, recurse_depth : int = 0) -> list:
         # print("running astar  ", start, end)
         # print("size of data: ", self.data.shape)
@@ -266,7 +276,7 @@ class Level:
                 wxy = self.transform.transform_to_world(p)
                 if self.dffinder and udffinder:
                     # print(p, udffinder)\
-                    wxy = self.transform.transform_to_world((int32(p[0]), int32(p[1])))
+                    wxy = self.transform.transform_to_world((int32(p[1]), int32(p[0])))
 
                     world_paths.append({
                         "x": wxy[0],

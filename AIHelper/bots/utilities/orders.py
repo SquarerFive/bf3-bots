@@ -16,3 +16,5 @@ class BotActionEnum(IntEnum):
     GET_IN = 6
     GET_OUT = 7
     PROVIDE = 8
+    PROVIDE_HEALTH = 9
+    PROVIDE_AMMO = 10

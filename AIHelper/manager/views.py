@@ -561,7 +561,8 @@ def manager_update_level(request: Request, project_id : int) -> Response:
             else:
                 bots_query.create_or_update_player(player)
 
-        bots_models.Player.objects.bulk_update(p_array, ['transform', 'player_id', 'name', 'online_id', 'alive', 'is_squad_leader', 'is_squad_private', 'in_vehicle', 'has_soldier', 'team', 'squad', 'health'])
+        bots_models.Player.objects.bulk_update(p_array, ['transform', 'player_id', 'name', 'online_id', 'alive', 'is_squad_leader', 'is_squad_private', 'in_vehicle', 'has_soldier', 'team', 'squad', 'health',
+            'health_provider', 'ammo_provider'])
         
         bots = bots_models.Bot.objects.all()
         b_array = []
@@ -570,7 +571,7 @@ def manager_update_level(request: Request, project_id : int) -> Response:
             bot_model = bots.filter(bot_index=bot['bot_index']).first()
             
             if (bot_model):
-                bots_query.create_or_update_bot_model(bot_model, bot)
+                
                 b_array.append(bot_model)
             
                 active_collection = friendly_faction_kit_collection if bot['team'] == 0 else enemy_faction_kit_collection
@@ -591,7 +592,10 @@ def manager_update_level(request: Request, project_id : int) -> Response:
                         'unlocks': kit.appearance[random.randint(0, len(kit.melee))-1] if len(kit.appearance) > 0 else None,
                         'kit_asset': kit.kit_asset
                     }
+                    bot['ammo_provider'] = bot['kit']['primary_gadget']['name'] == 'U_Ammobag'
+                    bot['health_provider'] = bot['kit']['primary_gadget']['name'] == 'U_Medkit'
                     # bots_query.create_or_update_bot(bot)
+                bots_query.create_or_update_bot_model(bot_model, bot)
             else:
                 active_collection = friendly_faction_kit_collection if bot['team'] == 0 else enemy_faction_kit_collection
                 if active_collection:
@@ -611,6 +615,8 @@ def manager_update_level(request: Request, project_id : int) -> Response:
                         'unlocks': kit.appearance[random.randint(0, len(kit.melee))-1] if len(kit.appearance) > 0 else None,
                         'kit_asset': kit.kit_asset
                     }
+                    bot['ammo_provider'] = bot['kit']['primary_gadget']['name'] == 'U_Ammobag'
+                    bot['health_provider'] = bot['kit']['primary_gadget']['name'] == 'U_Medkit'
                     bots_query.create_or_update_bot(bot)
             # behaviour.compute(bot['bot_index'], level_object, bots_models.Bot, bots_models.Player, navigation_models.Objective, int(bot['requested_target_id'])!=-2, int(bot['requested_target_id']))
         bots_models.Bot.objects.bulk_update(b_array, ['transform', 'health', 'in_vehicle', 'team', 'order', 'action', 'bot_index', 'alive', 'squad', 'overidden_target', 'last_transform', 'last_transform_update', 'stuck'])

@@ -199,6 +199,18 @@ function ScorecardClient:Tick(deltaTime, pass, local_player)
         return
     end
     
+    print('Primary and Secondary Ammo: '..tostring(local_player.soldier.weaponsComponent.currentWeapon.primaryAmmo).. ' '..
+        tostring(local_player.soldier.weaponsComponent.currentWeapon.secondaryAmmo)..' '..
+            tostring(local_player.soldier.weaponsComponent.currentWeaponSlot)..' '..
+            tostring(local_player.input:GetLevel(EntryInputActionEnum.EIADynamicGadget1)).. ' '..
+            tostring(local_player.input:GetLevel(EntryInputActionEnum.EIAQuicktimeFire)).. ' '..
+            tostring(local_player.input:GetLevel(EntryInputActionEnum.EIASelectWeapon1)).. ' '..
+            tostring(local_player.input:GetLevel(EntryInputActionEnum.EIASelectWeapon3)).. ' '..
+            tostring(local_player.input:GetLevel(EntryInputActionEnum.EIASelectWeapon4)).. ' '..
+            tostring(local_player.input:GetLevel(EntryInputActionEnum.EIASelectWeapon5)).. ' '..
+            tostring(local_player.input:GetLevel(EntryInputActionEnum.EIASelectWeapon6)).. ' '
+        )
+
     -- print("ChangePose: ".. 
     --     tostring(local_player.input:GetLevel(EntryInputActionEnum.EIAChangePose)) ..
     --     " QuicktimeCrouchDuck: ".. tostring(local_player.input:GetLevel(EntryInputActionEnum.EIAQuicktimeCrouchDuck))..

@@ -6,8 +6,9 @@ bot_step = 0
 
 from . behaviour import distance
 import datetime
-
+from . import orders
 import pytz
+import math
 
 def create_or_update_bot(bot : dict):
     b : models.Bot = models.Bot.objects.filter(player_id = bot['player_id']).first()
@@ -27,7 +28,9 @@ def create_or_update_bot(bot : dict):
             selected_kit = bot['kit'],
             last_transform_update = datetime.datetime.now(),
             last_transform = {},
-            stuck=False
+            stuck=False,
+            health_provider = bot['health_provider'],
+            ammo_provider = bot['ammo_provider']
             )
     else:
         b.transform = bot['transform']
@@ -42,6 +45,8 @@ def create_or_update_bot(bot : dict):
         b.bot_index = bot['bot_index']
         b.alive = bot['alive']
         b.squad = bot['squad']
+        b.health_provider = bot['health_provider']
+        b.ammo_provider = bot['ammo_provider']
         #if int(bot['requested_target_id']) != -2:
         #    b.target = int(bot['requested_target_id'])
         b.overidden_target = int(bot['requested_target_id'])
@@ -83,7 +88,7 @@ def create_or_update_bot_model(b : models.Bot, bot: dict):
         b.overidden_target = int(bot['requested_target_id'])
 
         delta = datetime.datetime.now().replace(tzinfo=pytz.UTC) - b.last_transform_update.replace(tzinfo=pytz.UTC)
-        if delta.total_seconds() > 1:
+        if delta.total_seconds() > 4:
             b.last_transform_update = datetime.datetime.now().replace(tzinfo=pytz.UTC)
             if 'trans' in list(b.last_transform.keys()):
                 if distance(bot['transform']['trans']['x'], 0, bot['transform']['trans']['z'], 
@@ -92,6 +97,8 @@ def create_or_update_bot_model(b : models.Bot, bot: dict):
                 else:
                     b.stuck = False
             b.last_transform = bot['transform']
+        b.health_provider = bot['health_provider']
+        b.ammo_provider = bot['ammo_provider']
         # b.save()
 
 def create_or_update_player(player : dict):
@@ -206,14 +213,34 @@ def get_bots_as_dict():
 
 def emit_and_propagate_action(instigator : int, order : int, action : int) -> bool:
     instigator : models.BasePlayer = models.Player.objects.filter(player_id=instigator).first() or models.Bot.objects.filter(player_id=instigator).first()
-    print(instigator)
-    friends : List[models.Bot] = list(models.Bot.objects.filter(squad=instigator.squad, team=instigator.team))
-    print("friends", friends, 'action', action)
-    for friend in friends:
-        friend.order = order
-        friend.action = action
-        friend.target = instigator.player_id
-        friend.save()
-        
-    
+    if order == int(orders.BotOrdersEnum.FRIENDLY):
+        friends : List[models.Bot] = list(models.Bot.objects.filter(squad=instigator.squad, team=instigator.team))
+        if action == int(orders.BotActionEnum.GET_IN) or action == int(orders.BotActionEnum.GET_OUT):
+            print("friends", friends, 'action', action)
+            for friend in friends:
+                friend.order = order
+                friend.action = action
+                friend.target = instigator.player_id
+                friend.save()
+        elif action == int(orders.BotActionEnum.PROVIDE_HEALTH) or action == int(orders.BotActionEnum.PROVIDE_AMMO):
+            # Get nearest_friend
+            nearest_friend = None
+            nearest_distance = math.inf
+            wants_ammo = action == int(orders.BotActionEnum.PROVIDE_AMMO)
+            wants_health = action == int(orders.BotActionEnum.PROVIDE_HEALTH)
+            friends = list(models.Bot.objects.filter(team = instigator.team, ammo_provider = wants_ammo, health_provider = wants_health).all())
+            for friend in friends:
+                d = distance(
+                    instigator.transform['trans']['x'], instigator.transform['trans']['y'], instigator.transform['trans']['z'],
+                    friend.transform['trans']['x'], friend.transform['trans']['y'], friend.transform['trans']['z']
+                )
+
+                if d < nearest_distance:
+                    nearest_distance = d
+                    nearest_friend = friend
+            if nearest_friend:
+                nearest_friend.order = order
+                nearest_friend.action = action
+                nearest_friend.target = instigator.player_id
+                nearest_friend.save()
     return True

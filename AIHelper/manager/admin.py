@@ -17,7 +17,8 @@ class SoldierKitAdmin(admin.ModelAdmin):
 
 @admin.register(models.SoldierKitCollection)
 class SoldierKitCollectionAdmin(admin.ModelAdmin):
-    fields = ('assault', 'engineer', 'support', 'recon', 'faction')
+    fields = ('assault', 'engineer', 'support', 'recon', 'faction', 'project_id', 'level_id')
+    list_display = ['project_id', 'level_id', 'faction']
 
 @admin.register(models.BF3GameManager)
 class BF3GameManagerAdmin(admin.ModelAdmin):

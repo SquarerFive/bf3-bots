@@ -2,7 +2,8 @@ class 'ScorecardServer'
 
 local NavGrid = require('__shared/NavGrid')
 local botsManager = require("BotsManager")
-
+local Actions = require('BotActions')
+local Orders = require('BotOrders')
 local encoded_scores = nil
 local size_x = 0
 local size_y = 0
@@ -254,6 +255,10 @@ Events:Subscribe('Player:Chat', function(player, recipientMask, message)
                 print("Found entity: ".. entity.typeInfo.name)
             end
         end)
+    end
+
+    if parts[1] == 'test_provider' then
+        botsManager:EmitAction(player.id, Actions.PROVIDE, Orders.FRIENDLY)
     end
 
     if parts[1] == "get_in" then

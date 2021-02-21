@@ -1,6 +1,7 @@
 class 'BotsManager'
 local bot_ = require("Bot")
 local Actions = require("BotActions")
+local Orders = require('BotOrders')
 local VecLib = require('__shared/VecLib')
 
 function BotsManager:__init()
@@ -476,6 +477,15 @@ function BotsManager:PostManager (url, data)
     return Net:PostHTTP(url, data, options)
 end 
 
+function BotsManager:PostManagerAsync (url, data, context, callable)
+    local headers = {}
+    local options = HttpOptions(headers, 30)
+    options:SetHeader('Authorization', 'Token '..self.profile.token)
+    options:SetHeader('Content-Type', 'application/json')
+    local url = 'http://127.0.0.1:8000/v1'..url
+    return Net:PostHTTPAsync(url, data, options, context, callable)
+end 
+
 function BotsManager:GetManager (url)
     local headers = {}
     local options = HttpOptions(headers, 30)
@@ -492,14 +502,18 @@ function BotsManager:EmitAction(instigator, action, order)
     data['Order'] = order
     local data_json = json.encode(data)
     self:PostManager('/emit/', data_json)
+end
 
-    -- local url = 'http://127.0.0.1:8000/pathfinding/emit/'
-    -- local headers = {}
-    -- local options = HttpOptions(headers, 30)
-    -- options:SetHeader("Instigator", tostring(instigator))
-    -- options:SetHeader("Action", tostring(action))
-    -- options:SetHeader("Order", tostring(order))
-    -- Net:GetHTTP(url, options)
+function BotsManager:OnEmitAction(data)
+end
+
+function BotsManager:EmitActionAsync(instigator, action, order)
+    local data = {}
+    data['Instigator'] = instigator
+    data['Action'] = action
+    data['Order'] = order
+    local data_json = json.encode(data)
+    self:PostManagerAsync('/emit/', data_json, self, self.OnEmitAction)
 end
 
 function BotsManager:PostPushLevelData(result)
@@ -624,6 +638,18 @@ function BotsManager:StepThroughData()
                 currentBot.requested_order = -1
                 currentBot.requested_target_id = -2
                 currentBot.selected_kit = bot.selected_kit
+
+                if (currentBot.player_controller.alive) then
+                    if currentBot:IsOutOfAmmo() and (SharedUtils:GetTime() -  currentBot.last_request_ammo_request) > 5 then
+                        currentBot.last_request_ammo_request = SharedUtils:GetTime()
+                        self:EmitActionAsync(currentBot.player_controller.id, Actions.PROVIDE_AMMO, Orders.FRIENDLY)
+                    end
+                    if currentBot:IsLowHealth() and (SharedUtils:GetTime() -  currentBot.last_request_health_request) > 5 then
+                        currentBot.last_request_health_request = SharedUtils:GetTime()
+                        self:EmitActionAsync(currentBot.player_controller.id, Actions.PROVIDE_HEALTH, Orders.FRIENDLY)
+                    end
+                end
+
                 -- print("checking respawn")
                 if currentBot.requested_respawn then
                     self:RespawnBot(currentBot)
@@ -912,15 +938,27 @@ function BotsManager:GetNearestSpawnPointFromTranslation(Translation, Team)
             table.insert(optimalPoints, p)
         end
     end
-    if #optimalPoints <= 1 then
-        return Translation
+    if #optimalPoints == 0 then
+        return Vec3(
+            Translation.x + math.random(-5, 5),
+            Translation.y,
+            Translation.z + math.random(-5, 5)
+        )
     end
     minTranslation = optimalPoints[math.random(1, #optimalPoints)]
 
     if minTranslation:Distance(Translation) > 50 then
-        return Translation
+        return Vec3(
+            Translation.x + math.random(-5, 5),
+            Translation.y,
+            Translation.z + math.random(-5, 5)
+        )
     end
-    return minTranslation
+    return Vec3(
+        minTranslation.x + math.random(-5, 5),
+        minTranslation.y - 0.6,
+        minTranslation.z + math.random(-5, 5)
+    )
 end
 
 function BotsManager:GetRandomSpawnPoint(Team)
@@ -950,16 +988,21 @@ function BotsManager:SpawnBotAroundTransform(Transform, bot)
 
     if self.use_spawn_points then
         local currentTransform = Transform:Clone()
-        local newTransform = LinearTransform(
-            currentTransform.left, currentTransform.up, currentTransform.forward,
-            self:GetNearestSpawnPointFromTranslation(currentTransform.trans, bot.teamId)
-        )
-        bot:SpawnBot(newTransform,CharacterPoseType.CharacterPoseType_Stand , soldierBlueprint, soldierKit, {}, nil)
-        bot.objective = self:GetNearestEnemyObjectiveEntity(newTransform.trans, TeamId.Team1)
-        bot.path_step = 1
-        bot.path = {}
-        bot.action = Actions.ATTACK
-        return
+        local optimalTranslation = self:GetNearestSpawnPointFromTranslation(currentTransform.trans, bot.teamId)
+        if optimalTranslation ~= nil then
+            local newTransform = LinearTransform(
+                currentTransform.left, currentTransform.up, currentTransform.forward,
+                optimalTranslation
+            )
+            bot:SpawnBot(newTransform,CharacterPoseType.CharacterPoseType_Stand , soldierBlueprint, soldierKit, {}, nil)
+            bot.objective = self:GetNearestEnemyObjectiveEntity(newTransform.trans, TeamId.Team1)
+            bot.path_step = 1
+            bot.path = {}
+            bot.action = Actions.ATTACK
+            return true
+        else
+            return false
+        end
     end
 
     local currentTransform = Transform:Clone()
@@ -973,6 +1016,21 @@ function BotsManager:SpawnBotAroundTransform(Transform, bot)
     bot.path_step = 1
     bot.path = {}
     bot.action = Actions.ATTACK
+    return true
+end
+
+function BotsManager:SpawnBotOnTransform(Transform, Bot)
+    --US
+    local soldierBlueprint = ResourceManager:SearchForInstanceByGuid(Guid('261E43BF-259B-41D2-BF3B-9AE4DDA96AD2'))
+    local soldierKit = ResourceManager:SearchForInstanceByGuid(Guid('0A99EBDB-602C-4080-BC3F-B388AA18ADDD'))
+    
+    --RU
+    if Bot.teamId == TeamId.Team2 then
+        soldierBlueprint = ResourceManager:SearchForInstanceByGuid(Guid('261E43BF-259B-41D2-BF3B-9AE4DDA96AD2'))
+        soldierKit = ResourceManager:SearchForInstanceByGuid(Guid('DB0FCE83-2505-4948-8661-660DD0C64B63'))
+    end
+    Bot:SpawnBot(Transform, CharacterPoseType.CharacterPoseType_Stand , soldierBlueprint, soldierKit, {}, nil)
+
 end
 
 function BotsManager:SpawnBotAtEntity(entity, bot)
@@ -986,10 +1044,10 @@ function BotsManager:SpawnBotAtEntity(entity, bot)
         soldierKit = ResourceManager:SearchForInstanceByGuid(Guid('DB0FCE83-2505-4948-8661-660DD0C64B63'))
     end
    
-    currentTransform = LinearTransform(
+    local currentTransform = LinearTransform(
         1.0
     )
-    bot:SpawnBot(currentTransform,CharacterPoseType.CharacterPoseType_Stand , soldierBlueprint, soldierKit, {}, entity)
+    bot:SpawnBot(currentTransform, CharacterPoseType.CharacterPoseType_Stand , soldierBlueprint, soldierKit, {}, entity)
     bot.objective = self:GetNearestEnemyObjectiveEntity(currentTransform.trans, TeamId.Team1)
     bot.path_step = 1
     bot.path = {}
@@ -1011,11 +1069,9 @@ function BotsManager:RespawnBot(bot)
         if #alive_players_in_squad > 0 then
             local choice = alive_players_in_squad[math.random(1, #alive_players_in_squad)]
                 if choice ~= nil then
-                self:SpawnBotAroundTransform(choice.soldier.transform, bot)
-                -- self:SpawnBotAtEntity(choice.soldier, bot)
-                Events:Dispatch('Player:SpawnOnPlayer', bot.player_controller, choice)
-                has_spawned_on_squadmate = true
-                bot.target = nil
+                
+                    has_spawned_on_squadmate = self:SpawnBotAroundTransform(choice.soldier.transform, bot)
+                    bot.target = nil
             end
         end
     end
@@ -1028,8 +1084,8 @@ function BotsManager:RespawnBot(bot)
                 -- first, try spawn on objective entity
                 local successfulSpawn = bot.player_controller:Spawn(choice, false)
                 if (not successfulSpawn) then
-                    self:SpawnBotAroundTransform(choice.transform , bot)
-                    has_spawned_on_objective = true
+                    
+                    has_spawned_on_objective = self:SpawnBotAroundTransform(choice.transform , bot)
                 else
                     print("Successfully spawned on entity")
                     has_spawned_on_objective = true
@@ -1043,10 +1099,17 @@ function BotsManager:RespawnBot(bot)
     if (not (has_spawned_on_objective and has_spawned_on_squadmate)) then
         local choice = self:GetRandomSpawnPoint(bot.player_controller.teamId)
         if choice ~= nil then
-            self:SpawnBotAroundTransform(LinearTransform(
-                Vec3(-1.0, 0.0, 0.0), Vec3(0.0, 1.0, 0.0), Vec3(0.0, 0.0, 1.0),
-                choice
-            ), bot)
+            local transform = LinearTransform(
+                1.0
+            )
+
+            transform:Translate(Vec3(
+                choice.x + math.random(-10, 10)+ math.random(-10, 10),
+                choice.y - 0.6,
+                choice.z + math.random(-10, 10)+ math.random(-10, 10)
+            ))
+            print("Attempting to spawn bot")
+            self:SpawnBotAroundTransform(transform:Clone(), bot)
         end
     end
 end

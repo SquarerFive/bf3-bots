@@ -86,7 +86,12 @@ function Bot:__init()
     --
     self.delta_time = 0.0
     --
+    self.is_providing = false
     self.botVehicleController = BotVehicleController.Create()
+    self.is_secondary = false
+    --
+    self.last_request_ammo_request = 0
+    self.last_request_health_request = 0
     -- Events:Subscribe("UpdateManager:Update", self, self.InternalTick)
 end
 
@@ -151,6 +156,34 @@ end
 
 function Bot:PathPointToVec3(point)
     return Vec3(point.x, point.y, point.z)
+end
+
+function Bot:IsOutOfAmmo()
+    if self.player_controller.alive and self.player_controller.soldier ~= nil then
+        local soldier = self.player_controller.soldier
+        if (soldier.weaponsComponent) then
+            return soldier.weaponsComponent.currentWeapon.secondaryAmmo <= 1
+        end
+    end
+    return false
+end
+
+function Bot:IsLowHealth()
+    if self.player_controller.alive and self.player_controller.soldier ~= nil then
+        return self.player_controller.soldier.health <= 30
+    end
+    return false
+end
+
+function Bot:DropProvider()
+    if self.player_controller.alive and self.player_controller.soldier ~= nil then
+        self.is_providing = true
+        self.firing = false
+        self.aiming = false
+        self.crouching = false
+        self.jumping = false
+        self.knifing = false
+    end
 end
 
 function Bot:GetLocalOffsetTransform(transform)
@@ -231,6 +264,7 @@ function Bot:StepPath()
                     self.knifing = true
                     --
                     self.requested_target_id = -1
+                    self.crouching = false
 
                 else
                     -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIAJump, 0.0)
@@ -257,6 +291,7 @@ function Bot:StepPath()
                     self.requested_target_id = -1
                     self.jumping = false
                     self.knifing = false
+                    self.crouching = false
                 end
                 self.last_position = self.player_controller.soldier.transform.trans:Clone()
                 self.last_long_position_check_time = SharedUtils:GetTime()
@@ -451,6 +486,16 @@ function Bot:InternalTick(deltaTime, pass)
             else
                 self.player_controller.input:SetLevel(EntryInputActionEnum.EIAClutch, 0)
             end
+
+            if self.is_providing then
+                self:SetActiveWeaponSlot(3)
+            else
+                if self.is_secondary then
+                    self:SetActiveWeaponSlot(0)
+                else
+                    self:SetActiveWeaponSlot(-1)
+                end
+            end
             
             if (SharedUtils:GetTime() - self.last_path_reset_time) >= 5.0 then
                 self.lock_path = false
@@ -467,9 +512,10 @@ function Bot:InternalTick(deltaTime, pass)
 
             if (self.knifing) then
                 if math.random(10) > 5 then
-                    self.player_controller.input:SetLevel(EntryInputActionEnum.EIASelectWeapon7, 1.0)
-                    self.player_controller.input:SetLevel(EntryInputActionEnum.EIASelectWeapon1, 0.0)
-                    self.player_controller.input:SetLevel(EntryInputActionEnum.EIASelectWeapon2, 0.0)
+                    -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIASelectWeapon7, 1.0)
+                    -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIASelectWeapon1, 0.0)
+                    -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIASelectWeapon2, 0.0)
+                    self:SetActiveWeaponSlot(6)
                     self.player_controller.input:SetLevel(EntryInputActionEnum.EIAFire, 1)
                     self.player_controller.input:SetLevel(EntryInputActionEnum.EIAQuicktimeFastMelee, 1);
                     self.player_controller.input:SetLevel(EntryInputActionEnum.EIAMeleeAttack, 1);
@@ -486,8 +532,9 @@ function Bot:InternalTick(deltaTime, pass)
             else
                 if self.knifingGate then
                     self.player_controller.input:SetLevel(EntryInputActionEnum.EIAMeleeAttack, 0.0)
-                    self.player_controller.input:SetLevel(EntryInputActionEnum.EIASelectWeapon7, 0.0)
-                    self.player_controller.input:SetLevel(EntryInputActionEnum.EIASelectWeapon1, 1)
+                    -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIASelectWeapon7, 0.0)
+                    -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIASelectWeapon1, 1)
+                    self:SetActiveWeaponSlot(0)
                     self.player_controller.input:SetLevel(EntryInputActionEnum.EIAFire, 0)
                     self.player_controller.input:SetLevel(EntryInputActionEnum.EIAQuicktimeFastMelee, 0);
                     self.player_controller.input:SetLevel(EntryInputActionEnum.EIAMeleeAttack, 0);
@@ -537,12 +584,24 @@ function Bot:InternalTick(deltaTime, pass)
     self:Tick(deltaTime, pass)
 end
 
+function Bot:SetActiveWeaponSlot(slot)
+    local offset = slot + 16
+    local slots = {16, 17, 18, 19, 20, 21, 22, 23, 24}
+    for _, slotIndex in pairs(slots) do
+        if slotIndex == offset then
+            self.player_controller.input:SetLevel(slotIndex, 1.0)
+        else
+            self.player_controller.input:SetLevel(slotIndex, 0.0)
+        end
+    end
+end
+
 function Bot:Tick(delta_time, pass)
     -- if pass ~= UpdatePass.UpdatePass_PostFrame then
 	-- 	return
 	-- end
     if self.player_controller ~= nil then
-        if self.alive and self.player_controller.soldier then
+        if self.alive and self.player_controller.soldier and self.player_controller.alive then
             if (self.player_controller.id == 2) then
                 if (self.in_vehicle) then
                     -- do something here
@@ -550,6 +609,14 @@ function Bot:Tick(delta_time, pass)
             end
             self.requested_respawn = false
             if self.action == Actions.NONE then
+            
+            elseif self.action == Actions.PROVIDE or self.action == Actions.PROVIDE_HEALTH or self.action == Actions.PROVIDE_AMMO then
+                local isAtLocation = self:StepPath()
+                if isAtLocation then
+                    self:DropProvider()
+                    self.requested_order = 2
+                    self.requested_action = 2
+                end
 
             elseif self.action == Actions.GET_IN and not self.in_vehicle then
                 local isAtLocation = self:StepPath()
@@ -603,7 +670,7 @@ function Bot:Tick(delta_time, pass)
                 self:StepPathVehicle()
             end
 
-            if self.target ~= nil and not self.in_vehicle then
+            if self.target ~= nil and not self.in_vehicle and self.action == Actions.ATTACK then
                 if self.target.alive and self.action == Actions.ATTACK then
                     if self.target.soldier.transform.trans:Distance(self.target.soldier.transform.trans:Clone()) > 30 then
                         self.target = nil
@@ -617,7 +684,7 @@ function Bot:Tick(delta_time, pass)
                     self:SetFocusOn(focus.trans)
 
                     if self.player_controller.soldier.transform.trans:Distance(self.target.soldier.transform.trans:Clone()) < 15 and not shouldStop then
-                        self.knifing = false
+                        -- self.knifing = false
                         self.firing = true
                         self.crouching = false
                         self.stopMoving = false
@@ -671,6 +738,10 @@ function Bot:Tick(delta_time, pass)
         else
             self.requested_respawn = true
         end
+
+        -- if not self.player_controller.alive then
+        --     self.requested_respawn = true
+        -- end
     end
 end
 
@@ -737,6 +808,34 @@ function Bot.createBot(manager, name, team, squad)
 
 end
 
+function Bot:KillNullSoldier()
+    local soldierIterator = EntityManager:GetIterator('SoldierEntity')
+
+    local soldierEntity = (soldierIterator:Next())
+    while soldierEntity ~= nil do
+        soldierEntity = SoldierEntity(soldierEntity)
+        print('iterating soldiers... '..tostring(soldierEntity.player.name))
+        if soldierEntity.player == nil then
+            soldierEntity:ForceDead()
+            if soldierEntity.isAlive or soldierEntity ~= nil then
+                soldierEntity:Kill()
+            end
+            print("Destroying soldier with NULL player")
+        elseif soldierEntity.player then
+            if soldierEntity.player.id == self.player_controller.id then
+                soldierEntity:ForceDead()
+                if soldierEntity.isAlive or soldierEntity ~= nil then
+                    soldierEntity:Kill()
+                end
+                self.soldier = nil
+                print("Destroying soldier with player")
+            end
+        end
+        soldierIterator:Next()
+    end
+    
+end
+
 
 function Bot:SpawnBot(transform, pose, soldierBP, kit, unlocks, spawnEntity)
     
@@ -757,9 +856,11 @@ function Bot:SpawnBot(transform, pose, soldierBP, kit, unlocks, spawnEntity)
 
     -- print("Checking if soldier is alive")
     if self.player_controller.soldier ~= nil then
-         
+        print("destroying soldier as it exists...")
         self.player_controller.soldier:Kill()
-        
+        if self.player_controller.soldier then
+            self.player_controller.soldier:Destroy()
+        end
         self.soldier =  nil
         self.alive = false
     end
@@ -815,10 +916,10 @@ function Bot:SpawnBot(transform, pose, soldierBP, kit, unlocks, spawnEntity)
                 primaryGadget = ResourceManager:SearchForDataContainer(self.selected_kit.primary_gadget.path)
                 if self.selected_kit.primary_gadget.name == 'U_Ammobag' then
                     self.provides_ammo = true
-                    self.provides_ammo_slot = 2
+                    self.provides_ammo_slot = 4
                 elseif self.selected_kit.primary_gadget.name == 'U_Medkit' then
                     self.provides_health = true
-                    self.provides_health_slot = 2
+                    self.provides_health_slot = 4
                 end
             end
             local secondaryGadget = nil
@@ -829,7 +930,7 @@ function Bot:SpawnBot(transform, pose, soldierBP, kit, unlocks, spawnEntity)
                     self.provides_ammo_slot = 5
                 elseif self.selected_kit.secondary_gadget.name == 'U_Medkit' then
                     self.provides_health = true
-                    self.provides_health_slot = 2
+                    self.provides_health_slot = 5
                 end
             end
             local melee = nil
@@ -869,7 +970,11 @@ function Bot:SpawnBot(transform, pose, soldierBP, kit, unlocks, spawnEntity)
             end
             if primaryGadget ~= nil then
                 local primaryGadgetSlot = UnlockWeaponAndSlot()
-                primaryGadgetSlot.slot = 2
+                if self.provides_health and self.provides_health == 4 or self.provides_ammo and self.provides_ammo_slot == 4 then
+                    primaryGadgetSlot.slot = 4
+                else
+                    primaryGadgetSlot.slot = 2
+                end
                 primaryGadgetSlot.weapon = SoldierWeaponUnlockAsset(primaryGadget)
                 customization.weapons:add(primaryGadgetSlot)
             end
@@ -929,9 +1034,21 @@ function Bot:SpawnBot(transform, pose, soldierBP, kit, unlocks, spawnEntity)
    -- print("Creating soldier")
     local soldier = self.player_controller:CreateSoldier(soldierBP, transform)
     if soldier == nil then
-       -- print("Soldier failed to create")
+        print("Soldier failed to create "..tostring(self.player_controller.name))
+        self.requested_respawn = true
+        -- self:KillNullSoldier()
+        if self.soldier then
+            self.soldier:Kill()
+        end
+        if self.player_controller.soldier then
+            self.player_controller.soldier:ForceDead()
+            self.player_controller.soldier:Kill()
+            
+        end
+        self.soldier = nil
+        return nil
     else
-        --print("Spawning soldier")
+        print("Spawning soldier for ".. tostring(self.player_controller.name))
         --print("Attaching Soldier")
         
         if spawnEntity ==  nil then
@@ -963,7 +1080,12 @@ function Bot:SpawnBot(transform, pose, soldierBP, kit, unlocks, spawnEntity)
         data.humanPlayerControlled = false
         data.collisionEnabled = true
         data.physicsControlled = true
-
+        if self.player_controller.soldier == nil then
+            print("Failed to attach, killing...")
+            self.alive = false
+            self.soldier:Kill()
+            self.soldier = nil
+        end
         -- Events:Dispatch('Player:Respawn', self.player_controller.soldier)
     end
     

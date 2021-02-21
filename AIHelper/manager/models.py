@@ -24,7 +24,7 @@ class SoldierKit(models.Model):
     # primary_attachments = models.JSONField(default=list) # 
     secondary_weapon = models.JSONField(default=dict) # 1
     # secondary_attachments = models.JSONField(default=list) # 
-    primary_gadget = models.JSONField(default=dict) # 2
+    primary_gadget = models.JSONField(default=dict) # 2 (engineer) 4 (support/assault)
     secondary_gadget = models.JSONField(default=dict) # 5
     melee = models.JSONField(default=dict) # 7
 

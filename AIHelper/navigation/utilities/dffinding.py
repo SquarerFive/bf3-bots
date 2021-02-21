@@ -2,6 +2,7 @@
 
 from typing import List, Tuple
 import numba
+from numba.core.types.containers import DictType
 import numpy as np
 import math
 from numba.experimental import jitclass
@@ -224,7 +225,10 @@ class DFFinder:
                 if not self._ingrid(next): continue
                 if not self._is_within_threshold(next): continue
                 # print("Sampling neighbours")
-                new_cost = costs_so_far[current] + self._cost(current, next, end)
+                if costs_so_far[current] < float32(math.inf):
+                    new_cost = costs_so_far[current] + self._cost(current, next, end)
+                else:
+                    new_cost = self._cost(current, next, end)
                  #self._hdistance(self.graph[current], self.graph[next])
                 if next not in costs_so_far or new_cost < costs_so_far[next]:
                     costs_so_far[next] = new_cost
@@ -232,8 +236,61 @@ class DFFinder:
                     queue.put(next, priority)
                     came_from[next] = current
             i += 1
-
+        
         return self.build_path(came_from, start, end)
+
+    def find_costs(self, start : Tuple[int, int, int], end : Tuple[int, int, int]) -> List[Tuple[int, int, int]]:
+        queue = PriorityQueue()
+        start = self.ensure_point_valid((int32(start[0]), int32(start[1]), int32(start[2])))
+        end = self.ensure_point_valid((int32(end[0]), int32(end[1]), int32(end[2])))
+
+        null_ptv = (int32(-1), int32(-1), int32(-1))
+
+        self.path = typed.List.empty_list(ptv)
+        
+        
+        came_from = typed.Dict.empty(*pdt)
+        came_from[start] = null_ptv
+        costs_so_far = typed.Dict.empty(*cmt)
+        costs_so_far[start] = float32(math.inf)
+        
+        queue.put(start, float32(0))
+        current = start
+        just_started=  True
+        i = int32(0)
+        while (not queue.empty()) and i < 5000:
+            current = queue.get()
+
+            #if i % 10 == 0:
+            #    print('['+str(i)+'] - Distance to goal: '+str(int(self._hfdistance(current, end))))
+
+            if current == end:
+                # print("Current is end")
+                break
+            x = current[0]
+            y = current[1]
+            level = current[2]
+            neighbours = [(int32(x-1), int32(y), int32(level)), (int32(x+1), int32(y), int32(level)), 
+                (int32(x), int32(y-1), int32(level)), (int32(x), int32(y+1), int32(level)), (int32(x), int32(y), int32(level-1)),
+                    (int32(x), int32(y), int32(level+1))]
+
+            for next in neighbours:
+                if not self._ingrid(next): continue
+                if not self._is_within_threshold(next): continue
+                # print("Sampling neighbours")
+                if costs_so_far[current] < math.inf:
+                    new_cost = costs_so_far[current] + self._cost(current, next, end)
+                else:
+                    new_cost = self._cost(current, next ,end)
+                 #self._hdistance(self.graph[current], self.graph[next])
+                if next not in costs_so_far or new_cost < costs_so_far[next]:
+                    costs_so_far[next] = new_cost
+                    priority = float32(self._hfdistance(next, end)) #float32(self._hdistance(self.graph[next], self.graph[end]))
+                    queue.put(next, priority)
+                    came_from[next] = current
+            i += 1
+        
+        return self.build_costs(came_from, costs_so_far, start, end)
 
     def ensure_point_valid(self, point):
         k = point
@@ -260,6 +317,20 @@ class DFFinder:
             current = came_from[current]
         path.append(start)
         return path
+
+    def build_costs(self, came_from :types.DictType(types.Tuple((int32, int32, int32)), types.Tuple((int32, int32, int32))), costs_so_far : types.DictType(*cmt), start : types.Tuple((int32, int32, int32)), end : types.Tuple((int32, int32, int32))):
+        current = end
+        cost = float32(0.0)
+        # print(costs_so_far)
+        if current not in came_from:
+            # print("Could not find path", came_from)
+            return cost
+        while current != start:
+            if costs_so_far[current] < float32(math.inf):
+                cost += self.values[current[2]][current[0]][current[1]]
+            current = came_from[current]
+        
+        return cost
 
 
 if __name__ == "__main__":

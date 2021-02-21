@@ -19,7 +19,8 @@ class BasePlayer(models.Model):
     squad = models.IntegerField(default = 0)
 
     health = models.IntegerField(default=100)
-
+    health_provider = models.BooleanField(default = False)
+    ammo_provider = models.BooleanField(default = False)
     class Meta:
         abstract = True
 
@@ -36,6 +37,8 @@ class Bot(BasePlayer):
     last_transform_update = models.DateTimeField(auto_created=True, editable=True)
     
     stuck = models.BooleanField(default=False)
+
+    
 
     
 class Player(BasePlayer):
