@@ -26,6 +26,8 @@ function BotsManager:__init()
     --
     self.bot_update_interval = 1
     self.bot_update_tickrate = 0.01
+    self.last_bot_stream_update_time = 0.0
+    self.bot_stream_update_tickrate = 0.25
     --
     self.last_bot_update_time = 0.0
 
@@ -249,6 +251,17 @@ function BotsManager:GetAllLevelDataJSONConcat()
     buffer[#buffer+1] = self:GetPlayersJSONConcat()
     buffer[#buffer+1] = ','
     buffer[#buffer+1] = self:GetObjectivesJSON()
+    buffer[#buffer+1] = ','
+    buffer[#buffer+1] = ' "level_name": '..'"'..SharedUtils:GetLevelName()..'"'
+    buffer[#buffer+1] = ' }'
+    return table.concat(buffer)
+end
+
+function BotsManager:GetMinimalLevelDataJSONConcat()
+    local buffer = {'{'}
+    buffer[#buffer+1] = self:GetBotsJSON()
+    buffer[#buffer+1] = ','
+    buffer[#buffer+1] = self:GetPlayersJSONConcat()
     buffer[#buffer+1] = ','
     buffer[#buffer+1] = ' "level_name": '..'"'..SharedUtils:GetLevelName()..'"'
     buffer[#buffer+1] = ' }'
@@ -561,6 +574,17 @@ function BotsManager:PushLevelData(data)
     
 end
 
+function BotsManager:FastStreamData(data)
+    if self.project_id ~= -1 then
+        local url = "http://127.0.0.1:8000/v1/project/"..tostring(self.project_id)..'/level/update/stream/'
+        local headers= {}
+        local options = HttpOptions(headers, 90)
+        options:SetHeader('Authorization', 'Token '..self.profile.token)
+        options:SetHeader('Level', SharedUtils:GetLevelName())
+        Net:PostHTTPAsync(url, data, options, self, self.PostPushLevelData)
+    end
+end
+
 function BotsManager:StepThroughData()
     if self.data ~= nil then
         if tonumber(#self.data.bots) ~= 0 and self.data_step <= tonumber(#self.data.bots) then
@@ -724,7 +748,10 @@ function BotsManager:Tick(deltaTime, pass)
     --     -- print('ticking')
     --     self.last_bot_update_time = SharedUtils:GetTime()
     -- end
-    
+    if self.should_update == true or (SharedUtils:GetTime() - self.last_bot_stream_update_time) > self.bot_stream_update_tickrate then
+        local data = self:GetMinimalLevelDataJSONConcat()
+        self.FastStreamData(data)
+    end
     if self.should_update == true or (SharedUtils:GetTime() - self.last_update_time) > self.bot_update_interval then
         self.last_update_time = SharedUtils:GetTime()
         -- print("Update")
