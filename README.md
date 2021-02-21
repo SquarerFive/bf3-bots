@@ -5,7 +5,7 @@ This mod is currently in development, some features may not function as intended
 
 
 
-## Version 0.0.4a2 : Changelogs + Features
+## ✨ Version 0.0.4a2 : Changelogs + Features
 - Fixed: [#16](https://github.com/SquarerFive/bf3-bots/issues/16), [#15](https://github.com/SquarerFive/bf3-bots/issues/15), [#9](https://github.com/SquarerFive/bf3-bots/issues/9), and several bugs. Full Changelist:
 ```
 Layered navmesh seemed to only be valid for layer 0.
@@ -49,7 +49,7 @@ Asset manager, where you may add a weapon from the left into the selected list, 
 - Working server bullet damage
 
 
-## Master Branch: Features
+## ✨ Master Branch: Features
 - Conquest, TDM and Domination support. 
     - Rush, CTF will soon be supported
 - Multi-layer navigation mesh.
@@ -71,10 +71,10 @@ Asset manager, where you may add a weapon from the left into the selected list, 
 - Variable response times
     - The interval where the paths and actions of the bots can be set by using the `--interval` parameter for `startcomputetask`.
 
-## Requirements
+## 🖥 Requirements
 - Battlefield 3 and Venice Unleashed
 
-## Installation
+## ⛏ Installation
 NOTICE: These binaries will be available on the 0.0.4 release. **(currently version is 0.0.4alpha2)**
 
 0. You will need to open up two instances of CMD/Powershell for this.
@@ -83,8 +83,9 @@ NOTICE: These binaries will be available on the 0.0.4 release. **(currently vers
 3. Copy the directory 'bf3_bots_mod' into your BF3 server mods folder (ie, `MyServerInstance/Admin/Mods/`), then add `bf3_bots_mod` to your ModList.txt file.
 4. Start your VU/BF3 server, hold down F1 in-game to focus on the UI. Create an account by registering (this is to prevent random players from messing with the settings).
 5. On the top-left of the screen, open the menu and click 'Set Active' on the BF3 Bots Mod 0.0.4 project.
+6. The wiki is frequently updated, please read through it if you are unsure on the setup process.
 
-## System Requirements
+## 🖥 System Requirements
 - CPU: Intel/AMD @3.5GHz - 4 cores 8 threads minimum
 - RAM: 8GB RAM, nav-mesh on large maps are at-least 512MB
 - HDD: 20GB Free
@@ -95,7 +96,7 @@ NOTICE: These binaries will be available on the 0.0.4 release. **(currently vers
 ## UI
 ### Notes
 It is recommended to use a resolution above 1280x720.
-### Contributing
+### 🛠 Contributing
 - You will need NodeJS installed, then install yarn: `npm install yarn -g`
 - Inside the navigation folder, run `yarn`
 - Then to start it locally, run `quasar dev`
