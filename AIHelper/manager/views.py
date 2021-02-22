@@ -1210,3 +1210,56 @@ def manager_get_active_level_minimal(request : Request) -> Response:
     bots_models.Player.objects.all().delete()
     print(data)
     return Response(data)
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication, SessionAuthentication])
+@permission_classes([AllowAny])
+def manager_update_level_stream(request: Request, project_id : int) -> Response:
+    global global_cache
+    print(request.body)
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+    except:
+        return Response("Failed to decode data")
+    level_name = str(request.headers['Level'])
+    level_model : navigation_models.Level = level.models.Level.objects.filter(name=level_name, project_id=project_id).first()
+    
+    if level_model:
+        level_object = global_cache.get_object(project_id, level_model.level_id)
+        settings : models.BF3GameManager = models.BF3GameManager.objects.first()
+        if settings.active_level_id != level_model.level_id or settings.active_project_id != level_model.project_id:
+            settings.active_project_id = level_model.project_id
+            settings.active_level_id = level_model.level_id
+            settings.reload = True
+            settings.save()
+        players = bots_models.Player.objects.all()
+        ts = time.time()
+        p_array = []
+        for player in data['players']:
+            player_m : bots_models.Player = players.filter(player_id=player['player_id']).first()
+            if player_m:
+                player_m.transform = player['transform']
+                player_m.alive = player['alive']
+                p_array.append(player_m)
+           
+
+        bots_models.Player.objects.bulk_update(p_array, ['transform', 'alive'])
+        
+        bots = bots_models.Bot.objects.all()
+        b_array = []
+        # print("doing bots, ", data['bots'])
+        for bot in data['bots']:
+            bot_model : bots_models.Bot = bots.filter(bot_index=bot['bot_index']).first()
+            
+            if (bot_model):
+                bot_model.transform = bot['transform']
+                bot_model.alive = bot['alive']
+                b_array.append(bot_model)
+        bots_models.Bot.objects.bulk_update(b_array, ['transform', 'alive'])
+        
+       
+        te = time.time()
+        print("Time to update level: ", te-ts)
+        return HttpResponse('Success')
+    print('no level')
+    return Response('Failed to find level {0} for current project {1}'.format(level_name, project_id), status=404)

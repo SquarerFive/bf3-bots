@@ -43,6 +43,7 @@ urlpatterns = [
     path("project/<int:project_id>/tasks/", views.manager_get_tasks, name='manager-get-tasks'),
     path("project/<int:project_id>/tasks/start/", views.manager_start_all_tasks, name='manager-start-tasks-all'),
     path("project/<int:project_id>/level/update/", views.manager_update_level, name='manager-update-level'),
+    path("project/<int:project_id>/level/update/stream/", views.manager_update_level_stream, name='manager-update-level-stream'),
     path("project/<int:project_id>/level/<int:level_id>/reset/", views.manager_reset_level_data, name='manager-reset-level-data'),
     path("project/<int:project_id>/level/<int:level_id>/on-level-loaded/", views.manager_on_level_loaded, name='manager-on-level-loaded'),
     path("project/<int:project_id>/level/<int:level_id>/recalculate/", views.manager_recalculate_costs, name='manager-recalculate-costs'),

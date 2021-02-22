@@ -93,6 +93,7 @@ function Bot:__init()
     self.last_request_ammo_request = 0
     self.last_request_health_request = 0
     -- Events:Subscribe("UpdateManager:Update", self, self.InternalTick)
+    self.spawned = false
 end
 
 function Bot:UpdateAimSettings(newFiringOffset, newFiringBaseOffset, newAimWhenFire)
@@ -106,7 +107,7 @@ function Bot:EncodeAsJSON()
     if self.player_controller.hasSoldier then
         data = data..'"transform": '..json.encode(self.player_controller.soldier.transform)..', "health": '..self.player_controller.soldier.health
     else
-        data = data..'"transform": '..json.encode(LinearTransform(1.0))..', "health": 0.0'
+        data = data..'"transform": '..'{"forward": {"x": 0, "y": 0, "z": 1}, "right": {"x": 1, "y": 0, "z": 0}, "up": {"x": 0, "y": 1, "z": 0}, "trans": {"x": 0, "y": 1, "z": 0}}'..', "health": 0.0'
     end
     data = data .. ', "team": '..self.player_controller.teamId..
         ', "name": '..'"'..self.player_controller.name..'"'..
@@ -130,11 +131,12 @@ function Bot:EncodeAsJSONConcat()
     local values = {'"'..self.player_controller.name..'"', self.player_controller.teamId, self.action, self.order, self.player_controller.id, self.bot_index,
                         tostring(self.in_vehicle)}
     local buffer = {"{ "}
-    if self.player_controller.hasSoldier then
+    if self.player_controller.hasSoldier and self.player_controller.soldier ~= nil then
         table.insert(values, json.encode(self.player_controller.soldier.transform))
         table.insert(values, tostring(self.player_controller.soldier.health))
     else
-        table.insert(values, json.encode(LinearTransform(1.0)))
+        --table.insert(values, json.encode(LinearTransform(1.0)))
+        table.insert(values, '{"forward": {"x": 0, "y": 0, "z": 1}, "right": {"x": 1, "y": 0, "z": 0}, "up": {"x": 0, "y": 1, "z": 0}, "trans": {"x": 0, "y": 1, "z": 0}}')
         table.insert(values, '0.0')
     end
 
@@ -162,7 +164,9 @@ function Bot:IsOutOfAmmo()
     if self.player_controller.alive and self.player_controller.soldier ~= nil then
         local soldier = self.player_controller.soldier
         if (soldier.weaponsComponent) then
-            return soldier.weaponsComponent.currentWeapon.secondaryAmmo <= 1
+            if soldier.weaponsComponent.currentWeapon ~= nil then
+                return soldier.weaponsComponent.currentWeapon.secondaryAmmo <= 1
+            end
         end
     end
     return false
@@ -601,7 +605,10 @@ function Bot:Tick(delta_time, pass)
 	-- 	return
 	-- end
     if self.player_controller ~= nil then
-        if self.alive and self.player_controller.soldier and self.player_controller.alive then
+        if self.alive and self.player_controller.alive then
+            if self.player_controller.soldier == nil then
+                return
+            end
             if (self.player_controller.id == 2) then
                 if (self.in_vehicle) then
                     -- do something here
@@ -837,8 +844,8 @@ function Bot:KillNullSoldier()
 end
 
 
-function Bot:SpawnBot(transform, pose, soldierBP, kit, unlocks, spawnEntity)
-    
+function Bot:SpawnBot(transform, pose, soldierBP, inKit, unlocks, spawnEntity)
+    local kit = ''
 
     -- soldierBlueprint = ResourceManager:SearchForInstanceByGuid(Guid('261E43BF-259B-41D2-BF3B-9AE4DDA96AD2'))
     -- soldierKit = ResourceManager:SearchForInstanceByGuid(Guid('A15EE431-88B8-4B35-B69A-985CEA934855'))
@@ -944,29 +951,40 @@ function Bot:SpawnBot(transform, pose, soldierBP, kit, unlocks, spawnEntity)
                 kit = ResourceManager:SearchForDataContainer(self.selected_kit.kit_asset.path)
             end
 
-            if (kit ~= nil and unlocks ~= nil) then
-                print("kit and unlocks valid: "..self.selected_kit.kit_asset.path..' '..self.selected_kit.unlocks.path)
-                self.player_controller:SelectUnlockAssets(kit, {unlocks})
-            end
+            
 
             -- now mount these weapons
             if primaryWeapon ~= nil then
                 local primaryWeaponSlot = UnlockWeaponAndSlot()
                 primaryWeaponSlot.slot = 0
                 primaryWeaponSlot.weapon = SoldierWeaponUnlockAsset(primaryWeapon)
+                local pUnlocks = {}
                 for _, uA in pairs(primaryWeaponAttachments) do
                     primaryWeaponSlot.unlockAssets:add(uA)
+                    table.insert(pUnlocks, uA)
                 end
                 customization.weapons:add(primaryWeaponSlot)
+
+                self.player_controller:SelectWeapon(
+                    WeaponSlot.WeaponSlot_0,  primaryWeapon, pUnlocks
+                )
+                print("Successfully set primary weapon")
             end
             if secondaryWeapon ~= nil then
                 local secondaryWeaponSlot = UnlockWeaponAndSlot()
                 secondaryWeaponSlot.slot = 1
                 secondaryWeaponSlot.weapon = SoldierWeaponUnlockAsset(secondaryWeapon)
+                local sUnlocks = {}
                 for _, uA in pairs(secondaryWeaponAttachments) do
                     secondaryWeaponSlot.unlockAssets:add(uA)
+                    table.insert(sUnlocks, uA)
                 end
+                
                 customization.weapons:add(secondaryWeaponSlot)
+                self.player_controller:SelectWeapon(
+                    WeaponSlot.WeaponSlot_1,  secondaryWeapon, sUnlocks
+                )
+                print("Successfully set secondary weapon")
             end
             if primaryGadget ~= nil then
                 local primaryGadgetSlot = UnlockWeaponAndSlot()
@@ -990,7 +1008,12 @@ function Bot:SpawnBot(transform, pose, soldierBP, kit, unlocks, spawnEntity)
                 meleeSlot.weapon = SoldierWeaponUnlockAsset(melee)
                 customization.weapons:add(meleeSlot)
             end
-        -- else
+
+            if (kit ~= nil and unlocks ~= nil) then
+                print("kit and unlocks valid: "..self.selected_kit.kit_asset.path..' '..self.selected_kit.unlocks.path .. tostring(kit))
+                self.player_controller:SelectUnlockAssets(kit, {unlocks})
+            end
+        else
         --     
         --     local weapon = ResourceManager:SearchForInstanceByGuid(Guid('96FC0A67-DEA2-4061-B955-E173A8DBB00D'))
         --     
@@ -1087,6 +1110,7 @@ function Bot:SpawnBot(transform, pose, soldierBP, kit, unlocks, spawnEntity)
             self.alive = false
             self.soldier:Kill()
             self.soldier = nil
+            return nil
         end
         -- Events:Dispatch('Player:Respawn', self.player_controller.soldier)
     end
@@ -1102,7 +1126,7 @@ function Bot:SpawnBot(transform, pose, soldierBP, kit, unlocks, spawnEntity)
     --     end
     --     self.path_step = 1
     -- end
-    
+    self.spawned = true
     return self.soldier
 end
 

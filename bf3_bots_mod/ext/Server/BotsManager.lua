@@ -12,6 +12,7 @@ function BotsManager:__init()
     Events:Subscribe('Extension:Unloading', self, self.Destroy)
     Events:Subscribe('Player:Created', self, self.OnPlayerCreated)
     Events:Subscribe('Player:Left', self, self.OnPlayerLeft)
+    Events:Subscribe('Player:Destroyed', self, self.OnPlayerLeft)
     Events:Subscribe('Player:Authenticated', self, self.OnPlayerCreated)
     
         
@@ -27,7 +28,7 @@ function BotsManager:__init()
     self.bot_update_interval = 1
     self.bot_update_tickrate = 0.01
     self.last_bot_stream_update_time = 0.0
-    self.bot_stream_update_tickrate = 0.25
+    self.bot_stream_update_tickrate = 250
     --
     self.last_bot_update_time = 0.0
 
@@ -40,7 +41,7 @@ function BotsManager:__init()
     self.use_spawn_points = false
     self.friendly_spawn_points = {} -- Vec3[]
     self.enemy_spawn_points = {} -- Vec3[]
-
+    self.soldierBlueprint = ResourceManager:SearchForInstanceByGuid(Guid('261E43BF-259B-41D2-BF3B-9AE4DDA96AD2'))
 end
 
 function BotsManager:InitialiseHeartbeatSettings()
@@ -70,16 +71,16 @@ function BotsManager:OnPlayerCreated(player)
 end
 
 function BotsManager:OnPlayerLeft(player)
-    -- local idx = -1
-    -- for g, pl in pairs(self.players) do
-    --     if pl.ip == player.ip then
-    --         idx = g
-    --         break
-    --     end
-    -- end
-    -- print('removing player at: '..idx)
-    -- table.remove(self.players, idx)
-    self.players = PlayerManager:GetPlayers()
+    local idx = -1
+    for g, pl in pairs(self.players) do
+        if pl.ip == player.ip then
+            idx = g
+            break
+        end
+    end
+    print('removing player at: '..idx)
+    table.remove(self.players, idx)
+    -- self.players = PlayerManager:GetPlayers()
     self:UpdateSortedPlayersTable()
 end
 
@@ -101,12 +102,12 @@ function BotsManager:GetPlayerJSON(player)
         ', "alive":'..tostring(player.alive)..
         ', "is_squad_leader": '..tostring(player.isSquadLeader)..
         ', "is_squad_private": '..tostring(player.isSquadPrivate)
-    if player.hasSoldier and player.alive then
+    if player.hasSoldier and player.alive and player.soldier ~= nil then
         data = data..', "health": '..tostring(player.soldier.health)
         data = data..', "transform": '..json.encode(player.soldier.transform)
     else
         data = data..', "health": 0.0'
-        data = data..', "transform": '..json.encode(LinearTransform(1.0))
+        data = data..', "transform": '..'{"forward": {"x": 0, "y": 0, "z": 1}, "right": {"x": 1, "y": 0, "z": 0}, "up": {"x": 0, "y": 1, "z": 0}, "trans": {"x": 0, "y": 1, "z": 0}}'
     end
     data = data..
         ', "has_soldier": '..tostring(player.hasSoldier)..
@@ -117,6 +118,37 @@ function BotsManager:GetPlayerJSON(player)
     return data
 end
 
+function BotsManager:GetPlayerJSONConcat(player)
+    local keys = {'name', 'team', 'player_id','transform', 'health', 'alive', 'squad', 'online_id', 'is_squad_leader', 'is_squad_private', 'has_soldier', 'in_vehicle'}
+    local values = {'"'..player.name..'"', player.teamId, player.id}
+    local buffer = {"{ "}
+    if player.hasSoldier and player.soldier ~= nil then
+        table.insert(values, json.encode(player.soldier.transform))
+        table.insert(values, tostring(player.soldier.health))
+    else
+        --table.insert(values, json.encode(LinearTransform(1.0)))
+        table.insert(values, '{"forward": {"x": 0, "y": 0, "z": 1}, "right": {"x": 1, "y": 0, "z": 0}, "up": {"x": 0, "y": 1, "z": 0}, "trans": {"x": 0, "y": 1, "z": 0}}')
+        table.insert(values, '0.0')
+    end
+
+    table.insert(values, tostring(player.alive))
+    table.insert(values, tostring(player.squadId))
+    table.insert(values, tostring(player.onlineId))
+    table.insert(values, tostring(player.isSquadLeader))
+    table.insert(values, tostring(player.isSquadPrivate))
+    table.insert(values, tostring(player.hasSoldier))
+    table.insert(values, 'false')
+    for idx, key in pairs(keys) do
+        if idx == 1 then
+            buffer[#buffer+1] = '"'..key..'":'..values[idx]
+        else
+            buffer[#buffer+1] = ', "'..key..'":'..values[idx]
+        end
+    end
+    buffer[#buffer+1] = " }"
+    return table.concat(buffer)
+end
+
 function BotsManager:GetPlayersJSON()
     local players = PlayerManager:GetPlayers()
     local data = '['
@@ -124,9 +156,11 @@ function BotsManager:GetPlayersJSON()
         for idx, player in pairs(players) do
             if player ~= nil then
                 if idx == 1 then
-                    data = data..self:GetPlayerJSON(player)
+                    --data = data..self:GetPlayerJSON(player)
+                    data = data..self:GetPlayerJSONConcat(player)
                 else
-                    data = data..', '..self:GetPlayerJSON(player)
+                    --data = data..', '..self:GetPlayerJSON(player)
+                    data = data..', '..self:GetPlayerJSONConcat(player)
                 end
             end
         end
@@ -211,31 +245,84 @@ function BotsManager:GetObjectivesJSON()
     return table.concat(buffer)
 end
 
-function BotsManager:GetBotsJSON()
+function BotsManager:GetBotsJSON(only_alive)
+    local cond = true
+    if only_alive then
+        local res = '"bots": ['
+        if #self.bots > 0 then
+            for idx, obj in pairs(self.bots) do
+                
+                cond = obj.alive and obj.player_controller.hasSoldier
+                
+                if obj.player_controller ~= nil and cond then
+                    if idx == 1 then
+                        res = res .. obj:EncodeAsJSON()
+                    else
+                        res =  res..', '.. obj:EncodeAsJSON()
+                    end
+                end
+            end
+        end
+        res = res .. ' ]'
+        return res
+    end
     -- print("concat bots")
     local buffer = {'"bots": ['}
+    local i = 1
+    
     for idx, obj in pairs(self.bots) do
-        if idx == 1 then
-            buffer[#buffer+1] = obj:EncodeAsJSONConcat()
-        else
-            buffer[#buffer+1] = ', '..obj:EncodeAsJSONConcat()
+        if only_alive then
+            cond = obj.player_controller.alive and obj.player_controller.hasSoldier and obj.spawned
         end
+        if cond then
+            if i == 1 then
+                buffer[#buffer+1] = obj:EncodeAsJSONConcat()
+            else
+                buffer[#buffer+1] = ', '..obj:EncodeAsJSONConcat()
+            end
+        end
+        i = i + 1
     end
     buffer[#buffer+1] = ' ]'
     return table.concat(buffer)
 end
 
-function BotsManager:GetPlayersJSONConcat()
-    local players = PlayerManager:GetPlayers()
+function BotsManager:GetPlayersJSONConcat(only_alive)
+    local players = self.players -- PlayerManager:GetPlayers()
+    local cond = true
+    if only_alive then
+        local res = '"players": ['
+        if #players > 0 then
+            for idx, player in pairs(players) do
+                
+                cond = player.alive and player.hasSoldier
+                
+                if player ~= nil and cond then
+                    if idx == 1 then
+                        res = res .. self:GetPlayerJSONConcat(player)
+                    else
+                        res =  res..', '..self:GetPlayerJSONConcat(player)
+                    end
+                end
+            end
+        end
+        res = res .. ' ]'
+        return res
+    end
+    
     local buffer = {'"players": ['}
+    
     
     if #players > 0 then
         for idx, player in pairs(players) do
-            if player ~= nil then
+            if only_alive then
+                cond = player.alive and player.hasSoldier
+            end
+            if player ~= nil and cond then
                 if idx == 1 then
-                    buffer[#buffer+1] = self:GetPlayerJSON(player)
+                    buffer[#buffer+1] = self:GetPlayerJSONConcat(player)
                 else
-                    buffer[#buffer+1] = ', '..self:GetPlayerJSON(player)
+                    buffer[#buffer+1] = ', '..self:GetPlayerJSONConcat(player)
                 end
             end
         end
@@ -246,9 +333,9 @@ end
 
 function BotsManager:GetAllLevelDataJSONConcat()
     local buffer = {'{'}
-    buffer[#buffer+1] = self:GetBotsJSON()
+    buffer[#buffer+1] = self:GetBotsJSON(false)
     buffer[#buffer+1] = ','
-    buffer[#buffer+1] = self:GetPlayersJSONConcat()
+    buffer[#buffer+1] = self:GetPlayersJSONConcat(false)
     buffer[#buffer+1] = ','
     buffer[#buffer+1] = self:GetObjectivesJSON()
     buffer[#buffer+1] = ','
@@ -259,9 +346,9 @@ end
 
 function BotsManager:GetMinimalLevelDataJSONConcat()
     local buffer = {'{'}
-    buffer[#buffer+1] = self:GetBotsJSON()
+    buffer[#buffer+1] = self:GetBotsJSON(true)
     buffer[#buffer+1] = ','
-    buffer[#buffer+1] = self:GetPlayersJSONConcat()
+    buffer[#buffer+1] = self:GetPlayersJSONConcat(true)
     buffer[#buffer+1] = ','
     buffer[#buffer+1] = ' "level_name": '..'"'..SharedUtils:GetLevelName()..'"'
     buffer[#buffer+1] = ' }'
@@ -574,6 +661,10 @@ function BotsManager:PushLevelData(data)
     
 end
 
+function BotsManager:PostFastStreamData(result)
+
+end
+
 function BotsManager:FastStreamData(data)
     if self.project_id ~= -1 then
         local url = "http://127.0.0.1:8000/v1/project/"..tostring(self.project_id)..'/level/update/stream/'
@@ -581,7 +672,7 @@ function BotsManager:FastStreamData(data)
         local options = HttpOptions(headers, 90)
         options:SetHeader('Authorization', 'Token '..self.profile.token)
         options:SetHeader('Level', SharedUtils:GetLevelName())
-        Net:PostHTTPAsync(url, data, options, self, self.PostPushLevelData)
+        Net:PostHTTPAsync(url, data, options, self, self.PostFastStreamData)
     end
 end
 
@@ -748,9 +839,11 @@ function BotsManager:Tick(deltaTime, pass)
     --     -- print('ticking')
     --     self.last_bot_update_time = SharedUtils:GetTime()
     -- end
-    if self.should_update == true or (SharedUtils:GetTime() - self.last_bot_stream_update_time) > self.bot_stream_update_tickrate then
+    if (SharedUtils:GetTimeMS() - self.last_bot_stream_update_time) > (self.bot_stream_update_tickrate) then
         local data = self:GetMinimalLevelDataJSONConcat()
-        self.FastStreamData(data)
+        self:FastStreamData(data)
+        -- print("Sending fast stream")
+        self.last_bot_stream_update_time = SharedUtils:GetTimeMS()
     end
     if self.should_update == true or (SharedUtils:GetTime() - self.last_update_time) > self.bot_update_interval then
         self.last_update_time = SharedUtils:GetTime()
@@ -1003,15 +1096,18 @@ function BotsManager:GetRandomSpawnPoint(Team)
 end
 
 function BotsManager:SpawnBotAroundTransform(Transform, bot)
-    --US
-    local soldierBlueprint = ResourceManager:SearchForInstanceByGuid(Guid('261E43BF-259B-41D2-BF3B-9AE4DDA96AD2'))
-    local soldierKit = ResourceManager:SearchForInstanceByGuid(Guid('0A99EBDB-602C-4080-BC3F-B388AA18ADDD'))
-    
-    --RU
-    if bot.teamId == TeamId.Team2 then
-        soldierBlueprint = ResourceManager:SearchForInstanceByGuid(Guid('261E43BF-259B-41D2-BF3B-9AE4DDA96AD2'))
-        soldierKit = ResourceManager:SearchForInstanceByGuid(Guid('DB0FCE83-2505-4948-8661-660DD0C64B63'))
+    if self.soldierBlueprint == nil then
+        self.soldierBlueprint =ResourceManager:SearchForInstanceByGuid(Guid('261E43BF-259B-41D2-BF3B-9AE4DDA96AD2'))
     end
+    --US
+    -- local soldierBlueprint = ResourceManager:SearchForInstanceByGuid(Guid('261E43BF-259B-41D2-BF3B-9AE4DDA96AD2'))
+    -- local soldierKit = ResourceManager:SearchForInstanceByGuid(Guid('0A99EBDB-602C-4080-BC3F-B388AA18ADDD'))
+    -- 
+    -- --RU
+    -- if bot.teamId == TeamId.Team2 then
+    --     soldierBlueprint = ResourceManager:SearchForInstanceByGuid(Guid('261E43BF-259B-41D2-BF3B-9AE4DDA96AD2'))
+    --     soldierKit = ResourceManager:SearchForInstanceByGuid(Guid('DB0FCE83-2505-4948-8661-660DD0C64B63'))
+    -- end
 
     if self.use_spawn_points then
         local currentTransform = Transform:Clone()
@@ -1021,7 +1117,7 @@ function BotsManager:SpawnBotAroundTransform(Transform, bot)
                 currentTransform.left, currentTransform.up, currentTransform.forward,
                 optimalTranslation
             )
-            bot:SpawnBot(newTransform,CharacterPoseType.CharacterPoseType_Stand , soldierBlueprint, soldierKit, {}, nil)
+            bot:SpawnBot(newTransform,CharacterPoseType.CharacterPoseType_Stand , self.soldierBlueprint, nil, {}, nil)
             bot.objective = self:GetNearestEnemyObjectiveEntity(newTransform.trans, TeamId.Team1)
             bot.path_step = 1
             bot.path = {}
