@@ -65,10 +65,12 @@ class Level:
         self.dffinder = dffinding.DFFinder(self.costs, elevation, self.model.distance_field_threshold)
     
     def generate_distance_fields(self):
-        if type(self.df) == type(None):
+        if type(self.df) == type(None) :
             self.df = np.zeros(self.elevation.shape, dtype=np.float32)
-        
-        scorecard.bruteforce_generate_distancefields(self.elevation, self.df, tuple((*self.transform.min_point,)), tuple((*self.transform.max_point,)))
+        if self.df.shape != self.elevation.shape:
+            self.df = np.zeros(self.elevation.shape, dtype=np.float32)
+        # scorecard.bruteforce_generate_distancefields(self.elevation, self.df, tuple((*self.transform.min_point,)), tuple((*self.transform.max_point,)))
+        scorecard.approximate_distance_fields(self.elevation, self.df, 0.5)
         self.model.has_distance_field = True
         self.model.save()
         

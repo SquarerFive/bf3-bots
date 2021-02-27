@@ -35,11 +35,25 @@ def bruteforce_generate_distancefields(elevation_arr : np.ndarray, distance_fiel
                     distance_field_array[level][x][y] = 0.0
 
 def approximate_distance_fields(elevation_array : np.ndarray, distance_field_array : np.ndarray, seed_value : np.float32):
-    for level in elevation_array.shape[0]:
-        jumpflooder = jumpflooding.BasicJumpflooding(elevation_array[level], seed_value)
-        jumpflooding.initial(elevation_array[level], jumpflooder.jf_tx, seed_value)
-        jumpflooder.jfd(True)
-        distance_field_array[level] = jumpflooder.df_tx
+    for level in range(elevation_array.shape[0]):
+        texture = np.abs(np.gradient(elevation_array[level], axis=0))
+        jf_tx = np.zeros((*elevation_array[level].shape, 3), dtype=np.float32)
+        jumpflooding.initial(texture, jf_tx, seed_value)
+        jumpflooding.run_jfd(
+            texture, jf_tx, distance_field_array[level], seed_value, 4
+        )
+        jumpflooding.run_jfd(
+            texture, jf_tx, distance_field_array[level], seed_value, 8
+        )
+        jumpflooding.run_jfd(
+            texture, jf_tx, distance_field_array[level], seed_value, 16
+        )
+        jumpflooding.run_jfd(
+            texture, jf_tx, distance_field_array[level], seed_value, 32
+        )
+        print(np.max(distance_field_array[level]))
+        print("Done level", level)
+        # distance_field_array[level] = 
 
 @njit(parallel=True)
 def score_fast(

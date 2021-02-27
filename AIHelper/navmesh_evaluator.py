@@ -92,15 +92,18 @@ def get_path_to(start, end):
         path = pyastar.astar_path(arr, (344, 601),  get_valid_point_in_radius(arr, 353, 631), allow_diagonal=True)
 
 
-with open("./models/Project/BF3 Bots 0.0.4/Level/MP_Subway/elevation.npy", "rb") as f:
-    elevation = numpy.load(f)[0]
+with open("./models/Project/BF3 Bots 0.0.4/Level/XP1_004/elevation.npy", "rb") as f:
+    elevation : numpy.ndarray = numpy.load(f)[0]
+    elevation_g = numpy.abs(numpy.gradient(elevation, axis=0))
+    # print(elevation_g)
+    
 
 with open("./models/Project/BF3 Bots 0.0.4/Level/MP_Subway/data.npy", "rb") as f:
     with open('./models/Project/BF3 Bots 0.0.4/Level/XP1_004/df.npy', 'rb') as fx:
         elevation_arr = numpy.load(fx)[0]
-        elevation_arr = numpy.power(elevation_arr, 0.2)
-        elevation_arr = numpy.max(elevation_arr[1]) - elevation_arr
-        elevation_arr = numpy.power(elevation_arr, 4.0)
+        # elevation_arr = numpy.power(elevation_arr, 0.2)
+        # elevation_arr = numpy.max(elevation_arr[1]) - elevation_arr
+        # elevation_arr = numpy.power(elevation_arr, 4.0)
 
     with open('./models/Project/BF3 Bots 0.0.4/Level/XP1_004/costs.npy', 'rb') as fx:
         costs_arr = numpy.load(fx)[0]
@@ -125,12 +128,12 @@ with open("./models/Project/BF3 Bots 0.0.4/Level/MP_Subway/data.npy", "rb") as f
     #path = pyastar.astar_path(arr, (353, 659),  get_valid_point_in_radius(arr, 341, 591), allow_diagonal=True)
     #path = pyastar.astar_path(arr, (684, 397),  get_valid_point_in_radius(arr, 658, 444), allow_diagonal=False)
     # path = pyastar.astar_path(arr, (745, 528),  get_valid_point_in_radius(arr, 848, 596), allow_diagonal=True)
-    path = pyastar.astar_path(arr, (1100, 924 ),  get_valid_point_in_radius(arr, 1044, 938 ), allow_diagonal=True)
+    # path = pyastar.astar_path(arr, (1100, 924 ),  get_valid_point_in_radius(arr, 1044, 938 ), allow_diagonal=True)
 
     te = time.time()
     print(te - ts)
     
-    print(path)
+    # print(path)
 
     # print(arr[432,585])
     # grid = Grid(matrix=arr)

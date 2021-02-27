@@ -91,8 +91,9 @@ def initial(texture, jfd_texture, seed_value = 0.01):
                 jfd_texture[x][y][0] = x
                 jfd_texture[x][y][1] = y
 
-@njit(parallel=True)
+@njit(parallel=True, debug=False)
 def jfd(texture, jfd_texture, df_texture, seed_value, step_length):
+    # print(texture.shape, jfd_texture.shape, df_texture.shape)
     for x in prange(0, texture.shape[0]):
         if x % step_length != 0:
             continue
@@ -137,7 +138,7 @@ def jfd(texture, jfd_texture, df_texture, seed_value, step_length):
                             df_texture[x][y] = distance(center_pos, nearest_pos) * (-1 if \
                                 current_sample >= seed_value else 1)
 
-@njit()
+# @njit()
 def run_jfd(texture, jfd_texture, df_texture, seed_value, step_length):
     step_size=  step_length
     while step_size > 0:
@@ -159,7 +160,10 @@ if __name__ == "__main__":
     run_jfd(tex, jf_tx, df_tx, 0.5, 4)
     te = time.time()
     print(te - ts)
-    
+    ts = time.time()
+    run_jfd(tex, jf_tx, df_tx, 0.5, 4)
+    te = time.time()
+    print(te - ts)
     # b = BasicJumpflooding(tex, 0.5)
     # ts = time.time()
     # b.jfd()

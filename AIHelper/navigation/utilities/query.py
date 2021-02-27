@@ -54,6 +54,7 @@ def encode_level(in_level : level.Level) -> None:
         with open(f'{l.relative_path}/df.npy', 'wb') as f:
             df : np.ndarray = in_level.df
             np.save(f, df.astype(np.float32))
+            print(np.max(in_level.df[0]))
             print("Saved Distance Field Map")
     l.transform = in_level.transform.as_dict()
     l.save()
