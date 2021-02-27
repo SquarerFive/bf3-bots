@@ -98,6 +98,7 @@ function NavGrid:__init()
     self.elevation_based_scoring = false
     self.df_based_scoring = false
     self.layers = 10
+    self.df_diagonal_sampling = false
     
     if #cachedSpatialEntities == 0 then
         local ToLookFor = "ServerVegetationTreeEntity"
@@ -513,20 +514,30 @@ end
 
 function NavGrid:VoxelRaycastDF(p)
     local d = 9999999999
-    local angles = {
-        Vec3(p.x+6000, p.y, p.z),
-        Vec3(p.x-6000, p.y, p.z),
-        Vec3(p.x, p.y, p.z+6000),
-        Vec3(p.x, p.y, p.z-6000),
-        Vec3(p.x-6000, p.y, p.z-6000),
-        Vec3(p.x+6000, p.y, p.z-6000),
-        Vec3(p.x+6000, p.y, p.z+6000),
-        Vec3(p.x-6000, p.y, p.z+6000),
-        Vec3(p.x+6000, p.y+6000, p.z+6000),
-        Vec3(p.x+6000, p.y+6000, p.z-6000),
-        Vec3(p.x-6000, p.y+6000, p.z-6000),
-        Vec3(p.x-6000, p.y+6000, p.z+6000),
-    }
+    local angles = {}
+    if self.df_diagonal_sampling then
+        angles = {
+            Vec3(p.x+6000, p.y, p.z),
+            Vec3(p.x-6000, p.y, p.z),
+            Vec3(p.x, p.y, p.z+6000),
+            Vec3(p.x, p.y, p.z-6000),
+            Vec3(p.x-6000, p.y, p.z-6000),
+            Vec3(p.x+6000, p.y, p.z-6000),
+            Vec3(p.x+6000, p.y, p.z+6000),
+            Vec3(p.x-6000, p.y, p.z+6000),
+            Vec3(p.x+6000, p.y+6000, p.z+6000),
+            Vec3(p.x+6000, p.y+6000, p.z-6000),
+            Vec3(p.x-6000, p.y+6000, p.z-6000),
+            Vec3(p.x-6000, p.y+6000, p.z+6000),
+        }
+    else
+        angles = {
+            Vec3(p.x+6000, p.y, p.z),
+            Vec3(p.x-6000, p.y, p.z),
+            Vec3(p.x, p.y, p.z+6000),
+            Vec3(p.x, p.y, p.z-6000)
+        }
+    end
     for _, a in pairs(angles) do
         local ray = RaycastManager:Raycast(p, a, RayCastFlags.IsAsyncRaycast)
         if (ray ~= nil) then

@@ -39,12 +39,21 @@ class Level:
         self.costs_preview = None
         self.name = name
         self.grid = None
+        if model:
+            self.project_id = model.project_id
+        else:
+            self.project_id = 0
 
-        self.project_id = 0
-
-        self.model = model
+        # self.model = model
         self.dffinder = None
         self.mdf = None
+
+    @property
+    def model(self) -> models.Level:
+        # print(self.name, self.project_id)
+        # levels = models.Level.objects.filter(name = self.name)
+        # print(levels)
+        return models.Level.objects.filter(name = self.name, project_id = self.project_id).first()
 
     def create_dffinder(self):
         # self.mdf = np.power(self.df, 0.2)
@@ -52,8 +61,8 @@ class Level:
         # self.mdf = np.power(self.mdf, 4.0)
         # self.mdf = self.mdf.astype(np.float32)
         elevation = self.elevation.astype(np.float32)
-        
-        self.dffinder = dffinding.DFFinder(self.costs, elevation, 38)
+        print(self.model)
+        self.dffinder = dffinding.DFFinder(self.costs, elevation, self.model.distance_field_threshold)
     
     def classify_costs(self, elevation_based : bool = False, elevation_alpha_power : float = 0.05, elevation_alpha_beta : float = 1.5, elevation_alpha_beta_power : float = 7.0, just_paths = False, use_df = False):
         if not just_paths:
@@ -242,8 +251,8 @@ class Level:
         start = (start_v[0], start_v[1], start[2])
         end = (end_v[0], end_v[1], end[2])
         if self.dffinder:
-            return self.dffinder.find_costs(start, end)
-        return 99.0
+            return self.dffinder.get_direction_cost(start, end, 1)
+        return 0.0
 
     def astar(self, start : tuple, end : tuple, safe=True , all : bool = False, elevation : Union[float, None] = None, target_elevation : Union[float, None] = 0.0, recurse_depth : int = 0) -> list:
         # print("running astar  ", start, end)

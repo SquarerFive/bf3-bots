@@ -1216,7 +1216,7 @@ def manager_get_active_level_minimal(request : Request) -> Response:
 @permission_classes([AllowAny])
 def manager_update_level_stream(request: Request, project_id : int) -> Response:
     global global_cache
-    print(request.body)
+    # print(request.body)
     try:
         data = json.loads(request.body.decode('utf-8'))
     except:

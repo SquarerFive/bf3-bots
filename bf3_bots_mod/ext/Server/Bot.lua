@@ -320,6 +320,24 @@ function Bot:StepPath()
     return finished
 end
 
+function Bot:StepPathNew()
+    local finished = false
+    if #self.path > 0 then
+        self.destination = self.path[self.path_step]:Clone()
+        local is_at_path, is_outside_path = self:IsAtDestination()
+        if is_at_path and not is_outside_path then
+            self.path_step = self.path_step + 1
+            self.lock_path = false
+        end
+        self.throttle = true
+        self.sprinting = true
+    else
+        self.throttle = false
+        self.sprinting = false
+    end
+    return finished
+end
+
 function Bot:GetClosestPathPoint(point)
     local min_distance = 98999
     local min_point = nil
@@ -585,7 +603,8 @@ function Bot:InternalTick(deltaTime, pass)
         end
     end
 
-    self:Tick(deltaTime, pass)
+    -- self:Tick(deltaTime, pass)
+    self:NewTick(deltaTime, pass)
 end
 
 function Bot:SetActiveWeaponSlot(slot)
@@ -596,6 +615,16 @@ function Bot:SetActiveWeaponSlot(slot)
             self.player_controller.input:SetLevel(slotIndex, 1.0)
         else
             self.player_controller.input:SetLevel(slotIndex, 0.0)
+        end
+    end
+end
+
+function Bot:NewTick(delta_time, pass)
+    if self.player_controller ~= nil then
+        if self.alive and self.player_controller.alive and self.player_controller.soldier ~= nil then
+            if self.action == Actions.ATTACK then
+                self:StepPathNew()
+            end
         end
     end
 end
@@ -686,9 +715,9 @@ function Bot:Tick(delta_time, pass)
                         return
                     end
                     local focus = self:GetLocalOffsetTransform(self.target.soldier.transform)
-                    local shouldStop = self.player_controller.soldier.transform.trans:Distance(self.target.soldier.transform.trans:Clone()) > 3 and math.random(0, 100) > 75
+                    local shouldStop = self.player_controller.soldier.transform.trans:Distance(self.target.soldier.transform.trans:Clone()) > 3 and math.random(0, 100) > 15
 
-                    self:SetFocusOn(focus.trans)
+                    -- self:SetFocusOn(focus.trans)
 
                     if self.player_controller.soldier.transform.trans:Distance(self.target.soldier.transform.trans:Clone()) < 15 and not shouldStop then
                         -- self.knifing = false
@@ -696,7 +725,7 @@ function Bot:Tick(delta_time, pass)
                         self.crouching = false
                         self.stopMoving = false
                         -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIAFire, 1)
-                        self:SetFocusOn(focus.trans)
+                        self:SetFocusOn(self.cached_destination)
 
                     elseif self.player_controller.soldier.transform.trans:Distance(self.target.soldier.transform.trans:Clone()) < 15 and shouldStop then
                         self.knifing = false
@@ -705,6 +734,7 @@ function Bot:Tick(delta_time, pass)
                         self.sprinting = false
                         self.crouching = true
                         self.stopMoving = true
+                        self:SetFocusOn(focus.trans)
                         
                     else
                         self.firing = false
@@ -853,8 +883,10 @@ function Bot:SpawnBot(transform, pose, soldierBP, inKit, unlocks, spawnEntity)
         print("transform is nil")
     elseif pose == nil then
         print("pose is nil")
+        return
     elseif soldierBP == nil then
         print("soldierBP is nil")
+        return
     elseif kit == nil then
         print("kit is nil")
     elseif unlocks == nil then

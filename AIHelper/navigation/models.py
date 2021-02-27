@@ -43,6 +43,8 @@ class Level(models.Model):
     has_distance_field = models.BooleanField(default = True)
     layers = models.IntegerField(default = 10)
 
+    distance_field_threshold = models.FloatField(default = 32)
+
 class Project(models.Model):
     project_id = models.IntegerField(default = 0)
     name = models.TextField(default = "no-map-name")

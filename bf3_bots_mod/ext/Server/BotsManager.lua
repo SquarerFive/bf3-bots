@@ -288,7 +288,7 @@ function BotsManager:GetBotsJSON(only_alive)
 end
 
 function BotsManager:GetPlayersJSONConcat(only_alive)
-    local players = self.players -- PlayerManager:GetPlayers()
+    local players = PlayerManager:GetPlayers()
     local cond = true
     if only_alive then
         local res = '"players": ['
@@ -426,6 +426,7 @@ end
 
 function BotsManager:OnLevelLoaded(levelName, gameMode, round, roundsPerMap)
     if self.project_id > -1 then
+        print("Post level loaded")
         local data = {}
         data['level_name'] = SharedUtils:GetLevelName()
         local encoded_data = json.encode(data)
@@ -1134,7 +1135,7 @@ function BotsManager:SpawnBotAroundTransform(Transform, bot)
         currentTransform.left, currentTransform.up, currentTransform.forward,
         Vec3(newPos.x, currentTransform.trans.y, newPos.z)
     )
-    bot:SpawnBot(currentTransform,CharacterPoseType.CharacterPoseType_Stand , soldierBlueprint, soldierKit, {}, nil)
+    bot:SpawnBot(currentTransform,CharacterPoseType.CharacterPoseType_Stand , soldierBlueprint, nil, {}, nil)
     bot.objective = self:GetNearestEnemyObjectiveEntity(currentTransform.trans, TeamId.Team1)
     bot.path_step = 1
     bot.path = {}

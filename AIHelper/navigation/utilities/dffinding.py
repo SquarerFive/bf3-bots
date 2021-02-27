@@ -23,14 +23,15 @@ cmt = (ptv, float32)
 pdt = (ptv, ptv)
 
 spec = [
-    ('graph', types.DictType(*kv_ty)),
-    ('path', types.ListType(ptv)),
-    ('nodes', types.ListType(ptvp)),
-    ('keys', types.ListType(ptv)),
-    ('closed_nodes', types.ListType(ptvp)),
-    ('graph_lookup', types.ListType(gl)),
+    # ('graph', types.DictType(*kv_ty)),
+    # ('path', types.ListType(ptv)),
+    # ('nodes', types.ListType(ptvp)),
+    # ('keys', types.ListType(ptv)),
+    # ('closed_nodes', types.ListType(ptvp)),
+    # ('graph_lookup', types.ListType(gl)),
     ('values', float32[:, :, :]),
     ('elevation', float32[:, :, :]),
+    ('threshold', float32)
     
 ]
 # Ref: https://www.redblobgames.com/pathfinding/a-star/implementation.html
@@ -59,14 +60,15 @@ class PriorityQueue:
 @jitclass(spec)
 class DFFinder:
     def __init__(self, values : np.ndarray, elevation : np.ndarray, threshold : float32 = 3.0):
-        self.graph = typed.Dict.empty(*kv_ty)
-        self.path = typed.List.empty_list(ptv)
-        self.nodes = typed.List.empty_list(ptvp)
-        self.keys = typed.List.empty_list(ptv)
-        self.closed_nodes = typed.List.empty_list(ptvp)
-        self.graph_lookup = typed.List.empty_list(gl)
+        # self.graph = typed.Dict.empty(*kv_ty)
+        # self.path = typed.List.empty_list(ptv)
+        # self.nodes = typed.List.empty_list(ptvp)
+        # self.keys = typed.List.empty_list(ptv)
+        # self.closed_nodes = typed.List.empty_list(ptvp)
+        # self.graph_lookup = typed.List.empty_list(gl)
         self.values = values
         self.elevation = elevation
+        self.threshold = threshold
         # for level in range(values.shape[0]):
         #     for x in range(values.shape[1]):
         #         for y in range(values.shape[2]):
@@ -136,7 +138,7 @@ class DFFinder:
 
     def _is_within_threshold(self, key):
         if self._ingrid(key):
-            return self.values[key[2]][key[0]][key[1]] < float32(32.0) and self.values[key[2]][key[0]][key[1]] > float32(0.0) #and key[2] > 0
+            return self.values[key[2]][key[0]][key[1]] < float32(self.threshold) and self.values[key[2]][key[0]][key[1]] > float32(0.0) #and key[2] > 0
         return False
 
     def _hfdistance(self, key1, key2):
@@ -193,7 +195,7 @@ class DFFinder:
 
         null_ptv = (int32(-1), int32(-1), int32(-1))
 
-        self.path = typed.List.empty_list(ptv)
+        # self.path = typed.List.empty_list(ptv)
         
         
         came_from = typed.Dict.empty(*pdt)
@@ -246,7 +248,7 @@ class DFFinder:
 
         null_ptv = (int32(-1), int32(-1), int32(-1))
 
-        self.path = typed.List.empty_list(ptv)
+        # self.path = typed.List.empty_list(ptv)
         
         
         came_from = typed.Dict.empty(*pdt)
@@ -291,6 +293,33 @@ class DFFinder:
             i += 1
         
         return self.build_costs(came_from, costs_so_far, start, end)
+
+    def _mag(self, x : int32, y : int32):
+        return math.floor(math.sqrt((x*x)+ (y*y)))
+
+    def _sub(self, a: Tuple[int32, int32, int32], b: Tuple[int32, int32, int32]):
+        return (
+            a[0]-b[0],
+            a[1]-b[1],
+            a[2]-b[2]
+        )
+
+    def get_direction_cost(self, start: Tuple[int32, int32, int32], end: Tuple[int32, int32, int32], max_length: int32 = 5):
+        start = (int32(start[0]), int32(start[1]), int32(start[2]))
+        end = (int32(end[0]), int32(end[1]), int32(end[2]))
+        d = self._sub(end, start)
+        m = self._mag(d[0], d[1])
+
+        nx = int32(math.floor(d[0]/m))
+        ny = int32(math.floor(d[1]/m))
+
+        p = [start[0], start[1]]
+        cost: float32 = 0.0
+        for i in range(0, max_length):
+            cost += self.values[start[2]][p[0]][p[1]]
+            p[0] += nx*i
+            p[1] += ny*i
+        return cost
 
     def ensure_point_valid(self, point):
         k = point

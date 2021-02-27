@@ -42,17 +42,17 @@ def encode_level(in_level : level.Level) -> None:
     
     with open(f'{l.relative_path}/data.npy', 'wb') as f:
         data : np.ndarray = in_level.data
-        np.save(f, data)
+        np.save(f, data.astype(np.float32))
     with open(f'{l.relative_path}/costs.npy', 'wb') as f:
         costs : np.ndarray = in_level.costs
-        np.save(f, costs)
+        np.save(f, costs.astype(np.float32))
     with open(f'{l.relative_path}/elevation.npy', 'wb') as f:
         elevation : np.ndarray = in_level.elevation
-        np.save(f, elevation)
+        np.save(f, elevation.astype(np.float32))
     if l.has_distance_field:
         with open(f'{l.relative_path}/df.npy', 'wb') as f:
             df : np.ndarray = in_level.df
-            np.save(f, df)
+            np.save(f, df.astype(np.float32))
     l.transform = in_level.transform.as_dict()
     l.save()
 
@@ -87,17 +87,18 @@ def decode_level(in_data : models.Level) -> Union[level.Level, None]:
 
     transform = transformations.from_dict(in_data.transform)
     l = level.Level(in_data.name)
+    l.transform = transform
+    l.project_id = in_data.project_id
     if not failed_to_import:
-        l.data = data
+        l.data = data.astype(np.float32)
         l.costs = costs.astype(np.float32)
         l.elevation = elevation.astype(np.float32)
         if in_data.has_distance_field:
             l.df = df.astype(np.float32)
             l.create_dffinder()
 
-    l.transform = transform
-    l.project_id = in_data.project_id
-    l.model = in_data
+    
+    # l.model = in_data
     if failed_to_import:
         l.pre_process_data()
     return l

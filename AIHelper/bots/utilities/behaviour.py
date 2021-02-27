@@ -246,9 +246,11 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                 if distance(
                     bot.transform['trans']['x'], bot.transform['trans']['y'], bot.transform['trans']['z'],
                     player_provider.transform['trans']['x'], player_provider.transform['trans']['y'], player_provider.transform['trans']['z']
-                ) < 1.5:
+                ) < 2.5:
                     bot.order = 2
                     bot.action = 2
+                    bot.target = -1
+                    bot.path = []
                     pass
                 else:
                     bot.path = current_level.astar(
@@ -307,10 +309,10 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                     (*bot_grid_pos, bot_best_level),
                     (*enemy_grid_pos, enemy_best_level)
                 )
-                # print("Cost: ", cost)
-                if cost > 50:
+                print("Cost: ", cost)
+                if cost > current_level_model.distance_field_threshold*0.8:
                     bot.target = -1
-                    print("Cost more than 50, not attacking until at path")
+                    print(f"Cost is {cost}, not attacking until at path")
 
                 bot.path = current_level.astar(
                     bot_forward_grid_pos,

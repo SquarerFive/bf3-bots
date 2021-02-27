@@ -155,5 +155,5 @@ with open("./models/Project/BF3 Bots 0.0.4/Level/MP_Subway/data.npy", "rb") as f
     print(arr)
     image = Image.fromarray((arr*255).astype(numpy.uint8), mode="L")
     image.save("test.png")
-    pyplot.imshow(elevation_arr)
+    pyplot.imshow(costs_arr)
     pyplot.show()
