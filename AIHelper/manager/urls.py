@@ -49,6 +49,7 @@ urlpatterns = [
     path("project/<int:project_id>/level/<int:level_id>/recalculate/", views.manager_recalculate_costs, name='manager-recalculate-costs'),
     path("project/<int:project_id>/level/<int:level_id>/kits/", views.manager_push_soldier_kit_data, name="manager-push-kit-data"),
     path("project/<int:project_id>/level/<int:level_id>/export/", views.manager_export_level, name='manager-export-level'),
+    path("project/<int:project_id>/level/<int:level_id>/calculate-distance-fields/", views.manager_calculate_distance_fields, name='manager-generate-distance-fields'),
     path("project/<int:project_id>/get-level-id/", views.manager_get_level_id, name="manager-get-level-id"),
 
     path("utils/assets/import-from-csv/", views.manager_import_asset_from_csv, name="manager-import-asset-from-csv"),

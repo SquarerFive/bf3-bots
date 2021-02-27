@@ -46,6 +46,16 @@ def remap(value, old_min, old_max, new_min, new_max):
 def normalize(x, min_value, max_value):
     return abs((x - min_value) / (max_value - min_value))
 
+@njit()
+def c_transform_to_world(xy : tuple, width : int, height: int, min_point: tuple, max_point: tuple):
+    nx = remap(xy[0], 0, width, min_point[0], max_point[0])
+    ny = remap(xy[1], 0, height, min_point[1], max_point[1])
+
+    # wx = remap(nx, 0.0, 1.0, min_point[0], max_point[0])
+    # wy = remap(ny, 0.0, 1.0, min_point[1], max_point[1])
+
+    return (nx, ny)
+
 class GridTransform:
     def __init__(self, min_point, max_point, width, height):
         self.min_point = min_point

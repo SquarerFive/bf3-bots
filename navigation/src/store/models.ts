@@ -718,6 +718,11 @@ export class Manager {
     const response = await this.get('/v1/clear-tasks/')
     return response
   }
+
+  async calculateDistanceFields (project_id : string, level_id : string) {
+    const response = await this.post(`/v1/project/${project_id}/level/${level_id}/calculate-distance-fields/`, {})
+    return response
+  }
 }
 
 /**

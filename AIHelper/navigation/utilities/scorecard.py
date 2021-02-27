@@ -7,7 +7,30 @@ from .. import models
 from shapely.vectorized import contains
 import math
 
-from .transformations import remap
+from .transformations import remap, c_transform_to_world
+
+@njit(parallel = True)
+def bruteforce_generate_distancefields(elevation_arr : np.ndarray, distance_field_array : np.ndarray, min_point : tuple, max_point : tuple):
+    sample_radius = 32.0
+    threshold = 0.6
+    for level in prange(elevation_arr.shape[0]):
+        for x in prange(elevation_arr.shape[1]):
+            for y in prange(elevation_arr.shape[2]):
+                min_distance = math.inf
+                wx, wy = c_transform_to_world((y, x), elevation_arr.shape[1], elevation_arr.shape[2], min_point, max_point)
+                for nx in range(-sample_radius, sample_radius):
+                    for ny in range(-sample_radius, sample_radius):
+                        cx = x + nx
+                        cy = y + ny
+                        cwx, cwy = c_transform_to_world((cy, cx), elevation_arr.shape[1], elevation_arr.shape[2], min_point, max_point)
+                        if cx > 0 and cx < elevation_arr.shape[1] and cy > 0 and cy < elevation_arr.shape[2]:
+                            d = math.sqrt(math.pow((cwx - wx), 2)+ math.pow((cwy - wy), 2))*100
+                            if d < min_distance and (elevation_arr[level][cx][cy] - elevation_arr[level][x][y]) > threshold:
+                                min_distance = d
+                if min_distance < math.inf:
+                    distance_field_array[level][x][y] = min_distance
+                else:
+                    distance_field_array[level][x][y] = 0.0
 
 @njit(parallel=True)
 def score_fast(

@@ -64,6 +64,15 @@ class Level:
         print(self.model)
         self.dffinder = dffinding.DFFinder(self.costs, elevation, self.model.distance_field_threshold)
     
+    def generate_distance_fields(self):
+        if type(self.df) == type(None):
+            self.df = np.zeros(self.elevation.shape, dtype=np.float32)
+
+        scorecard.bruteforce_generate_distancefields(self.elevation, self.df, tuple((*self.transform.min_point,)), tuple((*self.transform.max_point,)))
+        self.model.has_distance_field = True
+        self.model.save()
+        
+
     def classify_costs(self, elevation_based : bool = False, elevation_alpha_power : float = 0.05, elevation_alpha_beta : float = 1.5, elevation_alpha_beta_power : float = 7.0, just_paths = False, use_df = False):
         if not just_paths:
             scorecard.Scorecard.score(self.model, self.transform, self.data, self.elevation, self.df, self.costs, elevation_based, elevation_alpha_power, elevation_alpha_beta, elevation_alpha_beta_power, use_df=use_df)
@@ -119,12 +128,12 @@ class Level:
         _height = self.transform.height + 1
 
         print("Creating arrays with size: ", _width, _height)
-        self.data = np.zeros((layers, _width, _height))
-        self.elevation = np.zeros((layers, _width, _height))
-        self.costs = np.zeros((layers, _width, _height))
-        self.costs_canvas = np.zeros((layers, _width, _height))
+        self.data = np.zeros((layers, _width, _height), dtype=np.float32)
+        self.elevation = np.zeros((layers, _width, _height), dtype=np.float32)
+        self.costs = np.zeros((layers, _width, _height), dtype=np.float32)
+        self.costs_canvas = np.zeros((layers, _width, _height), dtype=np.float32)
 
-        self.df = np.zeros((layers, _width, _height))
+        self.df = np.zeros((layers, _width, _height), dtype=np.float32)
     
     def sensecheck(self):
         try:

@@ -1263,3 +1263,17 @@ def manager_update_level_stream(request: Request, project_id : int) -> Response:
         return HttpResponse('Success')
     print('no level')
     return Response('Failed to find level {0} for current project {1}'.format(level_name, project_id), status=404)
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication, SessionAuthentication])
+@permission_classes([IsAuthenticated])
+def manager_calculate_distance_fields(request : Request, project_id : int, level_id : int):
+    global global_cache
+    level_object = global_cache.get_object(project_id, level_id)
+    if level_object:
+        print("Generating Distance Fields")
+        level_object.generate_distance_fields()
+        global_cache.save_object()
+        print("Finished generating distance fields")
+        return Response("Successfully generated distance fields")
+    return Response("Failed to find level!.")

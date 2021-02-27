@@ -16,6 +16,9 @@
           <div>
             <q-checkbox dark label="VoxelDF-Based Mesh" v-model="voxelDFBasedMesh" @input="onVoxelDFInput" />
           </div>
+          <div>
+            <q-checkbox dark label="Bruteforce DF" v-model="bruteforceDF" @input="onBruteforceDF" />
+          </div>
           <q-item>
           <q-item-section>
             <q-input dark outlined dense v-model="elevationAlphaPower" hint="Elevation Alpha Power" />
@@ -149,6 +152,7 @@ export default class MapEditor extends Vue {
   elevationAlphaBeta = '1.5'
   elevationAlphaBetaPower = '7.0'
   voxelDFBasedMesh = false
+  bruteforceDF = false
 
   drawingColors = [
     '#ff7017',
@@ -619,9 +623,19 @@ export default class MapEditor extends Vue {
   onClickRecalculateCosts () {
     if (this.manager) {
       this.isRecalculating = true
-      this.manager.recalculateCosts(this.level.project_id, this.level.level_id, this.elevationBasedScoring, this.voxelDFBasedMesh, parseFloat(this.elevationAlphaPower), parseFloat(this.elevationAlphaBeta), parseFloat(this.elevationAlphaBetaPower)).then(() => {
-        this.isRecalculating = false
-      }).catch(err => { console.error(err); this.isRecalculating = false })
+      if (this.bruteforceDF) {
+        this.manager.calculateDistanceFields(String(this.level.project_id), String(this.level.level_id)).then(res => {
+          if (this.manager) {
+            this.manager.recalculateCosts(this.level.project_id, this.level.level_id, this.elevationBasedScoring, this.voxelDFBasedMesh, parseFloat(this.elevationAlphaPower), parseFloat(this.elevationAlphaBeta), parseFloat(this.elevationAlphaBetaPower)).then(() => {
+              this.isRecalculating = false
+            }).catch(err => { console.error(err); this.isRecalculating = false })
+          }
+        }).catch(err => { console.error(err) })
+      } else {
+        this.manager.recalculateCosts(this.level.project_id, this.level.level_id, this.elevationBasedScoring, this.voxelDFBasedMesh, parseFloat(this.elevationAlphaPower), parseFloat(this.elevationAlphaBeta), parseFloat(this.elevationAlphaBetaPower)).then(() => {
+          this.isRecalculating = false
+        }).catch(err => { console.error(err); this.isRecalculating = false })
+      }
     }
   }
 
@@ -634,6 +648,12 @@ export default class MapEditor extends Vue {
   onVoxelDFInput (val : boolean) {
     if (val) {
       this.elevationBasedScoring = false
+    }
+  }
+
+  onBruteforceDF (val : boolean) {
+    if (val) {
+      this.bruteforceDF = val
     }
   }
 }

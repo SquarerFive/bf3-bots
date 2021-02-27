@@ -96,13 +96,13 @@ with open("./models/Project/BF3 Bots 0.0.4/Level/MP_Subway/elevation.npy", "rb")
     elevation = numpy.load(f)[0]
 
 with open("./models/Project/BF3 Bots 0.0.4/Level/MP_Subway/data.npy", "rb") as f:
-    with open('./models/Project/BF3 Bots 0.0.4/Level/MP_017/elevation.npy', 'rb') as fx:
+    with open('./models/Project/BF3 Bots 0.0.4/Level/XP1_004/elevation.npy', 'rb') as fx:
         elevation_arr = numpy.load(fx)[0]
         # elevation_arr = numpy.power(elevation_arr, 0.2)
         # elevation_arr = numpy.max(elevation_arr) - elevation_arr
         # elevation_arr = numpy.power(elevation_arr, 4.0)
 
-    with open('./models/Project/BF3 Bots 0.0.4/Level/MP_017/costs.npy', 'rb') as fx:
+    with open('./models/Project/BF3 Bots 0.0.4/Level/XP1_004/costs.npy', 'rb') as fx:
         costs_arr = numpy.load(fx)[0]
     arr = numpy.load(f)[0]
     new_arr = numpy.zeros(arr.shape)
