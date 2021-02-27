@@ -15,8 +15,9 @@ function BotsManager:__init()
     Events:Subscribe('Player:Left', self, self.OnPlayerLeft)
     Events:Subscribe('Player:Destroyed', self, self.OnPlayerLeft)
     Events:Subscribe('Player:Authenticated', self, self.OnPlayerCreated)
-    
-        
+    Events:Subscribe('Vehicle:Enter', self, self.OnVehicleEnter)
+    Events:Subscribe('Vehicle:Exit', self, self.OnVehicleExit)
+
     self.debug_target = nil
     self.should_update = true
     self.last_update_time = 0
@@ -71,6 +72,26 @@ function BotsManager:GetVehicleFromID(uniqueId)
         end
     end
     return nil
+end
+
+function BotsManager:OnPostVehicleEvent(data)
+    return
+end
+
+function BotsManager:OnVehicleEnter(vehicle, player)
+    if self.profile.token ~= nil then
+        local data = '{"event": "enter", "instance": '..tostring(vehicle.uniqueId)..', "player_id": '.. tostring(player.id)..' }'
+        local url = '/project/'..tostring(self.project_id)..'/level/'..tostring(self.level_id)..'/on-vehicle-event/'
+        self:PostManagerAsync(url, data, self, self.OnPostVehicleEvent)
+    end
+end
+
+function BotsManager:OnVehicleExit(vehicle, player)
+    if self.profile.token ~= nil then
+        local data = '{"event": "exit", "instance": '..tostring(vehicle.uniqueId)..', "player_id": '.. tostring(player.id)..' }'
+        local url = '/project/'..tostring(self.project_id)..'/level/'..tostring(self.level_id)..'/on-vehicle-event/'
+        self:PostManagerAsync(url, data, self, self.OnPostVehicleEvent)
+    end
 end
 
 function BotsManager:InitialiseHeartbeatSettings()
@@ -510,6 +531,7 @@ function BotsManager:OnLevelLoaded(levelName, gameMode, round, roundsPerMap)
         if tostring(result.body) ~= "error" then
             if tonumber(result.body) ~= nil then
                 local level_id = math.floor(tonumber(result.body))
+                self.level_id = level_id
                 self:PostManager('/project/'..self.project_id..'/level/'..tostring(level_id)..'/on-level-loaded/', '{}')
                 self:InitialiseHeartbeatSettings()
             end

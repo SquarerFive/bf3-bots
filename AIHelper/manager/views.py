@@ -1286,7 +1286,7 @@ def manager_update_level_stream(request: Request, project_id : int) -> Response:
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication, SessionAuthentication])
 @permission_classes([IsAuthenticated])
-def manager_calculate_distance_fields(request : Request, project_id : int, level_id : int):
+def manager_calculate_distance_fields(request : Request, project_id : int, level_id : int) -> Response:
     global global_cache
     level_object = global_cache.get_object(project_id, level_id)
     if level_object:
@@ -1299,3 +1299,19 @@ def manager_calculate_distance_fields(request : Request, project_id : int, level
         print("Finished generating distance fields")
         return Response("Successfully generated distance fields")
     return Response("Failed to find level!.")
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication, SessionAuthentication])
+@permission_classes([IsAuthenticated])
+def manager_on_vehicle_event(request : Request, project_id : int, level_id : int) -> Response:
+    global global_cache
+    data = json.loads(request.body.decode('utf-8'))
+    print(data)
+    vehicle : navigation_models.Vehicle = navigation_models.Vehicle.objects.filter(instance = str(data['instance'])).first()
+    if vehicle:
+        if data['event'] == 'enter':
+            vehicle.passengers.append(data['player_id'])
+        else:
+            vehicle.passengers.remove(data['player_id'])
+        vehicle.save()
+    return Response("Success")

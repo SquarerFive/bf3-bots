@@ -78,3 +78,5 @@ class Vehicle(models.Model):
     max_passenger_count = models.IntegerField(default = 3)
     transform = models.JSONField(default = dict)
     vehicle_type = models.IntegerField(default = 0)
+
+    

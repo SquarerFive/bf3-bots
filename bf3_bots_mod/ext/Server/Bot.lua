@@ -656,6 +656,10 @@ function Bot:NewTick(delta_time, pass)
                     self.in_vehicle = true
                     self.requested_action = 2
                     self.requested_order = 2
+                    self.path = {}
+                    self.throttle = false
+                    self.sprinting = false
+                    self.path_step = 1
                 end
             end
         else
