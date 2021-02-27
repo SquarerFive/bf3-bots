@@ -18,3 +18,4 @@ class BotActionEnum(IntEnum):
     PROVIDE = 8
     PROVIDE_HEALTH = 9
     PROVIDE_AMMO = 10
+    VEHICLE_DISCOVERY = 11

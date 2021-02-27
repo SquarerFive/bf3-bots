@@ -194,6 +194,7 @@ def get_bots_as_dict():
             "player_id": bot.player_id,
             "bot_index": bot.bot_index,
             "target": bot.target,
+            "target_vehicle": bot.target_vehicle,
             "selected_kit": bot.selected_kit
         }
         all_data.append(d)

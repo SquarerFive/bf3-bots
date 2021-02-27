@@ -1,3 +1,5 @@
+from inspect import trace
+from navigation.utilities.transformations import transform_to_world
 from bots import models
 
 from navigation import models as navigation_models
@@ -185,6 +187,21 @@ def compute(bot_id : int, current_level : Level, BotModels : models.Bot, PlayerM
         bot.path = []
         bot.save()
 
+def get_nearest_vehicle(bot : models.Bot):
+    nearest_vehicle = None
+    nearest_vehicle_distance = math.inf
+    for vehicle in navigation_models.Vehicle.objects.all():
+        vehicle : navigation_models.Vehicle = vehicle
+        d = distance(
+            bot.transform['trans']['x'], bot.transform['trans']['y'], bot.transform['trans']['z'],
+            vehicle.transform['trans']['x'], vehicle.transform['trans']['y'], vehicle.transform['trans']['z']
+        )
+        if d < nearest_vehicle_distance and len(vehicle.passengers) == 0:
+            nearest_vehicle_distance = d
+            nearest_vehicle = vehicle
+
+    return nearest_vehicle, nearest_vehicle_distance
+
 def compute_model(bot : models.Bot, current_level : Level, override_target = False, overidden_target = -2):
     if bot.alive and 'trans' in list(bot.transform.keys()):
         objectives : List[navigation_models.Objective] = get_target_objectives(bot.team, navigation_models.Objective)
@@ -336,6 +353,11 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                 bot.order = orders.BotOrdersEnum.OBJECTIVE
 
                 end =  current_level.transform.transform_to_grid((float(closest_objective.transform['trans']['x']) , float(closest_objective.transform['trans']['z'])))
+                print(distance_to_objective)
+                if distance_to_objective > 50 and not bot.in_vehicle:
+                    bot.order = orders.BotOrdersEnum.FRIENDLY
+                    bot.action = orders.BotActionEnum.VEHICLE_DISCOVERY
+
                 print("Finding from:", bot_grid_pos, "to:", end)
                 path = current_level.astar(
                     bot_grid_pos,
@@ -386,3 +408,20 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                     bot.action = orders.BotActionEnum.ATTACK
                     bot.order = orders.BotOrdersEnum.ENEMY
                 # bot.save()
+
+        elif bot.action == orders.BotActionEnum.VEHICLE_DISCOVERY:
+            if bot.in_vehicle:
+                bot.action = 2
+                bot.order = 2
+                return
+            nearest_vehicle, nearest_vehicle_distance = get_nearest_vehicle(bot)
+            if nearest_vehicle:
+                print("Vehicle Discovery", nearest_vehicle_distance)
+                end = current_level.transform.transform_to_grid((float(nearest_vehicle.transform['trans']['x']), float(nearest_vehicle.transform['trans']['z'])))
+                bot.path = current_level.astar(
+                    bot_grid_pos,
+                    end,
+                    elevation= bot.transform['trans']['y'],
+                    target_elevation= nearest_vehicle.transform['trans']['y']
+                )
+                bot.target_vehicle = nearest_vehicle.instance

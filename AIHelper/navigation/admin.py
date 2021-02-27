@@ -23,3 +23,4 @@ class ProjectAdmin(admin.ModelAdmin):
 @admin.register(Vehicle)
 class VehicleAdmin(admin.ModelAdmin):
     fields = ("instance", "vehicle_type", "transform", "passengers", "max_passenger_count")
+    list_display = ("instance", "vehicle_type", "passengers", "max_passenger_count")

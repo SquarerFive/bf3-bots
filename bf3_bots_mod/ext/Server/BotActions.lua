@@ -12,6 +12,7 @@ function BotActions:__init()
     self.PROVIDE = 8
     self.PROVIDE_HEALTH = 9
     self.PROVIDE_AMMO = 10
+    self.VEHICLE_DISCOVERY = 11
 end
 
 if not g_BotActions then

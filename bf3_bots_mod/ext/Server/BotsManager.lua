@@ -61,6 +61,15 @@ function BotsManager:AssignVehicles()
     end)
 end
 
+function BotsManager:GetVehicleFromID(uniqueId)
+    for _, vehicle in pairs(self.vehicles) do
+        if tostring(vehicle.uniqueId) == tostring(uniqueId) then
+            return vehicle
+        end
+    end
+    return nil
+end
+
 function BotsManager:InitialiseHeartbeatSettings()
     local initialHeartbeatData = self:GetManager('/initialise-heartbeat/')
     print("Initializing heartbeat...")
@@ -793,6 +802,11 @@ function BotsManager:StepThroughData()
                         
                     end
                 end
+                
+                if bot.target_vehicle ~= '' then
+                    currentBot.target_vehicle = self:GetVehicleFromID(bot.target_vehicle)
+                end
+
                 if bot.target ~= -1 then
                     --print("Setting target")
                     if currentBot.target ~= nil then

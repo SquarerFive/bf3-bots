@@ -154,6 +154,7 @@ def add_or_update_vehicle(data : dict):
     else:
         vehicle = models.Vehicle.objects.filter(instance = str(data['instance'])).first()
         vehicle.transform = data['transform']
+        vehicle.max_passenger_count = 3
         vehicle.save()
 
 # wouldn't want xss attack, would you?

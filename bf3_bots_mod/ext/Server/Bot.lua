@@ -95,6 +95,7 @@ function Bot:__init()
     -- Events:Subscribe("UpdateManager:Update", self, self.InternalTick)
     self.spawned = false
     self.soldierBP = nil
+    self.target_vehicle = nil
 end
 
 function Bot:UpdateAimSettings(newFiringOffset, newFiringBaseOffset, newAimWhenFire)
@@ -342,6 +343,7 @@ function Bot:StepPathNew()
         self.path_step = 1
         self.throttle = false
         self.sprinting = false
+        finished = true
     else
         self.throttle = false
         self.sprinting = false
@@ -635,10 +637,25 @@ function Bot:NewTick(delta_time, pass)
     if self.player_controller ~= nil then
         if self.alive and self.player_controller.alive and self.player_controller.soldier ~= nil then
             if self.action == Actions.ATTACK then
-                self:StepPathNew()
+                if not self.in_vehicle then
+                    self:StepPathNew()
+                    if self.destination ~= nil then
+                        self:SetFocusOn(self.destination)
+                        -- print('Focusing on: '..self.destination.x..' '..self.destination.y..' '..self.destination.z)
+                    end
+                else
+                    self:StepPathVehicle()
+                end
+            elseif self.action == Actions.VEHICLE_DISCOVERY then
+                local atDestination = self:StepPathNew()
                 if self.destination ~= nil then
                     self:SetFocusOn(self.destination)
-                    print('Focusing on: '..self.destination.x..' '..self.destination.y..' '..self.destination.z)
+                end
+                if atDestination and self.target_vehicle ~= nil then
+                    self.player_controller:EnterVehicle(self.target_vehicle, self.player_controller.controlledEntryId )
+                    self.in_vehicle = true
+                    self.requested_action = 2
+                    self.requested_order = 2
                 end
             end
         else

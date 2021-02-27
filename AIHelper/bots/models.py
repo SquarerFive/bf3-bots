@@ -30,6 +30,7 @@ class Bot(BasePlayer):
     order  = models.IntegerField(default=2)
     path = models.JSONField(default=dict, blank=True, null=True)
     target = models.IntegerField(default = -1)
+    target_vehicle = models.TextField(default = '')
     overidden_target = models.IntegerField(default = -2)
     selected_kit = models.JSONField(default = dict)
 
