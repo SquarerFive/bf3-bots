@@ -94,6 +94,7 @@ function Bot:__init()
     self.last_request_health_request = 0
     -- Events:Subscribe("UpdateManager:Update", self, self.InternalTick)
     self.spawned = false
+    self.soldierBP = nil
 end
 
 function Bot:UpdateAimSettings(newFiringOffset, newFiringBaseOffset, newAimWhenFire)
@@ -331,6 +332,11 @@ function Bot:StepPathNew()
         end
         self.throttle = true
         self.sprinting = true
+    elseif self.path_step >= #self.path then
+        self.path = {}
+        self.path_step = 1
+        self.throttle = false
+        self.sprinting = false
     else
         self.throttle = false
         self.sprinting = false
@@ -624,6 +630,13 @@ function Bot:NewTick(delta_time, pass)
         if self.alive and self.player_controller.alive and self.player_controller.soldier ~= nil then
             if self.action == Actions.ATTACK then
                 self:StepPathNew()
+                if self.destination ~= nil then
+                    self:SetFocusOn(self.destination)
+                end
+            end
+        else
+            if not self.player_controller.alive then
+                self.requested_respawn = true
             end
         end
     end
@@ -886,7 +899,11 @@ function Bot:SpawnBot(transform, pose, soldierBP, inKit, unlocks, spawnEntity)
         return
     elseif soldierBP == nil then
         print("soldierBP is nil")
-        return
+        -- return
+        if self.soldierBP == nil then
+            self.soldierBP = ResourceManager:SearchForInstanceByGuid(Guid('261E43BF-259B-41D2-BF3B-9AE4DDA96AD2'))
+        end
+        soldierBP = self.soldierBP
     elseif kit == nil then
         print("kit is nil")
     elseif unlocks == nil then

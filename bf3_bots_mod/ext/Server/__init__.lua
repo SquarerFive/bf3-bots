@@ -23,24 +23,24 @@ require('ScorecardServerSettings')
 
 
 
-Hooks:Install('EntityFactory:CreateFromBlueprint', 100, function(hookCtx, blueprint, transform, variation, parentRepresentative)
-    local createdBus = hookCtx:Call()
-    -- Do something with createdBus.
-    -- print("Loaded blueprint with ".. #createdBus.entities .." entities")
-    for _, entity in pairs(createdBus.entities) do
-        if entity:Is("GameEntity") then
-            local g = GameEntity(entity)
-            
-            NavGrid.AddCache(
-                g,
-                AxisAlignedBox(
-                    g.transform * g.aabb.min,
-                    g.transform * g.aabb.max
-                )
-            )
-        end
-    end
-end)
+-- Hooks:Install('EntityFactory:CreateFromBlueprint', 100, function(hookCtx, blueprint, transform, variation, parentRepresentative)
+--     local createdBus = hookCtx:Call()
+--     -- Do something with createdBus.
+--     -- print("Loaded blueprint with ".. #createdBus.entities .." entities")
+--     for _, entity in pairs(createdBus.entities) do
+--         if entity:Is("GameEntity") then
+--             local g = GameEntity(entity)
+--             
+--             NavGrid.AddCache(
+--                 g,
+--                 AxisAlignedBox(
+--                     g.transform * g.aabb.min,
+--                     g.transform * g.aabb.max
+--                 )
+--             )
+--         end
+--     end
+-- end)
 
 -- SoldierEntity : DamageInfo : (DamageGiverInfo | nil)
 Hooks:Install('Soldier:Damage', 1, function(hook, soldier, info, giverInfo)

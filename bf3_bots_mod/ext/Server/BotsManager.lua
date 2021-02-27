@@ -42,6 +42,8 @@ function BotsManager:__init()
     self.friendly_spawn_points = {} -- Vec3[]
     self.enemy_spawn_points = {} -- Vec3[]
     self.soldierBlueprint = ResourceManager:SearchForInstanceByGuid(Guid('261E43BF-259B-41D2-BF3B-9AE4DDA96AD2'))
+
+    self.lock_respawn = false
 end
 
 function BotsManager:InitialiseHeartbeatSettings()
@@ -425,6 +427,7 @@ function BotsManager:GetEnemyOf(player)
 end
 
 function BotsManager:OnLevelLoaded(levelName, gameMode, round, roundsPerMap)
+    self.lock_respawn = true
     if self.project_id > -1 then
         print("Post level loaded")
         local data = {}
@@ -440,11 +443,13 @@ function BotsManager:OnLevelLoaded(levelName, gameMode, round, roundsPerMap)
             end
         end
     end
+    print("Killing bots")
     if #self.bots > 0 then
         for _, bot in pairs(self.bots) do
             bot:Kill()
         end
     end
+    self.lock_respawn = false
     self.objectives = {}
     EntityManager:TraverseAllEntities(function(entity)
         -- Do something with entity.

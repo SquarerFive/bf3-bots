@@ -202,7 +202,7 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                 bot.transform['trans']['z'] + (bot.transform['forward']['z']*d)
             )
         )
-        if bot.stuck:
+        if False: #bot.stuck:
             back = [bot.transform['forward']['x']*-5, bot.transform['forward']['y']*-5, bot.transform['forward']['z']*-5]
             target = bot.transform['trans']['x'] + back[0], bot.transform['trans']['y'] + back[1], bot.transform['trans']['z'] + back[2]
             target_grid_pos = current_level.transform.transform_to_grid((target[0], target[2]))
@@ -329,7 +329,7 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                 # bot.save()
 
             elif closest_objective and any_objectives:
-                # print('no enemy, but close objective')
+                print('no enemy, but close objective')
                 bot.path = []
                 
                 bot.target = -1
@@ -338,7 +338,7 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                 end =  current_level.transform.transform_to_grid((float(closest_objective.transform['trans']['x']) , float(closest_objective.transform['trans']['z'])))
                 
                 path = current_level.astar(
-                    bot_forward_grid_pos,
+                    bot_grid_pos,
                     end,
                     elevation=bot.transform['trans']['y'],
                     target_elevation = closest_objective.transform['trans']['y']
