@@ -324,7 +324,7 @@ end
 function Bot:StepPathNew()
     local finished = false
 
-    if #self.path > 0 and self.path ~= nil then
+    if #self.path > 0 and self.path ~= nil and not (self.path_step >= #self.path) then
         if self.path[self.path_step] ~= nil then
             self.destination = self.path[self.path_step]:Clone()
             local is_at_path, is_outside_path = self:IsAtDestination()
@@ -335,6 +335,8 @@ function Bot:StepPathNew()
             self.throttle = true
             self.sprinting = true
         end
+        
+        
     elseif self.path_step >= #self.path then
         self.path = {}
         self.path_step = 1
@@ -343,6 +345,7 @@ function Bot:StepPathNew()
     else
         self.throttle = false
         self.sprinting = false
+        self.path_step = 1
     end
     return finished
 end
@@ -635,6 +638,7 @@ function Bot:NewTick(delta_time, pass)
                 self:StepPathNew()
                 if self.destination ~= nil then
                     self:SetFocusOn(self.destination)
+                    print('Focusing on: '..self.destination.x..' '..self.destination.y..' '..self.destination.z)
                 end
             end
         else

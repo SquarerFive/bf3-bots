@@ -312,6 +312,7 @@ function NavGrid:RaycastAndScore(Start, End, OldScore)
     for i, hit in pairs(hits) do
         local score = 256
         local elevation = -6969420
+        local feature = 0
         if hit ~= nil then
             if hit.rigidBody ~= nil then
                 if i == 1 and not self.elevation_based_scoring then
@@ -333,9 +334,13 @@ function NavGrid:RaycastAndScore(Start, End, OldScore)
                     elevation = hit.position.y
                 end
             end
+            if hit.rigidBody:Is("ClientWaterEntity") or hit.rigidBody:Is("WaterPhysicsEntity") then
+                feature = 1
+            end
             local r = {}
             r['value'] = score
             r['elevation'] = elevation
+            r['feature'] = feature
             if self.df_based_scoring then
                 r['df'] = tonumber(self:VoxelRaycastDF(Vec3(hit.position.x, hit.position.y+0.5, hit.position.z)))
             else
@@ -551,7 +556,7 @@ end
 function NavGrid.NestedRaycast(start_point, end_point, direction, layers)
     local hits = {} -- RayCastHit[]
     local last_point = nil
-    for i = 1, layers+1 do
+    for i = 1, layers do
         local p = start_point
         if last_point ~= nil then
             p = last_point + (direction*3.5)

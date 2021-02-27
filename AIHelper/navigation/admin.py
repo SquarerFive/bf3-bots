@@ -10,6 +10,7 @@ class LevelAdmin(admin.ModelAdmin):
 @admin.register(Objective)
 class ObjectiveAdmin(admin.ModelAdmin):
     fields = ("name", "index", "team", "attackingTeam", "transform", "controlled")
+    list_display = ("name", "team", "controlled", "attackingTeam")
 
 @admin.register(Profile)
 class UserAdmin(admin.ModelAdmin):

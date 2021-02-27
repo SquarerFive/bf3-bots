@@ -54,6 +54,7 @@ class GlobalCache:
         self.tasks = []
         self.project_id = 0
         self.level_id = 0
+        self.low_memory_mode = False
     
     @property
     def level_model(self):
@@ -66,7 +67,7 @@ class GlobalCache:
             if self.level_object.model.project_id == project_id and self.level_model.level_id == level_id:
                 return self.level_object
         # self.level_model = level.models.Level.objects.filter(project_id= project_id, level_id=level_id).first()
-        self.level_object = navigation_query.decode_level(self.level_model)
+        self.level_object = navigation_query.decode_level(self.level_model, self.low_memory_mode)
         game_manager = models.BF3GameManager.objects.first()
         if game_manager == None:
             game_manager = models.BF3GameManager(active_project_id = project_id, active_level_id=level_id)
@@ -289,6 +290,7 @@ def push_level_block(slot : LevelBlockInterface, levelObject : level.Level):
             levelObject.set_elevation_at(value['elevation'], slot.x, slot.y, level)
             levelObject.set_data_at(value['value'], slot.x, slot.y, level)
             levelObject.set_df_at(value['df'], slot.x, slot.y, level)
+            levelObject.set_feature_at(value['feature'], slot.x, slot.y, level)
             df_sum += value['df']
     except Exception as e:
         print(slot.values, e)
@@ -573,7 +575,7 @@ def manager_update_level(request: Request, project_id : int) -> Response:
         enemy_faction_kit_collection : models.SoldierKitCollection = models.SoldierKitCollection.objects.filter(project_id=project_id, level_id=level_model.level_id, faction=1).first()
         players = bots_models.Player.objects.all()
         objectives = navigation_models.Objective.objects.all()
-        
+        # print("Updating objectives", data['objectives'])
         for objective in data['objectives']:
             navigation_query.add_objective(objective)
         ts = time.time()

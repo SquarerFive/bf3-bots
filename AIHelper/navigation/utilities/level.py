@@ -47,6 +47,7 @@ class Level:
         # self.model = model
         self.dffinder = None
         self.mdf = None
+        self.feature = None
 
     @property
     def model(self) -> models.Level:
@@ -62,7 +63,7 @@ class Level:
         # self.mdf = self.mdf.astype(np.float32)
         elevation = self.elevation.astype(np.float32)
         print(self.model)
-        self.dffinder = dffinding.DFFinder(self.costs, elevation, self.model.distance_field_threshold)
+        self.dffinder = dffinding.DFFinder(self.costs, elevation, self.feature, self.model.distance_field_threshold)
     
     def generate_distance_fields(self):
         if type(self.df) == type(None) :
@@ -136,7 +137,8 @@ class Level:
         self.costs_canvas = np.zeros((layers, _width, _height), dtype=np.float32)
 
         self.df = np.zeros((layers, _width, _height), dtype=np.float32)
-    
+        self.feature = np.zeros((layers, _width, _height), dtype=np.int32)
+
     def sensecheck(self):
         try:
             print(self.transform.width)
@@ -183,6 +185,13 @@ class Level:
     def set_df_at(self, value : float, index_x : int, index_y : int, level : int = 0):
         try:
             self.df[level][index_y-1][index_x-1] = value
+        except Exception as e:
+            print(level, index_x-1, index_y-1)
+            raise(e)
+    
+    def set_feature_at(self, value : int, index_x : int, index_y : int, level : int = 0):
+        try:
+            self.feature[level][index_y-1][index_x-1] = value
         except Exception as e:
             print(level, index_x-1, index_y-1)
             raise(e)
@@ -297,10 +306,12 @@ class Level:
                 if self.dffinder and udffinder:
                     # print(p, udffinder)\
                     wxy = self.transform.transform_to_world((int32(p[1]), int32(p[0])))
-
+                    y = float(self.elevation[p[2]][p[0]][p[1]])
+                    if self.feature[p[2]][p[0]][p[1]] == 1:
+                        y = self.elevation[0][p[0]][p[1]]-0.3
                     world_paths.append({
                         "x": wxy[0],
-                        "y": float(self.elevation[p[2]][p[0]][p[1]]),
+                        "y": y,
                         "z": wxy[1]
                     })
                 else:
@@ -318,6 +329,9 @@ class Level:
                 # 
                 # if idx > 50:
                 #     break
+            if self.dffinder:
+                # Reverse paths
+                world_paths.reverse()
             if not self.dffinder:
                 for idx, wp in enumerate(world_paths):
                     if idx > 1 and idx+4 < len(path)-1:

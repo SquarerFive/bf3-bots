@@ -50,6 +50,11 @@ def encode_level(in_level : level.Level) -> None:
     with open(f'{l.relative_path}/elevation.npy', 'wb') as f:
         elevation : np.ndarray = in_level.elevation
         np.save(f, elevation.astype(np.float32))
+    with open(f'{l.relative_path}/feature.npy', 'wb') as f:
+        np.save(
+            f, in_level.feature
+        )
+
     if l.has_distance_field:
         with open(f'{l.relative_path}/df.npy', 'wb') as f:
             df : np.ndarray = in_level.df
@@ -59,26 +64,35 @@ def encode_level(in_level : level.Level) -> None:
     l.transform = in_level.transform.as_dict()
     l.save()
 
-def decode_level(in_data : models.Level) -> Union[level.Level, None]:
+def decode_level(in_data : models.Level, low_memory_mode : bool = False) -> Union[level.Level, None]:
     if not in_data: return None
     path = in_data.relative_path
     failed_to_import = False
-    try:
-        with open(f'{path}/data.npy', 'rb') as f:
-            data = np.load(f)
-        with open(f'{path}/costs.npy', 'rb') as f:
-            costs = np.load(f)
-            costs = costs.astype(np.float32)
-        print("Succesfully imported costs with shape: ", costs.shape)
-        with open(f'{path}/elevation.npy', 'rb') as f:
-            elevation = np.load(f)
-        if in_data.has_distance_field:
-            with open(f'{path}/df.npy', 'rb') as f:
-                df = np.load(f)
+    has_feature = False
+    if not low_memory_mode:
+        try:
+            with open(f'{path}/data.npy', 'rb') as f:
+                data = np.load(f)
+            with open(f'{path}/costs.npy', 'rb') as f:
+                costs = np.load(f)
+                costs = costs.astype(np.float32)
+            print("Succesfully imported costs with shape: ", costs.shape)
+            with open(f'{path}/elevation.npy', 'rb') as f:
+                elevation = np.load(f)
+            if in_data.has_distance_field:
+                with open(f'{path}/df.npy', 'rb') as f:
+                    df = np.load(f)
+            try:
+                with open(f'{path}/feature.npy', 'rb') as f:
+                    feature = np.load(f)
+                    has_feature = True
+            except:
+                has_feature = False
 
-    except:
-        print('--- failed to import level, recreating arrays ---')
-        failed_to_import = True
+
+        except:
+            print('--- failed to import level, recreating arrays ---')
+            failed_to_import = True
 
     # data_bytes = base64.b64decode(in_data.raw_data)
     # costs_bytes = base64.b64decode(in_data.cost_data)
@@ -92,10 +106,12 @@ def decode_level(in_data : models.Level) -> Union[level.Level, None]:
     l = level.Level(in_data.name)
     l.transform = transform
     l.project_id = in_data.project_id
-    if not failed_to_import:
+    if not failed_to_import and not low_memory_mode:
         l.data = data.astype(np.float32)
         l.costs = costs.astype(np.float32)
         l.elevation = elevation.astype(np.float32)
+        if has_feature:
+            l.feature = feature
         if in_data.has_distance_field:
             l.df = df.astype(np.float32)
             l.create_dffinder()
@@ -111,7 +127,7 @@ def get_level_from_name(name : str) -> Union[level.Level, None]:
 
 def add_objective(data : dict):
     if not models.Objective.objects.filter(name=data['name']).first():
-        o = models.Objective(index=data['index'], team=data['team'], attackingTeam=data['attackingTeam'], name=data['name'])
+        o = models.Objective.objects.create(index=data['index'], team=data['team'], attackingTeam=data['attackingTeam'], name=data['name'], transform = data['transform'])
         o.transform = data['transform']
         o.controlled = bool(data['controlled'])
         o.capturable = bool(data['capturable'])
@@ -124,6 +140,7 @@ def add_objective(data : dict):
         o.controlled = bool(data['controlled'])
         o.capturable = bool(data['capturable'])
         o.save()
+        # print("Updated objective", o.team, o.name, o.controlled)
 
 # wouldn't want xss attack, would you?
 def filter_text(text : str):

@@ -329,14 +329,14 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                 # bot.save()
 
             elif closest_objective and any_objectives:
-                print('no enemy, but close objective')
+                print('no enemy, but close objective', closest_objective.name, closest_objective.team, closest_objective.controlled, bot.team)
                 bot.path = []
                 
                 bot.target = -1
                 bot.order = orders.BotOrdersEnum.OBJECTIVE
 
                 end =  current_level.transform.transform_to_grid((float(closest_objective.transform['trans']['x']) , float(closest_objective.transform['trans']['z'])))
-                
+                print("Finding from:", bot_grid_pos, "to:", end)
                 path = current_level.astar(
                     bot_grid_pos,
                     end,

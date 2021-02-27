@@ -31,7 +31,8 @@ spec = [
     # ('graph_lookup', types.ListType(gl)),
     ('values', float32[:, :, :]),
     ('elevation', float32[:, :, :]),
-    ('threshold', float32)
+    ('threshold', float32),
+    ('feature', int32[:, :, :])
     
 ]
 # Ref: https://www.redblobgames.com/pathfinding/a-star/implementation.html
@@ -59,7 +60,7 @@ class PriorityQueue:
 
 @jitclass(spec)
 class DFFinder:
-    def __init__(self, values : np.ndarray, elevation : np.ndarray, threshold : float32 = 3.0):
+    def __init__(self, values : np.ndarray, elevation : np.ndarray, feature : np.ndarray, threshold : float32 = 3.0):
         # self.graph = typed.Dict.empty(*kv_ty)
         # self.path = typed.List.empty_list(ptv)
         # self.nodes = typed.List.empty_list(ptvp)
@@ -69,6 +70,7 @@ class DFFinder:
         self.values = values
         self.elevation = elevation
         self.threshold = threshold
+        self.feature = feature
         # for level in range(values.shape[0]):
         #     for x in range(values.shape[1]):
         #         for y in range(values.shape[2]):
@@ -138,7 +140,12 @@ class DFFinder:
 
     def _is_within_threshold(self, key):
         if self._ingrid(key):
-            if key[2] < self.values.shape[0]:
+            if self.feature[key[2]][key[0]][key[1]] == 1:
+                if key[2] == 0:
+                    return self.values[key[2]][key[0]][key[1]] < float32(self.threshold)
+                else:
+                    return False
+            else:
                 return self.values[key[2]][key[0]][key[1]] < float32(self.threshold)# and self.values[key[2]][key[0]][key[1]] > float32(0.0) #and key[2] > 0
         return False
 
@@ -216,11 +223,11 @@ class DFFinder:
         current = start
         just_started=  True
         i = int32(0)
-        while (not queue.empty()) and i < 3000:
+        while (not queue.empty()) and i < 5000:
             current = queue.get()
 
-            #if i % 1 == 0:
-            #print('['+str(i)+'] - Distance to goal: '+str(int(self._hfdistance(current, end))))
+            # if i % 10 == 0:
+            #     print('['+str(i)+'] - Distance to goal: '+str(int(self._hfdistance(current, end))))
 
             if current == end:
                 #print("Current is end")
@@ -243,12 +250,12 @@ class DFFinder:
                  #self._hdistance(self.graph[current], self.graph[next])
                 if next not in costs_so_far or new_cost < costs_so_far[next]:
                     costs_so_far[next] = new_cost
-                    priority = float32(self._hfdistance(next, end)) #float32(self._hdistance(self.graph[next], self.graph[end]))
+                    priority = float32(self._hfdistance(next, end))#float32(self._hdistance(self.graph[next], self.graph[end]))
                     queue.put(next, priority)
                     came_from[next] = current
             i += 1
         # print("Done after: "+str(i))
-        return self.build_path(came_from, start, end)
+        return self.build_path(came_from, start, end, current)
 
     def find_costs(self, start : Tuple[int, int, int], end : Tuple[int, int, int]) -> List[Tuple[int, int, int]]:
         queue = PriorityQueue()
@@ -343,20 +350,24 @@ class DFFinder:
                         break
                     # print(str(tries))
             tries += 1
+        print("Found valid point after: " + str(tries) + " tries.")
         return k
 
-    def build_path(self, came_from :types.DictType(types.Tuple((int32, int32, int32)), types.Tuple((int32, int32, int32))), start : types.Tuple((int32, int32, int32)), end : types.Tuple((int32, int32, int32))):
+    def build_path(self, came_from :types.DictType(types.Tuple((int32, int32, int32)), types.Tuple((int32, int32, int32))), start : types.Tuple((int32, int32, int32)), end : types.Tuple((int32, int32, int32)), defcurrent : types.Tuple((int32,int32,int32))):
         current = end
         path = typed.List.empty_list(ptv)
         # print(came_from)
         if current not in came_from:
             # print("Could not find path", came_from)
-            return path
+            # return path
+            current = defcurrent
+            
         if start not in came_from:
             print("No start")
             return path
         while current != start:
             path.append(current)
+            
             current = came_from[current]
         path.append(start)
         print("Build path")
@@ -382,6 +393,8 @@ if __name__ == "__main__":
         df = np.load(f)
     with open("./models/Project/BF3 Bots 0.0.4/Level/XP1_004/elevation.npy", "rb") as f:
         elevation = np.load(f)
+    with open("./models/Project/BF3 Bots 0.0.4/Level/XP1_004/feature.npy", "rb") as f:
+        feature = np.load(f)
 
 
     # df = np.power(df, 0.2)
@@ -390,13 +403,13 @@ if __name__ == "__main__":
     # df = df.astype(np.float32)
     elevation = elevation.astype(np.float32)
 
-    finder = DFFinder(df, elevation, 150)
+    finder = DFFinder(df, elevation, feature, 190)
     #print(finder.graph)
     # (461, 947, 1) (518, 1004, 1)
-    start = (863, 754, 0)
+    start = (1119, 1500, 0)
     print(df[start[2]][start[0]][start[1]])
     # start = (1145, 407, 1)
-    end = (868, 749, 0)
+    end = (1164, 2133, 0)
     # print(df[start[2]][start[0]][start[1]])
     print("FINDING PATH....")
     path = finder.find(start, end)

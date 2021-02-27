@@ -28,7 +28,7 @@ function BotsManager:__init()
     self.bot_update_interval = 1
     self.bot_update_tickrate = 0.01
     self.last_bot_stream_update_time = 0.0
-    self.bot_stream_update_tickrate = 250
+    self.bot_stream_update_tickrate = 1250
     --
     self.last_bot_update_time = 0.0
 
@@ -63,6 +63,22 @@ function BotsManager:InitialiseHeartbeatSettings()
                 table.insert(self.enemy_spawn_points, Vec3(p.x, p.y, p.z))
             end
         end
+        print("Loading objectives...")
+        self.objectives = {}
+        EntityManager:TraverseAllEntities(function(entity)
+            -- Do something with entity.
+            
+            if entity.typeInfo.name == "ServerCapturePointEntity" then
+                print("Objective Entity!")
+                local data = CapturePointEntityData(entity.data)
+                local teamid = data.areaValue
+                print("Capture: "..teamid.." capture type: "..data.capturableType)
+                --if data.capturableType ~= CapturableType.CTUnableToChangeTeam then
+                    table.insert(self.objectives, CapturePointEntity(entity))
+                --end 
+                print("X: ".. SpatialEntity(entity).transform.trans.x)
+            end    
+        end)
     end
 end
 
@@ -449,7 +465,8 @@ function BotsManager:OnLevelLoaded(levelName, gameMode, round, roundsPerMap)
             bot:Kill()
         end
     end
-    
+    self:Destroy() -- clear
+    print("Loading objectives...")
     self.objectives = {}
     EntityManager:TraverseAllEntities(function(entity)
         -- Do something with entity.
