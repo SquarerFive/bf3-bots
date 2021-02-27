@@ -127,11 +127,11 @@ end)
 --     
 -- end)
 
-Hooks:Install('EntityFactory:CreateFromBlueprint', 100, function(hookCtx, blueprint, transform, variation, parentRepresentative)
-    hookCtx:Call()
-    print("create bp")
-    print(blueprint, blueprint.typeInfo.name, variation)
-end)
+-- Hooks:Install('EntityFactory:CreateFromBlueprint', 100, function(hookCtx, blueprint, transform, variation, parentRepresentative)
+--     hookCtx:Call()
+--     print("create bp")
+--     print(blueprint, blueprint.typeInfo.name, variation)
+-- end)
 
 
 

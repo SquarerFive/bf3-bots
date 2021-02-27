@@ -323,15 +323,18 @@ end
 
 function Bot:StepPathNew()
     local finished = false
-    if #self.path > 0 then
-        self.destination = self.path[self.path_step]:Clone()
-        local is_at_path, is_outside_path = self:IsAtDestination()
-        if is_at_path and not is_outside_path then
-            self.path_step = self.path_step + 1
-            self.lock_path = false
+
+    if #self.path > 0 and self.path ~= nil then
+        if self.path[self.path_step] ~= nil then
+            self.destination = self.path[self.path_step]:Clone()
+            local is_at_path, is_outside_path = self:IsAtDestination()
+            if is_at_path and not is_outside_path then
+                self.path_step = self.path_step + 1
+                self.lock_path = false
+            end
+            self.throttle = true
+            self.sprinting = true
         end
-        self.throttle = true
-        self.sprinting = true
     elseif self.path_step >= #self.path then
         self.path = {}
         self.path_step = 1

@@ -449,7 +449,7 @@ function BotsManager:OnLevelLoaded(levelName, gameMode, round, roundsPerMap)
             bot:Kill()
         end
     end
-    self.lock_respawn = false
+    
     self.objectives = {}
     EntityManager:TraverseAllEntities(function(entity)
         -- Do something with entity.
@@ -465,6 +465,7 @@ function BotsManager:OnLevelLoaded(levelName, gameMode, round, roundsPerMap)
             print("X: ".. SpatialEntity(entity).transform.trans.x)
         end    
     end)
+    self.lock_respawn = false
 end
 
 function BotsManager:RawPathToVec3Path(data)
@@ -706,9 +707,11 @@ function BotsManager:StepThroughData()
                                 local min_distance = 98999
                                 local min_step = 1
                                 for idx, point in pairs(p) do
-                                    if point:Distance(currentBot.path[currentBot.path_step]) < min_distance then
-                                        min_distance =point:Distance(currentBot.path[currentBot.path_step])
-                                        min_step = idx
+                                    if currentBot.path ~= nil and point ~= nil then
+                                        if point:Distance(currentBot.path[currentBot.path_step]) < min_distance then
+                                            min_distance =point:Distance(currentBot.path[currentBot.path_step])
+                                            min_step = idx
+                                        end
                                     end
                                 end
                                 currentBot.path_step = min_step
@@ -1185,6 +1188,10 @@ end
 
 function BotsManager:RespawnBot(bot)
     -- first priority is to spawn on squadmate
+    if self.lock_respawn then
+        return
+    end
+
     local has_spawned_on_squadmate = false
     local has_spawned_on_objective = false
     local players_in_squad = PlayerManager:GetPlayersBySquad(bot.player_controller.teamId, bot.player_controller.squadId)
