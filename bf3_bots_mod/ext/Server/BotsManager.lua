@@ -62,9 +62,12 @@ function BotsManager:AssignVehicles()
 end
 
 function BotsManager:GetVehicleFromID(uniqueId)
+    self:AssignVehicles()
     for _, vehicle in pairs(self.vehicles) do
-        if tostring(vehicle.uniqueId) == tostring(uniqueId) then
-            return vehicle
+        if vehicle ~= nil then
+            if tostring(vehicle.uniqueId) == tostring(uniqueId) then
+                return vehicle
+            end
         end
     end
     return nil
