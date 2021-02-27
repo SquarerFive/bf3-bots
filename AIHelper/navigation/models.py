@@ -79,4 +79,10 @@ class Vehicle(models.Model):
     transform = models.JSONField(default = dict)
     vehicle_type = models.IntegerField(default = 0)
     controllable_type = models.TextField(default = "", null=True)
+    abstract_type = models.TextField(null=True, blank=True)
     
+class VehicleType(models.Model):
+    controllable_type = models.TextField(default = "")
+    abstract_type = models.TextField(default="Car")
+    turret_slots = models.JSONField(default = list)
+    max_players = models.IntegerField(default = 3)

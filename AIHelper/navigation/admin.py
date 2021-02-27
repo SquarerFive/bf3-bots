@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Level, Objective, Profile, Project, Vehicle
+from .models import Level, Objective, Profile, Project, Vehicle, VehicleType
 # Register your models here.
 
 @admin.register(Level)
@@ -22,8 +22,13 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(Vehicle)
 class VehicleAdmin(admin.ModelAdmin):
-    fields = ("instance", "vehicle_type", "transform", "passengers", "max_passenger_count")
-    list_display = ("instance", "vehicle_type", "passenger_count", "max_passenger_count", "controllable_type")
+    fields = ("instance", "vehicle_type", "transform", "passengers", "max_passenger_count", "abstract_type")
+    list_display = ("instance", "vehicle_type", "passenger_count", "max_passenger_count", "controllable_type", "abstract_type")
 
     def passenger_count(self, obj):
         return len(list(obj.passengers))
+
+@admin.register(VehicleType)
+class VehicleTypeAdmin(admin.ModelAdmin):
+    fields = ("controllable_type", "abstract_type", "turret_slots", "max_players")
+    list_display = ("controllable_type", "abstract_type", "max_players")

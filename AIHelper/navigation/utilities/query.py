@@ -145,19 +145,30 @@ def add_objective(data : dict):
 def add_or_update_vehicle(data : dict):
     # print(data)
     if not models.Vehicle.objects.filter(instance = str(data['instance'])).first():
+        abstract_type= None
+        vehicle_type = models.VehicleType.objects.filter(controllable_type=data['controllable_type']).first()
+        if vehicle_type:
+            abstract_type = vehicle_type.abstract_type
         vehicle : models.Vehicle = models.Vehicle.objects.create(
             instance = str(data['instance']), 
             max_passenger_count = int(data['max_passenger_count']),
             transform = data['transform'],
             vehicle_type = 0,
-            controllable_type = data['controllable_type']
+            controllable_type = data['controllable_type'],
+            abstract_type = abstract_type,
         )
         vehicle.save()
     else:
+        vehicle_type = models.VehicleType.objects.filter(controllable_type=data['controllable_type']).first()
+        if vehicle_type:
+            abstract_type = vehicle_type.abstract_type
         vehicle = models.Vehicle.objects.filter(instance = str(data['instance'])).first()
         vehicle.transform = data['transform']
         vehicle.max_passenger_count = 3
         vehicle.controllable_type = data['controllable_type']
+        if vehicle_type:
+            vehicle.abstract_type = abstract_type
+            vehicle.max_passenger_count = vehicle_type.max_players
         vehicle.save()
 
 # wouldn't want xss attack, would you?
