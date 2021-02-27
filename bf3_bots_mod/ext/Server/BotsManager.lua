@@ -188,11 +188,13 @@ end
 -- @Params
 -- vehicle : ControllableEntity [server]
 function BotsManager:GetVehicleJSON(vehicle)
+    local vehicleData = VehicleEntityData(vehicle.data)
     local data = '{'
     data = data .. 
     '"instance": '.. tostring(vehicle.uniqueId) ..
-    ', "max_passenger_count": '.. tostring(VehicleEntityData(vehicle.data).maxPlayersInVehicle) ..
-    ', "transform": '.. json.encode(vehicle.transform)
+    ', "max_passenger_count": '.. tostring(vehicleData.maxPlayersInVehicle) ..
+    ', "transform": '.. json.encode(vehicle.transform)..
+    ', "controllable_type": '.. json.encode(vehicleData.controllableType)
     data = data .. ' }'
     return data
 end

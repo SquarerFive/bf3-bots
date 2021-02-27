@@ -23,7 +23,7 @@ class ProjectAdmin(admin.ModelAdmin):
 @admin.register(Vehicle)
 class VehicleAdmin(admin.ModelAdmin):
     fields = ("instance", "vehicle_type", "transform", "passengers", "max_passenger_count")
-    list_display = ("instance", "vehicle_type", "passenger_count", "max_passenger_count")
+    list_display = ("instance", "vehicle_type", "passenger_count", "max_passenger_count", "controllable_type")
 
     def passenger_count(self, obj):
         return len(list(obj.passengers))
