@@ -49,15 +49,23 @@ from tqdm import tqdm
 # Globals [to avoid poo memory, cache it here until the level changes]
 class GlobalCache:
     def __init__(self):
-        self.level_model : Union[level.models.Level, None] = None
+        # self.level_model : Union[level.models.Level, None] = None
         self.level_object : Union[level.Level, None] = None
         self.tasks = []
+        self.project_id = 0
+        self.level_id = 0
+    
+    @property
+    def level_model(self):
+        return level.models.Level.objects.filter(level_id = self.level_id, project_id = self.project_id).first()
 
     def get_object(self, project_id : int, level_id : int):
+        self.project_id = project_id
+        self.level_id = level_id
         if self.level_object:
             if self.level_object.model.project_id == project_id and self.level_model.level_id == level_id:
                 return self.level_object
-        self.level_model = level.models.Level.objects.filter(project_id= project_id, level_id=level_id).first()
+        # self.level_model = level.models.Level.objects.filter(project_id= project_id, level_id=level_id).first()
         self.level_object = navigation_query.decode_level(self.level_model)
         game_manager = models.BF3GameManager.objects.first()
         if game_manager == None:
@@ -1273,6 +1281,9 @@ def manager_calculate_distance_fields(request : Request, project_id : int, level
     if level_object:
         print("Generating Distance Fields")
         level_object.generate_distance_fields()
+        level_object.model.has_distance_field = True
+        global_cache.level_model.has_distance_field = True
+        global_cache.level_model.save()
         global_cache.save_object()
         print("Finished generating distance fields")
         return Response("Successfully generated distance fields")

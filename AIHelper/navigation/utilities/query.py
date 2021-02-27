@@ -23,7 +23,8 @@ def encode_level(in_level : level.Level) -> None:
     # costs_bytes_b64 = base64.b64encode(costs_bytes)
     # elevation_bytes = pickle.dumps(in_level.elevation)
     # elevation_bytes_b64 = base64.b64encode(elevation_bytes)
-    l = models.Level.objects.filter(project_id = in_level.project_id, name=in_level.name).first()
+    # l = models.Level.objects.filter(project_id = in_level.project_id, name=in_level.name).first()
+    l = in_level.model
     l_id = models.Level.objects.filter(project_id = in_level.project_id).count() + 1
     if not l:
         # l = models.Level(raw_data=data_bytes_b64, cost_data=costs_bytes_b64, elevation_data=elevation_bytes_b64, name=in_level.name, project_id=in_level.project_id, level_id=l_id)
@@ -53,6 +54,7 @@ def encode_level(in_level : level.Level) -> None:
         with open(f'{l.relative_path}/df.npy', 'wb') as f:
             df : np.ndarray = in_level.df
             np.save(f, df.astype(np.float32))
+            print("Saved Distance Field Map")
     l.transform = in_level.transform.as_dict()
     l.save()
 

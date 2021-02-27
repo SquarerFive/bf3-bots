@@ -92,9 +92,9 @@ class DFFinder:
         )
 
     def _ingrid(self, key) -> bool:
-        return key[0] >= 0 and key[0] <= self.elevation.shape[1] \
-            and key[1] >= 0 and key[1] <= self.elevation.shape[2] \
-                and key[2] >= 0 and key[2] <= self.elevation.shape[0]
+        return key[0] >= 0 and key[0] < self.elevation.shape[1] \
+            and key[1] >= 0 and key[1] < self.elevation.shape[2] \
+                and key[2] >= 0 and key[2] < self.elevation.shape[0]
 
     def _sort_node(self, in_nodes : List[Tuple[Tuple[int32, int32, int32], int32]], goal : Tuple[int32, int32, int32]):
         sorted_nodes = typed.List.empty_list(ptvp)
@@ -138,7 +138,8 @@ class DFFinder:
 
     def _is_within_threshold(self, key):
         if self._ingrid(key):
-            return self.values[key[2]][key[0]][key[1]] < float32(self.threshold) and self.values[key[2]][key[0]][key[1]] > float32(0.0) #and key[2] > 0
+            if key[2] < self.values.shape[0]:
+                return self.values[key[2]][key[0]][key[1]] < float32(self.threshold) and self.values[key[2]][key[0]][key[1]] > float32(0.0) #and key[2] > 0
         return False
 
     def _hfdistance(self, key1, key2):
@@ -147,7 +148,7 @@ class DFFinder:
             
             math.pow((key2[0]- key1[0]), 2)+
             math.pow((key2[1]- key1[1]), 2)+
-            math.pow(self._get_elevation(key2)-self._get_elevation(key1), 4)
+            math.pow(self._get_elevation(key2)-self._get_elevation(key1), 2)
         )
     
     def _cost(self, key1, key2, key3):
@@ -207,7 +208,7 @@ class DFFinder:
         current = start
         just_started=  True
         i = int32(0)
-        while (not queue.empty()) and i < 5000:
+        while (not queue.empty()) and i < 10000:
             current = queue.get()
 
             #if i % 10 == 0:
@@ -363,24 +364,24 @@ class DFFinder:
 
 
 if __name__ == "__main__":
-    with open("./models/Project/BF3 Bots 0.0.4/Level/MP_017/df.npy", "rb") as f:
+    with open("./models/Project/BF3 Bots 0.0.4/Level/XP1_004/costs.npy", "rb") as f:
         df = np.load(f)
-    with open("./models/Project/BF3 Bots 0.0.4/Level/MP_017/elevation.npy", "rb") as f:
+    with open("./models/Project/BF3 Bots 0.0.4/Level/XP1_004/elevation.npy", "rb") as f:
         elevation = np.load(f)
 
 
-    df = np.power(df, 0.2)
-    df = np.max(df[1]) - df
-    df = np.power(df, 4.0)
-    df = df.astype(np.float32)
+    # df = np.power(df, 0.2)
+    # df = np.max(df[1]) - df
+    # df = np.power(df, 4.0)
+    # df = df.astype(np.float32)
     elevation = elevation.astype(np.float32)
 
-    finder = DFFinder(df, elevation, 32)
+    finder = DFFinder(df, elevation, 26)
     #print(finder.graph)
     # (461, 947, 1) (518, 1004, 1)
-    start = (99, 342, 0)
+    start = (1196, 1705, 0)
     # start = (1145, 407, 1)
-    end = (57, 407, 0)
+    end = (1199, 2097, 0)
     # print(df[start[2]][start[0]][start[1]])
     print("FINDING PATH....")
     path = finder.find(start, end)

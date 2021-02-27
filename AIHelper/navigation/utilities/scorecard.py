@@ -9,6 +9,8 @@ import math
 
 from .transformations import remap, c_transform_to_world
 
+from . import jumpflooding
+
 @njit(parallel = True)
 def bruteforce_generate_distancefields(elevation_arr : np.ndarray, distance_field_array : np.ndarray, min_point : tuple, max_point : tuple):
     sample_radius = 32.0
@@ -31,6 +33,13 @@ def bruteforce_generate_distancefields(elevation_arr : np.ndarray, distance_fiel
                     distance_field_array[level][x][y] = min_distance
                 else:
                     distance_field_array[level][x][y] = 0.0
+
+def approximate_distance_fields(elevation_array : np.ndarray, distance_field_array : np.ndarray, seed_value : np.float32):
+    for level in elevation_array.shape[0]:
+        jumpflooder = jumpflooding.BasicJumpflooding(elevation_array[level], seed_value)
+        jumpflooding.initial(elevation_array[level], jumpflooder.jf_tx, seed_value)
+        jumpflooder.jfd(True)
+        distance_field_array[level] = jumpflooder.df_tx
 
 @njit(parallel=True)
 def score_fast(

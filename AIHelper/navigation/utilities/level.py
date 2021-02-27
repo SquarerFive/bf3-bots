@@ -67,7 +67,7 @@ class Level:
     def generate_distance_fields(self):
         if type(self.df) == type(None):
             self.df = np.zeros(self.elevation.shape, dtype=np.float32)
-
+        
         scorecard.bruteforce_generate_distancefields(self.elevation, self.df, tuple((*self.transform.min_point,)), tuple((*self.transform.max_point,)))
         self.model.has_distance_field = True
         self.model.save()
