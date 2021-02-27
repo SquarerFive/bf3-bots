@@ -9,8 +9,8 @@ function BotVehicleController:__init()
     self.moving = true
 
     -- config
-    self.intensity = 1.0
-    self.power = 1.0
+    self.intensity = 8.0
+    self.power = 2.0
 end
 
 function BotVehicleController:Update(newYaw, newMomentum, deltaTime)
