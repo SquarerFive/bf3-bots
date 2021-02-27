@@ -576,6 +576,15 @@ def manager_update_level(request: Request, project_id : int) -> Response:
         players = bots_models.Player.objects.all()
         objectives = navigation_models.Objective.objects.all()
         # print("Updating objectives", data['objectives'])
+        vehicle_ids = []
+        for vehicle in data['vehicles']:
+            navigation_query.add_or_update_vehicle(vehicle)
+            vehicle_ids.append(str(vehicle['instance']))
+        # Remove old vehicles
+        for vehicleModel in navigation_models.Vehicle.objects.all():
+            if vehicleModel.instance not in vehicle_ids:
+                vehicleModel.delete()
+                
         for objective in data['objectives']:
             navigation_query.add_objective(objective)
         ts = time.time()

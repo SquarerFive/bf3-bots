@@ -142,6 +142,20 @@ def add_objective(data : dict):
         o.save()
         # print("Updated objective", o.team, o.name, o.controlled)
 
+def add_or_update_vehicle(data : dict):
+    if not models.Vehicle.objects.filter(instance = str(data['instance'])).first():
+        vehicle : models.Vehicle = models.Vehicle.objects.create(
+            instance = str(data['instance']), 
+            max_passenger_count = int(data['max_passenger_count']),
+            transform = data['transform'],
+            vehicle_type = 0,
+        )
+        vehicle.save()
+    else:
+        vehicle = models.Vehicle.objects.filter(instance = str(data['instance'])).first()
+        vehicle.transform = data['transform']
+        vehicle.save()
+
 # wouldn't want xss attack, would you?
 def filter_text(text : str):
     return text.replace("<", "&#60;").replace(">", "&#62;")

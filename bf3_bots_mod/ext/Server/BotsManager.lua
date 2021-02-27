@@ -7,6 +7,7 @@ local VecLib = require('__shared/VecLib')
 function BotsManager:__init()
     self.bots = {}
     self.objectives = {}
+    self.vehicles = {}
     Events:Subscribe("UpdateManager:Update", self, self.Tick)
     Events:Subscribe("Level:Loaded", self, self.OnLevelLoaded)
     Events:Subscribe('Extension:Unloading', self, self.Destroy)
@@ -46,6 +47,20 @@ function BotsManager:__init()
     self.lock_respawn = false
 end
 
+function BotsManager:AssignVehicles()
+    self.vehicles = {}
+    EntityManager:TraverseAllEntities(function(entity)
+        -- Do something with entity.
+
+        if entity.typeInfo.name == "ServerVehicleEntity" then
+            -- print("Vehicle Entity!")
+            -- local data = VehicleEntityData(entity.data)
+            table.insert(self.vehicles, ControllableEntity(entity))
+            -- print("X: ".. SpatialEntity(entity).transform.trans.x)
+        end    
+    end)
+end
+
 function BotsManager:InitialiseHeartbeatSettings()
     local initialHeartbeatData = self:GetManager('/initialise-heartbeat/')
     print("Initializing heartbeat...")
@@ -67,7 +82,7 @@ function BotsManager:InitialiseHeartbeatSettings()
         self.objectives = {}
         EntityManager:TraverseAllEntities(function(entity)
             -- Do something with entity.
-            
+
             if entity.typeInfo.name == "ServerCapturePointEntity" then
                 print("Objective Entity!")
                 local data = CapturePointEntityData(entity.data)
@@ -79,6 +94,7 @@ function BotsManager:InitialiseHeartbeatSettings()
                 print("X: ".. SpatialEntity(entity).transform.trans.x)
             end    
         end)
+        self:AssignVehicles()
     end
 end
 
@@ -136,6 +152,18 @@ function BotsManager:GetPlayerJSON(player)
     return data
 end
 
+-- @Params
+-- vehicle : ControllableEntity [server]
+function BotsManager:GetVehicleJSON(vehicle)
+    local data = '{'
+    data = data .. 
+    '"instance": '.. tostring(vehicle.uniqueId) ..
+    ', "max_passenger_count": '.. tostring(VehicleEntityData(vehicle.data).maxPlayersInVehicle) ..
+    ', "transform": '.. json.encode(vehicle.transform)
+    data = data .. ' }'
+    return data
+end
+
 function BotsManager:GetPlayerJSONConcat(player)
     local keys = {'name', 'team', 'player_id','transform', 'health', 'alive', 'squad', 'online_id', 'is_squad_leader', 'is_squad_private', 'has_soldier', 'in_vehicle'}
     local values = {'"'..player.name..'"', player.teamId, player.id}
@@ -185,6 +213,20 @@ function BotsManager:GetPlayersJSON()
     end
     data = data..' ]'
     return data
+end
+
+function BotsManager:GetVehiclesJSON()
+    self:AssignVehicles()
+    local buffer = {'"vehicles": ['}
+    for idx, vehicle in pairs(self.vehicles) do
+        if idx == 1 then
+            buffer[#buffer+1] = self:GetVehicleJSON(vehicle)
+        else
+            buffer[#buffer+1] = ", "..self:GetVehicleJSON(vehicle)
+        end
+    end
+    buffer[#buffer+1] = ' ]'
+    return table.concat(buffer)
 end
 
 function BotsManager:FindPath(Start, End)
@@ -356,6 +398,8 @@ function BotsManager:GetAllLevelDataJSONConcat()
     buffer[#buffer+1] = self:GetPlayersJSONConcat(false)
     buffer[#buffer+1] = ','
     buffer[#buffer+1] = self:GetObjectivesJSON()
+    buffer[#buffer+1] = ','
+    buffer[#buffer+1] = self:GetVehiclesJSON()
     buffer[#buffer+1] = ','
     buffer[#buffer+1] = ' "level_name": '..'"'..SharedUtils:GetLevelName()..'"'
     buffer[#buffer+1] = ' }'

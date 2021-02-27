@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Level, Objective, Profile, Project
+from .models import Level, Objective, Profile, Project, Vehicle
 # Register your models here.
 
 @admin.register(Level)
@@ -19,3 +19,7 @@ class UserAdmin(admin.ModelAdmin):
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
     fields = ("project_id", "name", "author", "date_created", "date_modified", "description")
+
+@admin.register(Vehicle)
+class VehicleAdmin(admin.ModelAdmin):
+    fields = ("instance", "vehicle_type", "transform", "passengers", "max_passenger_count")

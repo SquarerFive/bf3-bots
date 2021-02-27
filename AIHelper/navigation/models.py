@@ -72,3 +72,9 @@ class Profile(models.Model):
     def natural_key(self):
         return self.username
     
+class Vehicle(models.Model):
+    instance = models.TextField(default = "")
+    passengers = models.JSONField(default=list) # List of player IDs
+    max_passenger_count = models.IntegerField(default = 3)
+    transform = models.JSONField(default = dict)
+    vehicle_type = models.IntegerField(default = 0)
