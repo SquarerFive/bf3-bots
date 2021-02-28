@@ -21,7 +21,6 @@ function ScorecardServer:__init()
     NetEvents:Subscribe("OnScorecardRequestPath", self, self.OnScorecardRequestPath)
     NetEvents:Subscribe("OnSetActiveProject", self, self.OnSetActiveProject)
     NetEvents:Subscribe("OnUpdateBotSettings", self, self.OnScorecardUpdateBotSettings)
-    Events:Subscribe('UpdateManager:Update', self, self.Tick)
     self.damageHook = nil
     self.damageInfo = nil
     self.damageGiverInfo = nil
@@ -33,18 +32,6 @@ function ScorecardServer:OnScorecardUpdateBotSettings(player, newFiringOffset, n
     for _, bot in pairs(botsManager.bots) do
         bot:UpdateAimSettings(newFiringOffset, newFiringBaseOffset, newAimWhenFire)
     end
-end
-
-function ScorecardServer:Tick(deltaTime, pass)
-    -- if (self.damageHook ~= nil) then
-    --     local firstPlayer = PlayerManager:GetPlayerById(0)
-    --     print("valid damageHook "..firstPlayer.name)
-    --     if firstPlayer.soldier ~= nil then
-    --         print('applying damage')
-    --         self.damageHook:Pass(firstPlayer.soldier, self.damageInfo, self.damageGiverInfo)
-    --     end
-    --     -- print("valid damageHook")
-    -- end
 end
 
 function ScorecardServer:OnSetActiveProject(player, active_project, profile)

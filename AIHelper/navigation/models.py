@@ -86,3 +86,4 @@ class VehicleType(models.Model):
     abstract_type = models.TextField(default="Car")
     turret_slots = models.JSONField(default = list)
     max_players = models.IntegerField(default = 3)
+    can_drive_in_water = models.BooleanField(default = False)

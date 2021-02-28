@@ -1,4 +1,5 @@
 from inspect import trace
+from navigation.utilities import query as navigation_query
 from navigation.utilities.transformations import transform_to_world
 from bots import models
 
@@ -190,17 +191,35 @@ def compute(bot_id : int, current_level : Level, BotModels : models.Bot, PlayerM
 def get_nearest_vehicle(bot : models.Bot):
     nearest_vehicle = None
     nearest_vehicle_distance = math.inf
+    nearest_vehicle_slot = -1
     for vehicle in navigation_models.Vehicle.objects.all():
         vehicle : navigation_models.Vehicle = vehicle
         d = distance(
             bot.transform['trans']['x'], bot.transform['trans']['y'], bot.transform['trans']['z'],
             vehicle.transform['trans']['x'], vehicle.transform['trans']['y'], vehicle.transform['trans']['z']
         )
-        if d < nearest_vehicle_distance and len(vehicle.passengers) == 0:
+        passenger_count = 0
+        for passenger in vehicle.passengers:
+            if passenger != -1:
+                passenger_count += 1
+        if d < nearest_vehicle_distance and passenger_count < vehicle.max_passenger_count and vehicle.abstract_type:
             nearest_vehicle_distance = d
             nearest_vehicle = vehicle
+    if nearest_vehicle:
+        nearest_vehicle_slot = navigation_query.find_empty_slot_for_vehicle(nearest_vehicle)
+    return nearest_vehicle, nearest_vehicle_distance, nearest_vehicle_slot
 
-    return nearest_vehicle, nearest_vehicle_distance
+def bot_constraint_to_land(bot : models.Bot):
+    for vehicle in navigation_models.Vehicle.objects.all():
+        vehicle : navigation_models.Vehicle = vehicle
+        vehicle_type : navigation_models.VehicleType = navigation_models.VehicleType.objects.filter(abstract_type = vehicle.abstract_type).first()
+        if vehicle_type:
+            if bot.player_id in vehicle.passengers:
+                if vehicle_type.can_drive_in_water:
+                    return False
+                else:
+                    return True
+    return False
 
 def compute_model(bot : models.Bot, current_level : Level, override_target = False, overidden_target = -2):
     if bot.alive and 'trans' in list(bot.transform.keys()):
@@ -219,7 +238,8 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                 bot.transform['trans']['z'] + (bot.transform['forward']['z']*d)
             )
         )
-        if False: #bot.stuck:
+        nearest_vehicle, nearest_vehicle_distance, nearest_vehicle_slot = get_nearest_vehicle(bot)
+        if bot.stuck:
             back = [bot.transform['forward']['x']*-5, bot.transform['forward']['y']*-5, bot.transform['forward']['z']*-5]
             target = bot.transform['trans']['x'] + back[0], bot.transform['trans']['y'] + back[1], bot.transform['trans']['z'] + back[2]
             target_grid_pos = current_level.transform.transform_to_grid((target[0], target[2]))
@@ -245,7 +265,7 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                             'z': p[1]
                         }
                     )
-                # bot.stuck = False
+                bot.stuck = False
             else:
                 bot.path = current_level.astar(
                     bot_grid_pos, target_grid_pos, elevation=bot.transform['trans']['y'], target_elevation = bot.transform['trans']['y']
@@ -254,6 +274,7 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                 bot.target = -1
             bot.order = 2
             bot.action = 2
+            bot.stuck = False
 
         
         elif bot.action == int(orders.BotActionEnum.PROVIDE_AMMO) or bot.action == int(orders.BotActionEnum.PROVIDE_HEALTH):
@@ -278,7 +299,9 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                     )
 
         elif bot.action == int(orders.BotActionEnum.ATTACK):
-            if (closest_enemy and distance_to_enemy < 30) and not bot.in_vehicle: # TODO: change this to x within viewing angle of y 
+            if (closest_enemy and distance_to_enemy < 30) and (
+                (bot.in_vehicle and (bot.vehicle_abstract_type == "Tank" or bot.in_vehicle_turret))
+                ): # TODO: change this to x within viewing angle of y 
                 # enemy_grid_pos =  current_level.transform.transform_to_grid((float(closest_enemy.transform['trans']['x']) , float(closest_enemy.transform['trans']['z'])))
                 if override_target and models.Player.objects.filter(player_id=overidden_target).first():
                     if not models.Player.objects.filter(player_id=overidden_target).first().alive:
@@ -335,7 +358,8 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                     bot_forward_grid_pos,
                     enemy_grid_pos,
                     elevation=bot.transform['trans']['y'],
-                    target_elevation = closest_enemy.transform['trans']['y']
+                    target_elevation = closest_enemy.transform['trans']['y'],
+                    only_land = bot_constraint_to_land(bot)
                 )
                 #print("path")
                 if type(bot.path ) == type(None):
@@ -354,7 +378,7 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
 
                 end =  current_level.transform.transform_to_grid((float(closest_objective.transform['trans']['x']) , float(closest_objective.transform['trans']['z'])))
                 print(distance_to_objective)
-                if distance_to_objective > 50 and not bot.in_vehicle:
+                if nearest_vehicle_distance < distance_to_objective and not bot.in_vehicle and not bot.is_driver:
                     bot.order = orders.BotOrdersEnum.FRIENDLY
                     bot.action = orders.BotActionEnum.VEHICLE_DISCOVERY
 
@@ -363,7 +387,8 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                     bot_grid_pos,
                     end,
                     elevation=bot.transform['trans']['y'],
-                    target_elevation = closest_objective.transform['trans']['y']
+                    target_elevation = closest_objective.transform['trans']['y'],
+                    only_land = bot_constraint_to_land(bot)
                 )
                 bot.path = path
                 # print("path: ", bot.path)
@@ -385,7 +410,8 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                     bot_grid_pos, 
                     target_grid_pos,
                     elevation = bot.transform['trans']['y'],
-                    target_elevation = target['y']
+                    target_elevation = target['y'],
+                    only_land = bot_constraint_to_land(bot)
                 )
 
             elif bot.action == 6 and not bot.in_vehicle:
@@ -414,7 +440,7 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                 bot.action = 2
                 bot.order = 2
                 return
-            nearest_vehicle, nearest_vehicle_distance = get_nearest_vehicle(bot)
+            
             if nearest_vehicle:
                 print("Vehicle Discovery", nearest_vehicle_distance)
                 end = current_level.transform.transform_to_grid((float(nearest_vehicle.transform['trans']['x']), float(nearest_vehicle.transform['trans']['z'])))
@@ -425,3 +451,4 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                     target_elevation= nearest_vehicle.transform['trans']['y']
                 )
                 bot.target_vehicle = nearest_vehicle.instance
+                bot.target_vehicle_slot = nearest_vehicle_slot

@@ -115,7 +115,7 @@ class Command(BaseCommand):
                             print('Encountered Error: ', e)
                             raise(e)
 
-                    bot_models.Bot.objects.bulk_update(b_array, ['path', 'action', 'order', 'target', 'stuck', 'target_vehicle'])
+                    bot_models.Bot.objects.bulk_update(b_array, ['path', 'action', 'order', 'target', 'stuck', 'target_vehicle', 'target_vehicle_slot'])
                     # print(thread_pool.stats())
             else:
                 print("No Game Manager found. Maybe start the game?")

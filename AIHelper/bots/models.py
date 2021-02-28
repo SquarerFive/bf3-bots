@@ -13,6 +13,9 @@ class BasePlayer(models.Model):
     is_squad_private = models.BooleanField(default = False)
     transform = models.JSONField(default=dict)
     in_vehicle = models.BooleanField(default=False)
+    in_vehicle_turret = models.BooleanField(default = False)
+    is_driver = models.BooleanField(default = False)
+    vehicle_abstract_type = models.TextField(default = "")
 
     has_soldier = models.BooleanField(default = False)
     team = models.IntegerField(default = 0)
@@ -31,6 +34,7 @@ class Bot(BasePlayer):
     path = models.JSONField(default=dict, blank=True, null=True)
     target = models.IntegerField(default = -1)
     target_vehicle = models.TextField(default = '')
+    target_vehicle_slot = models.IntegerField(default = 0, null=True)
     overidden_target = models.IntegerField(default = -2)
     selected_kit = models.JSONField(default = dict)
 

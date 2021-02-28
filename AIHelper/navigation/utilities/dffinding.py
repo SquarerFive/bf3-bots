@@ -11,6 +11,7 @@ from numba import types, typed
 import heapq
 
 
+
 kv_ty = (types.Tuple((types.int32, types.int32, types.int32)), types.Tuple((types.float32, types.float32, types.int32, types.int32, types.int32)))
 gl = (types.Tuple((types.Tuple((int32, int32, int32)), int32)))
 # [((0,0,0), 0)]
@@ -61,25 +62,11 @@ class PriorityQueue:
 @jitclass(spec)
 class DFFinder:
     def __init__(self, values : np.ndarray, elevation : np.ndarray, feature : np.ndarray, threshold : float32 = 3.0):
-        # self.graph = typed.Dict.empty(*kv_ty)
-        # self.path = typed.List.empty_list(ptv)
-        # self.nodes = typed.List.empty_list(ptvp)
-        # self.keys = typed.List.empty_list(ptv)
-        # self.closed_nodes = typed.List.empty_list(ptvp)
-        # self.graph_lookup = typed.List.empty_list(gl)
         self.values = values
         self.elevation = elevation
         self.threshold = threshold
         self.feature = feature
-        # for level in range(values.shape[0]):
-        #     for x in range(values.shape[1]):
-        #         for y in range(values.shape[2]):
-        #             value = float32(values[level][x][y])
-        #             if value < threshold:
-        #                 self.graph[(x, y, level)] = (value, float32(elevation[level][x][y]), int32(x), int32(y), int32(level))
-        #                 key = (int32(x), int32(y), int32(level))
-        #                 self.keys.append(key)
-        #                 self.graph_lookup.append((key, int32(-1)))
+        
     
     def _haskey(self, key) -> bool:
         return key in self.keys
@@ -196,7 +183,7 @@ class DFFinder:
                 min_index=  index
         return nodes.pop(min_index)
 
-    def find(self, start : Tuple[int, int, int], end : Tuple[int, int, int]) -> List[Tuple[int, int, int]]:
+    def find(self, start : Tuple[int, int, int], end : Tuple[int, int, int], only_land : bool = False) -> List[Tuple[int, int, int]]:
         queue = PriorityQueue()
         # print("Finding valid points")
         #start = (int32(start[0]), int32(start[1]), int32(start[2]))
@@ -240,6 +227,9 @@ class DFFinder:
                     (int32(x), int32(y), int32(level+1))]
 
             for next in neighbours:
+                if only_land:
+                    if self.feature[next[2]][next[0]][next[1]] == 1:
+                        continue
                 if not self._ingrid(next): continue
                 if not self._is_within_threshold(next): continue
                 # print("Sampling neighbours")
@@ -257,11 +247,19 @@ class DFFinder:
         # print("Done after: "+str(i))
         return self.build_path(came_from, start, end, current)
 
-    def find_costs(self, start : Tuple[int, int, int], end : Tuple[int, int, int]) -> List[Tuple[int, int, int]]:
+    def find_costs(self, start : Tuple[int, int, int], end : Tuple[int, int, int], only_land : bool = False) -> List[Tuple[int, int, int]]:
         queue = PriorityQueue()
-        start = (int32(start[0]), int32(start[1]), int32(start[2]))
-        end = (int32(end[0]), int32(end[1]), int32(end[2]))
-
+        # print("Finding valid points")
+        #start = (int32(start[0]), int32(start[1]), int32(start[2]))
+        start =  self.ensure_point_valid((int32(start[0]), int32(start[1]), int32(start[2])))
+        # end =  (int32(end[0]), int32(end[1]), int32(end[2]))
+        end = self.ensure_point_valid  ((int32(end[0]), int32(end[1]), int32(end[2])))
+        path = typed.List.empty_list(ptv)
+        if not self._is_within_threshold(start) or not self._ingrid(start) or not self._is_within_threshold(end) or not self._ingrid(end):
+            start = self.ensure_point_valid((int32(start[0]), int32(start[1]), int32(start[2])))
+            end = self.ensure_point_valid  ((int32(end[0]), int32(end[1]), int32(end[2])))
+            print("Not in grid", start, end, self._get_value(start), self._get_value(end), self._ingrid(start), self._is_within_threshold(start))
+            return path
         null_ptv = (int32(-1), int32(-1), int32(-1))
 
         # self.path = typed.List.empty_list(ptv)
@@ -270,7 +268,7 @@ class DFFinder:
         came_from = typed.Dict.empty(*pdt)
         came_from[start] = null_ptv
         costs_so_far = typed.Dict.empty(*cmt)
-        costs_so_far[start] = self._hfdistance(start, end)
+        costs_so_far[start] = float32(math.inf)
         
         queue.put(start, float32(0))
         current = start
@@ -279,11 +277,11 @@ class DFFinder:
         while (not queue.empty()) and i < 5000:
             current = queue.get()
 
-            #if i % 10 == 0:
-            #    print('['+str(i)+'] - Distance to goal: '+str(int(self._hfdistance(current, end))))
+            # if i % 10 == 0:
+            #     print('['+str(i)+'] - Distance to goal: '+str(int(self._hfdistance(current, end))))
 
             if current == end:
-                # print("Current is end")
+                #print("Current is end")
                 break
             x = current[0]
             y = current[1]
@@ -293,22 +291,26 @@ class DFFinder:
                     (int32(x), int32(y), int32(level+1))]
 
             for next in neighbours:
+                if only_land:
+                    if self.feature[next[2]][next[0]][next[1]] == 1:
+                        continue
                 if not self._ingrid(next): continue
                 if not self._is_within_threshold(next): continue
                 # print("Sampling neighbours")
-                if costs_so_far[current] < math.inf:
-                    new_cost = costs_so_far[current] + self._hfdistance(current,next) #self._cost(current, next, end)
+                if costs_so_far[current] < float32(math.inf):
+                    new_cost = costs_so_far[current] + self._cost(current, next, end)
                 else:
-                    new_cost = self._hfdistance(current, next) #self._cost(current, next ,end)
+                    new_cost = self._cost(current, next, end)
                  #self._hdistance(self.graph[current], self.graph[next])
                 if next not in costs_so_far or new_cost < costs_so_far[next]:
                     costs_so_far[next] = new_cost
-                    priority = float32(self._hfdistance(next, end)) #float32(self._hdistance(self.graph[next], self.graph[end]))
+                    priority = float32(self._hfdistance(next, end))#float32(self._hdistance(self.graph[next], self.graph[end]))
                     queue.put(next, priority)
                     came_from[next] = current
             i += 1
+        # print("Done after: "+str(i))
         
-        return self.build_costs(came_from, costs_so_far, start, end)
+        return self.build_costs(came_from, costs_so_far, start, end, current)
 
     def _mag(self, x : int32, y : int32):
         return math.floor(math.sqrt((x*x)+ (y*y)))
@@ -373,13 +375,14 @@ class DFFinder:
         print("Build path")
         return path
 
-    def build_costs(self, came_from :types.DictType(types.Tuple((int32, int32, int32)), types.Tuple((int32, int32, int32))), costs_so_far : types.DictType(*cmt), start : types.Tuple((int32, int32, int32)), end : types.Tuple((int32, int32, int32))):
+    def build_costs(self, came_from :types.DictType(types.Tuple((int32, int32, int32)), types.Tuple((int32, int32, int32))), costs_so_far : types.DictType(*cmt), start : types.Tuple((int32, int32, int32)), end : types.Tuple((int32, int32, int32)), defcurrent : types.Tuple((int32,int32,int32))):
         current = end
         cost = float32(0.0)
         # print(costs_so_far)
         if current not in came_from:
             # print("Could not find path", came_from)
-            return cost
+            # return path
+            current = defcurrent
         while current != start:
             if costs_so_far[current] < float32(math.inf):
                 cost += costs_so_far[current] #self.values[current[2]][current[0]][current[1]]

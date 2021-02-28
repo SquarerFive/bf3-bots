@@ -26,9 +26,13 @@ class VehicleAdmin(admin.ModelAdmin):
     list_display = ("instance", "vehicle_type", "passenger_count", "max_passenger_count", "controllable_type", "abstract_type")
 
     def passenger_count(self, obj):
-        return len(list(obj.passengers))
+        count = 0
+        for p in obj.passengers:
+            if p != -1:
+                count += 1
+        return count
 
 @admin.register(VehicleType)
 class VehicleTypeAdmin(admin.ModelAdmin):
-    fields = ("controllable_type", "abstract_type", "turret_slots", "max_players")
-    list_display = ("controllable_type", "abstract_type", "max_players")
+    fields = ("controllable_type", "abstract_type", "turret_slots", "max_players", "can_drive_in_water")
+    list_display = ("controllable_type", "abstract_type", "max_players", "can_drive_in_water")

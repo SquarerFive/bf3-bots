@@ -96,6 +96,10 @@ function Bot:__init()
     self.spawned = false
     self.soldierBP = nil
     self.target_vehicle = nil
+    self.is_driving = false
+    self.vehicle_abstract_type = ''
+    self.in_vehicle_turret = false
+    self.target_vehicle_slot = 0
 end
 
 function Bot:UpdateAimSettings(newFiringOffset, newFiringBaseOffset, newAimWhenFire)
@@ -379,8 +383,8 @@ function Bot:StepPathVehicle()
         local nearest_point_left, nearest_point_left_distance = self:GetClosestPathPoint(front_probe_left)
         local nearest_point_back, nearest_point_back_distance = self:GetClosestPathPoint(back_probe)
         
-        local steady_momentum = 0.2
-        local steer_momentum = 2
+        local steady_momentum = 0.1
+        local steer_momentum = 10.0
         local invert_steer = false
         
         local forwardLevelEnum = EntryInputActionEnum.EIAThrottle
@@ -425,6 +429,15 @@ function Bot:StepPathVehicle()
                     yaw = nearest_point_distance/-steer_momentum
                 end
             end
+            local y = VecLib:YawFromNormalizedAngle(
+                Vec3(front_probe - nearest_point):Normalize()
+            )   
+            if invert_steer then
+                yaw = -y
+            else
+                yaw = y
+            end
+            yaw = yaw * 2
             
         else
             self.botVehicleController.moving = false
@@ -432,6 +445,8 @@ function Bot:StepPathVehicle()
             -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIAYaw, 0)
             -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIABrake, 0)
         end
+
+        
 
     end
 
@@ -449,7 +464,10 @@ function Bot:StepPathVehicle()
         end
     end
 
+    
+
     self.botVehicleController:Update(yaw, momentum, self.delta_time)
+    self.player_controller.input:SetLevel(EntryInputActionEnum.EIAYaw, self.botVehicleController.yaw)
 
 end
 
@@ -645,6 +663,20 @@ function Bot:NewTick(delta_time, pass)
                     end
                 else
                     self:StepPathVehicle()
+                    if self.target ~= nil then
+                        if self.in_vehicle_turret or (self.vehicle_abstract_type == 'Tank' and self.is_driving) then
+                            if self.target.soldier ~= nil and self.target.alive then
+                                -- self:SetFocusOn(self.target.soldier.transform.trans:Clone())
+                                self:SetVehicleFocusOn(self.target.soldier.transform.trans:Clone(), 0.1)
+                                self.firing = true
+                            else
+                                self.target = nil
+                                self.firing = false
+                            end
+                        else
+                            self.firing = false
+                        end
+                    end
                 end
             elseif self.action == Actions.VEHICLE_DISCOVERY then
                 local atDestination = self:StepPathNew()
@@ -652,15 +684,26 @@ function Bot:NewTick(delta_time, pass)
                     self:SetFocusOn(self.destination)
                 end
                 if atDestination and self.target_vehicle ~= nil then
-                    self.player_controller:EnterVehicle(self.target_vehicle, self.player_controller.controlledEntryId )
-                    self.in_vehicle = true
-                    self.requested_action = 2
-                    self.requested_order = 2
-                    self.path = {}
-                    self.throttle = false
-                    self.sprinting = false
-                    self.path_step = 1
+                    if self.target_vehicle_slot ~= nil then
+                        print("Bot attempting to enter vehicle: "..self.player_controller.name.." with slot: "..self.target_vehicle_slot..' '.. VehicleEntityData(self.target_vehicle.data).controllableType)
+                        local entrySlot = 0
+                        if self.target_vehicle_slot > 0 then
+                            local entrySlot = 1
+                        end
+                        self.player_controller:EnterVehicle(self.target_vehicle, math.floor(self.target_vehicle_slot))
+                        self.in_vehicle = true
+                        self.requested_action = 2
+                        self.requested_order = 2
+                        self.path = {}
+                        self.throttle = false
+                        self.sprinting = false
+                        self.path_step = 1
+                    end
                 end
+            elseif self.action == Actions.GET_OUT then
+                self.player_controller:ExitVehicle(true, true)
+                self.requested_order = 2
+                self.requested_action = 2
             end
         else
             if not self.player_controller.alive then
@@ -852,6 +895,16 @@ end
 function Bot:SetFocusOn(Target)
     local bot_trans = self.player_controller.soldier.transform.trans
     local bot_transform = self.player_controller.soldier.transform:Clone()
+    bot_transform:LookAtTransform(bot_trans, 
+        Target
+    )
+    self.player_controller.soldier.transform = bot_transform
+end
+
+function Bot:SetVehicleFocusOn(Target, zOffset)
+    local bot_trans = self.player_controller.attachedControllable.transform.trans + Vec3(0,0, zOffset)
+    local bot_transform = self.player_controller.soldier.transform:Clone()
+    bot_transform:Translate(Vec3(0, 0, zOffset))
     bot_transform:LookAtTransform(bot_trans, 
         Target
     )

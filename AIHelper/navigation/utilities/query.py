@@ -157,6 +157,9 @@ def add_or_update_vehicle(data : dict):
             controllable_type = data['controllable_type'],
             abstract_type = abstract_type,
         )
+        for i in range(vehicle.max_passenger_count):
+            vehicle.passengers.append(-1)
+        # print(vehicle.passengers)
         vehicle.save()
     else:
         vehicle_type = models.VehicleType.objects.filter(controllable_type=data['controllable_type']).first()
@@ -169,7 +172,34 @@ def add_or_update_vehicle(data : dict):
         if vehicle_type:
             vehicle.abstract_type = abstract_type
             vehicle.max_passenger_count = vehicle_type.max_players
+        if len(vehicle.passengers) == 0:
+            for i in range(vehicle.max_passenger_count):
+                vehicle.passengers.append(-1)
         vehicle.save()
+
+def add_player_to_vehicle(player, vehicle : models.Vehicle):
+    empty_slot = -1
+    for i in range(len(vehicle.passengers)):
+        if vehicle.passengers[i] == -1:
+            empty_slot = i
+            break
+    if empty_slot > -1:
+        vehicle.passengers[empty_slot] = player.player_id
+    return empty_slot
+
+def remove_player_from_vehicle(player, vehicle : models.Vehicle):
+    passengers : list = vehicle.passengers
+    occupied_slot = passengers.index(player.player_id)
+    vehicle.passengers[occupied_slot] = -1
+    return occupied_slot
+
+def find_empty_slot_for_vehicle(vehicle : models.Vehicle):
+    empty_slot = None
+    for i in range(len(vehicle.passengers)):
+        if vehicle.passengers[i] == -1:
+            empty_slot = i
+            break
+    return empty_slot
 
 # wouldn't want xss attack, would you?
 def filter_text(text : str):

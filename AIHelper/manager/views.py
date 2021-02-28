@@ -315,15 +315,23 @@ def manager_add_level_block(request : Request, project_id : int):
             int(float(str(request.headers['Size-X']).replace("'", ""))),
             int(float(str(request.headers['Size-Y']).replace("'","") ))), None)
         use_df = str(request.headers['Has-DF']).lower().strip() == 'true'
-        layers = int(request.headers['Layers'])
-        global_cache.level_model.layers = layers
-        global_cache.level_model.has_distance_field = use_df
+        layers = int(float(request.headers['Layers']))
+        if global_cache.level_model:
+            global_cache.level_model.layers = layers
+            global_cache.level_model.has_distance_field = use_df
+            global_cache.level_model.save()
         levelObject.project_id = project_id
         levelObject.pre_process_data(layers)
         navigation_query.encode_level(levelObject)
         levelModel = navigation_query.models.Level.objects.filter(project_id=project_id, name=level_name).first()
     
-
+    if global_cache.level_model:
+        use_df = str(request.headers['Has-DF']).lower().strip() == 'true'
+        layers = int(float(request.headers['Layers']))
+        if not global_cache.level_model.layers == layers:
+            global_cache.level_model.layers = layers
+            global_cache.level_model.has_distance_field = use_df
+            global_cache.level_model.save()
 
 
     levelModel = navigation_query.models.Level.objects.filter(project_id=project_id, name=level_name).first()
@@ -400,7 +408,7 @@ def manager_clear_level_data(request : Request, project_id : int) -> Response:
             int(float(str(request.headers['Size-Y']).replace("'","") )))
     transformObj = level.transformations.GridTransform(transform[0], transform[1], transform[2], transform[3])
     use_df = str(request.headers['Has-DF']).lower().strip() == 'true'
-    layers = int(request.headers['Layers'])
+    layers = int(float(request.headers['Layers']))
     print('clearing level', 'has levels:', layers)
     if levelObject:
         levelObject.transform = transformObj
@@ -440,6 +448,7 @@ def manager_on_level_loaded(request : Request, project_id : int, level_id : int)
     if level_object:
         for objective in navigation_models.Objective.objects.all():
             objective.delete()
+        navigation_models.Vehicle.objects.all().delete()
         return Response("Old level cleared successfully")
     return Response("LEvel not found", status=404)
 
@@ -1309,9 +1318,55 @@ def manager_on_vehicle_event(request : Request, project_id : int, level_id : int
     print(data)
     vehicle : navigation_models.Vehicle = navigation_models.Vehicle.objects.filter(instance = str(data['instance'])).first()
     if vehicle:
+        player : bots_models.Player = bots_models.Player.objects.filter(player_id = data['player_id']).first()
+        bot : bots_models.Bot = bots_models.Bot.objects.filter(player_id = data['player_id']).first()
+        has_bot = True
+        if not bot:
+            bot = player
+            has_bot = False
         if data['event'] == 'enter':
-            vehicle.passengers.append(data['player_id'])
+            vehicle_type : navigation_models.VehicleType = navigation_models.VehicleType.objects.filter(abstract_type=vehicle.abstract_type).first()
+            print(vehicle.abstract_type, vehicle.controllable_type)
+            
+            # vehicle.passengers.append(data['player_id'])
+            if has_bot:
+                seat_index = navigation_query.add_player_to_vehicle(bot, vehicle)
+            else:
+                seat_index = navigation_query.add_player_to_vehicle(player, vehicle)
+            player.in_vehicle = True
+            bot.in_vehicle = True
+            passengers : list = vehicle.passengers
+            # seat_index = passengers.index(data['player_id'])
+            print(vehicle.instance, vehicle_type)
+            if seat_index in vehicle_type.turret_slots:
+                player.in_vehicle_turret = True
+                bot.in_vehicle_turret = True
+                print("Is Turret")
+            elif seat_index == 0:
+                player.is_driver = True
+                bot.is_driver = True
+            player.save()
+            if isinstance(bot, bots_models.Bot):
+                bot.path = []
+                if vehicle_type:
+                    bot.vehicle_abstract_type = vehicle_type.abstract_type
+                bot.order = 2
+                bot.action = 2
+            bot.save()
+
         else:
-            vehicle.passengers.remove(data['player_id'])
+            # vehicle.passengers.remove(data['player_id'])
+            if has_bot:
+                navigation_query.remove_player_from_vehicle(bot, vehicle)
+            else:
+                navigation_query.remove_player_from_vehicle(player, vehicle)
+            player.in_vehicle = False
+            bot.in_vehicle = False
+            player.in_vehicle_turret = False
+            bot.in_vehicle_turret = False
+            player.is_driver = False
+            bot.is_driver = False
+            player.save()
+            bot.save()
         vehicle.save()
     return Response("Success")

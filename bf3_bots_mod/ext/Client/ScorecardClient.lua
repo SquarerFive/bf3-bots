@@ -197,6 +197,10 @@ end
 function ScorecardClient:OnNavgridComplete(data)
 end
 
+function ScorecardClient:Vec3ToString(inVector)
+    return 'X: '..inVector.x..'Y: '..inVector.y..'Z: '..inVector.z
+end
+
 -- note: this only executes if player.soldier is valid. [check __init__.lua]
 function ScorecardClient:Tick(deltaTime, pass, local_player)
     if(pass ~= UpdatePass.UpdatePass_PreSim) then
@@ -227,7 +231,11 @@ function ScorecardClient:Tick(deltaTime, pass, local_player)
     --    )
 
      -- print('throttle: '.. local_player.input:GetLevel(EntryInputActionEnum.EIAThrottle))
-    
+     -- print('yaw: '.. local_player.input.authoritativeAimingYaw)
+     -- print('pitch: '.. local_player.input.authoritativeAimingPitch)
+
+    -- print("Soldier Control Transform: ".. self:Vec3ToString(local_player.soldier.transform.forward).. ' '..self:Vec3ToString(local_player.soldier.transform.left)..' '..self:Vec3ToString(local_player.soldier.transform.up))
+
 	-- local local_player = PlayerManager:GetLocalPlayer()
     WebUI:ExecuteJS("window.GameSyncManager.updateCurrentPosition("..
       local_player.soldier.transform.trans.x.." ,"..local_player.soldier.transform.trans.y.." ,"..local_player.soldier.transform.trans.z..");")

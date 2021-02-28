@@ -30,7 +30,7 @@ function BotsManager:__init()
     self.bot_update_interval = 1
     self.bot_update_tickrate = 0.01
     self.last_bot_stream_update_time = 0.0
-    self.bot_stream_update_tickrate = 1250
+    self.bot_stream_update_tickrate = 250
     --
     self.last_bot_update_time = 0.0
 
@@ -95,6 +95,23 @@ function BotsManager:OnVehicleExit(vehicle, player)
 end
 
 function BotsManager:InitialiseHeartbeatSettings()
+    if self.project_id > -1 then
+        print("Post level loaded")
+        local data = {}
+        data['level_name'] = SharedUtils:GetLevelName()
+        local encoded_data = json.encode(data)
+        local result = self:PostManager('/project/'..self.project_id..'/get-level-id/', encoded_data)
+        print(result.body)
+        if tostring(result.body) ~= "error" then
+            if tonumber(result.body) ~= nil then
+                local level_id = math.floor(tonumber(result.body))
+                self.level_id = level_id
+                self:PostManager('/project/'..self.project_id..'/level/'..tostring(level_id)..'/on-level-loaded/', '{}')
+                
+            end
+        end
+    end
+
     local initialHeartbeatData = self:GetManager('/initialise-heartbeat/')
     print("Initializing heartbeat...")
     if (initialHeartbeatData.body ~= nil) then
@@ -805,9 +822,11 @@ function BotsManager:StepThroughData()
                                 local min_step = 1
                                 for idx, point in pairs(p) do
                                     if currentBot.path ~= nil and point ~= nil then
-                                        if point:Distance(currentBot.path[currentBot.path_step]) < min_distance then
-                                            min_distance =point:Distance(currentBot.path[currentBot.path_step])
-                                            min_step = idx
+                                        if currentBot.path[currentBot.path_step] ~= nil then
+                                            if point:Distance(currentBot.path[currentBot.path_step]) < min_distance then
+                                                min_distance =point:Distance(currentBot.path[currentBot.path_step])
+                                                min_step = idx
+                                            end
                                         end
                                     end
                                 end
@@ -864,6 +883,10 @@ function BotsManager:StepThroughData()
                 currentBot.requested_order = -1
                 currentBot.requested_target_id = -2
                 currentBot.selected_kit = bot.selected_kit
+                currentBot.is_driver = bot.is_driver
+                currentBot.in_vehicle_turret = bot.in_vehicle_turret
+                currentBot.vehicle_abstract_type = bot.vehicle_abstract_type
+                currentBot.target_vehicle_slot = bot.target_vehicle_slot
 
                 if (currentBot.player_controller.alive) then
                     if currentBot:IsOutOfAmmo() and (SharedUtils:GetTime() -  currentBot.last_request_ammo_request) > 5 then

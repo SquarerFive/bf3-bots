@@ -73,7 +73,7 @@ def create_or_update_bot_model(b : models.Bot, bot: dict):
     else:
         b.transform = bot['transform']
         b.health = bot['health']
-        b.in_vehicle = bot['in_vehicle']
+        # b.in_vehicle = bot['in_vehicle']
         b.team = bot['team']
         if int(bot['requested_order']) != b.order and int(bot['requested_order']) != -1:
             b.order = bot['order']
@@ -128,7 +128,7 @@ def create_or_update_player(player : dict):
         p.alive = player['alive']
         p.is_squad_leader = player['is_squad_leader']
         p.is_squad_private = player['is_squad_private']
-        p.in_vehicle = player['in_vehicle']
+        # p.in_vehicle = player['in_vehicle']
         p.has_soldier = player['has_soldier']
         p.team = player['team']
         p.squad = player['squad']
@@ -163,7 +163,7 @@ def create_or_update_player_model(p : models.Player, player : dict):
         p.alive = player['alive']
         p.is_squad_leader = player['is_squad_leader']
         p.is_squad_private = player['is_squad_private']
-        p.in_vehicle = player['in_vehicle']
+        # p.in_vehicle = player['in_vehicle']
         p.has_soldier = player['has_soldier']
         p.team = player['team']
         p.squad = player['squad']
@@ -183,7 +183,7 @@ def get_bots_as_dict():
     group_index = 0
     for bot in bots:
         #  d = bot.__dict__
-
+        bot : models.Bot = bot
         d = {
             "health": bot.health,
             "action": bot.action,
@@ -195,7 +195,13 @@ def get_bots_as_dict():
             "bot_index": bot.bot_index,
             "target": bot.target,
             "target_vehicle": bot.target_vehicle,
-            "selected_kit": bot.selected_kit
+            "selected_kit": bot.selected_kit,
+            "in_vehicle": bot.in_vehicle,
+            "is_driver": bot.is_driver,
+            "in_vehicle_turret": bot.in_vehicle_turret,
+            "vehicle_abstract_type": bot.vehicle_abstract_type,
+            'target_vehicle_slot': bot.target_vehicle_slot
+
         }
         all_data.append(d)
         # print(group_index)

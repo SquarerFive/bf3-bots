@@ -6,7 +6,8 @@ import numpy as np
 from matplotlib import pyplot, use
 from skimage.graph import route_through_array, shortest_path
 import math
-
+import simplification
+from simplification.cutil import simplify_coords_idx
 # from pathfinding.core.diagonal_movement import DiagonalMovement
 # from pathfinding.core.grid import Grid
 # from pathfinding.finder.a_star import AStarFinder
@@ -250,13 +251,19 @@ class Level:
     #     path = [(p[1], p[0]) for p in path]
     #     return path
 
-    def find_path_safe(self, start: tuple, end: tuple, level : int = 0, target_level : int = 0) -> list:
+    def find_path_safe(self, start: tuple, end: tuple, level : int = 0, target_level : int = 0, only_land = False) -> list:
         path = []
         used_dffinder = False
         if self.dffinder:
             
-            path = self.dffinder.find((int32(start[0]), int32(start[1]), int32(level)), (int32(end[0]), int32(end[1]), int32(target_level)))
+            path = self.dffinder.find((int32(start[0]), int32(start[1]), int32(level)), (int32(end[0]), int32(end[1]), int32(target_level)), only_land)
             used_dffinder = True
+            p = np.array(path)
+            p_simplified_coords_idx = simplify_coords_idx(p, 100)
+           #  print(p_simplified_coords_idx)
+            p_simplified = p[p_simplified_coords_idx]
+            path = list(p_simplified)
+            # print(path)
             
         if not self.dffinder:
             path = pyastar.astar_path(self.costs[level], start, end, allow_diagonal=True)
@@ -274,7 +281,8 @@ class Level:
             return self.dffinder.get_direction_cost(start, end, 1)
         return 0.0
 
-    def astar(self, start : tuple, end : tuple, safe=True , all : bool = False, elevation : Union[float, None] = None, target_elevation : Union[float, None] = 0.0, recurse_depth : int = 0) -> list:
+    def astar(self, start : tuple, end : tuple, safe=True , all : bool = False, elevation : Union[float, None] = None, target_elevation : Union[float, None] = 0.0, recurse_depth : int = 0,
+        only_land : bool = False) -> list:
         # print("running astar  ", start, end)
         # print("size of data: ", self.data.shape)
         #path, cost = route_through_arrays(self.costs, start, end, fully_connected=False, geometric=True) # astar(self.data, start, end)
@@ -291,7 +299,7 @@ class Level:
                 # print("Start elevation at {} - {}:".format(str(start), elevation), self.elevation[best_level][start[0]][start[1]])
                 path, udffinder = self.find_path_safe(
                     self.get_valid_point_in_radius(self.costs, start[0], start[1], 5), 
-                    self.get_valid_point_in_radius(self.costs, end[0], end[1], 5), best_level, target_best_level)
+                    self.get_valid_point_in_radius(self.costs, end[0], end[1], 5), best_level, target_best_level, only_land)
         else:
             print("Outside of map", start, end)
             return []
@@ -308,7 +316,7 @@ class Level:
                     wxy = self.transform.transform_to_world((int32(p[1]), int32(p[0])))
                     y = float(self.elevation[p[2]][p[0]][p[1]])
                     if self.feature[p[2]][p[0]][p[1]] == 1:
-                        y = self.elevation[0][p[0]][p[1]]-0.3
+                        y = float(self.elevation[0][p[0]][p[1]])
                     world_paths.append({
                         "x": wxy[0],
                         "y": y,

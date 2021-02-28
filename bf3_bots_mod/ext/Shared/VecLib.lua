@@ -19,6 +19,23 @@ function VecLib:RandomPointInRadius(Target, Radius)
     )
 end
 
+function VecLib:AngleB(a, b)
+    -- build triangle
+    local dx = math.abs(b.x - a.x)
+    local dz = math.abs(b.z - a.z)
+    local h = math.sqrt(
+        math.pow(b.x-a.x, 2) + math.pow(b.z - a.z, 2)
+    )
+    -- return radians
+    local a = math.asin(dx / h)
+
+    return a
+end
+
+function VecLib:YawFromNormalizedAngle(n)
+    return math.atan(n.x, n.z)
+end
+
 function VecLib:CosineInterpolation(x, y, alpha)
     local beta = (1 - math.cos(alpha * math.pi)) / 2
     return (x * (1 - beta) + y * beta)
