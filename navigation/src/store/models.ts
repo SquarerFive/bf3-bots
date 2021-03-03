@@ -496,7 +496,7 @@ export class Manager {
     return [newY, newX]
   }
 
-  projectToGrid (position : Vector, level : Level) {
+  projectToGrid (position : Vector, level : Level): [number, number] {
     const newX = this.remapValueRange(position.x, level.transform.min_point[0], level.transform.max_point[0], 0, level.transform.width)
     const newY = this.remapValueRange(position.z, level.transform.min_point[1], level.transform.max_point[1], 0, level.transform.height)
 
@@ -721,6 +721,11 @@ export class Manager {
 
   async calculateDistanceFields (project_id : string, level_id : string) {
     const response = await this.post(`/v1/project/${project_id}/level/${level_id}/calculate-distance-fields/`, {})
+    return response
+  }
+
+  async evaluatePath (project_id : string, level_id: string, start : [number, number], end: [number, number]) {
+    const response = await this.post(`/v1/project/${project_id}/level/${level_id}/get-path/`, { start: start, end: end })
     return response
   }
 }

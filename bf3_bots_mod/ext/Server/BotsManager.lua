@@ -30,7 +30,7 @@ function BotsManager:__init()
     self.bot_update_interval = 1
     self.bot_update_tickrate = 0.01
     self.last_bot_stream_update_time = 0.0
-    self.bot_stream_update_tickrate = 250
+    self.bot_stream_update_tickrate = 650
     --
     self.last_bot_update_time = 0.0
 
@@ -63,7 +63,7 @@ function BotsManager:AssignVehicles()
 end
 
 function BotsManager:GetVehicleFromID(uniqueId)
-    self:AssignVehicles()
+    -- self:AssignVehicles()
     for _, vehicle in pairs(self.vehicles) do
         if vehicle ~= nil then
             if tostring(vehicle.uniqueId) == tostring(uniqueId) then

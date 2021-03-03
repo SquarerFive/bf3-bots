@@ -21,5 +21,6 @@ urlpatterns = [
     path("pathfinding/", include('navigation.urls')),
     path("bots/", include('bots.urls')),
     path("v1/", include('manager.urls')),
+    path("unreal-engine-interface/", include('unreal_engine_interface.urls')),
     path("api-auth/", include('rest_framework.urls'))
 ]

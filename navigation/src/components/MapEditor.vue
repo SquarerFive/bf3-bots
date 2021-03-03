@@ -75,6 +75,38 @@
               <q-item-section> Draw Structure [e*2.25] </q-item-section>
             </q-item>
           </div>
+          <q-item clickable v-ripple>
+            <q-item-section>
+              <q-checkbox dark
+                v-model="isEvaluatingPath"
+              />
+            </q-item-section>
+            <q-item-section>Evaluate Path</q-item-section>
+          </q-item>
+           <div v-if="isEvaluatingPath">
+            <q-item
+              clickable
+              v-ripple
+              :active="isEvaluatingPath && evaluatingPathMode === 'start'"
+              @click="evaluatingPathMode = 'start'"
+            >
+              <q-item-section avatar>
+                <q-icon name="edit_path" />
+              </q-item-section>
+              <q-item-section>Set Start {{pathStart}}</q-item-section>
+            </q-item>
+            <q-item
+              clickable
+              v-ripple
+              :active="isEvaluatingPath && evaluatingPathMode === 'end'"
+              @click="evaluatingPathMode = 'end'"
+            >
+              <q-item-section avatar>
+                <q-icon name="edit_path" />
+              </q-item-section>
+              <q-item-section> Set End {{pathEnd}} </q-item-section>
+            </q-item>
+          </div>
         </q-list>
       </div>
 
@@ -153,6 +185,10 @@ export default class MapEditor extends Vue {
   elevationAlphaBetaPower = '7.0'
   voxelDFBasedMesh = false
   bruteforceDF = false
+  isEvaluatingPath = false
+  evaluatingPathMode = 'start'
+  pathStart: [number, number] = [0, 0]
+  pathEnd: [number, number] = [25, 25]
 
   drawingColors = [
     '#ff7017',
@@ -303,6 +339,32 @@ export default class MapEditor extends Vue {
           )
           lc.setLatLng(new LatLng(newPos[0], newPos[1]))
           projectedLayer = lc
+          if (this.isEvaluatingPath && this.evaluatingPathMode === 'start') {
+            this.pathStart = [newPos[0], newPos[1]]
+          }
+          if (this.isEvaluatingPath && this.evaluatingPathMode === 'end') {
+            this.pathEnd = [newPos[0], newPos[1]]
+            this.manager.evaluatePath(
+              String(this.level.project_id), String(this.level.level_id),
+              this.manager.projectToGrid({ z: this.pathStart[1], x: this.pathStart[0], y: 0.0 }, this.level),
+              this.manager.projectToGrid({ z: this.pathEnd[1], x: this.pathEnd[0], y: 0.0 }, this.level)).then(
+              res => {
+                const data: number[][] = <number[][]>res.data
+                if (this.map) {
+                  const latLongs: LatLng[] = []
+                  const v = data[0][0]
+                  data.forEach(d => {
+                    latLongs.push(new LatLng(this.level.transform.height - d[0], d[1]))
+                  })
+                  console.log(latLongs)
+                  const s = new L.Polyline(latLongs)
+                  s.addTo(this.map)
+                }
+              }
+            ).catch(err => {
+              console.error(err)
+            })
+          }
         }
       } else if (e.layerType === 'circle') {
         const l : L.Circle = <L.Circle>e.layer

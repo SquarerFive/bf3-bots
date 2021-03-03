@@ -1269,6 +1269,8 @@ def manager_update_level_stream(request: Request, project_id : int) -> Response:
                 player_m.transform = player['transform']
                 player_m.alive = player['alive']
                 p_array.append(player_m)
+            # else:
+            #     bots_query.create_or_update_player(player)
            
 
         bots_models.Player.objects.bulk_update(p_array, ['transform', 'alive'])
@@ -1283,6 +1285,8 @@ def manager_update_level_stream(request: Request, project_id : int) -> Response:
                 bot_model.transform = bot['transform']
                 bot_model.alive = bot['alive']
                 b_array.append(bot_model)
+            # else:
+            #     bots_query.create_or_update_bot(bot)
         bots_models.Bot.objects.bulk_update(b_array, ['transform', 'alive'])
         
        
@@ -1370,3 +1374,17 @@ def manager_on_vehicle_event(request : Request, project_id : int, level_id : int
             bot.save()
         vehicle.save()
     return Response("Success")
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication, SessionAuthentication])
+@permission_classes([IsAuthenticated])
+def manager_get_path(request: Request, project_id: int, level_id: int) -> Response:
+    global global_cache
+    level_object = global_cache.get_object(project_id, level_id)
+    if level_object:
+        data = request.data
+        path = level_object.astar(
+            (int(data['start'][0]), int(data['start'][1])), (int(data['end'][0]), int(data['end'][1])), use_base_level=True, return_raw_path=True
+        )
+        return Response(path)
+    return Response("Error! Level not found!!", status = 404)

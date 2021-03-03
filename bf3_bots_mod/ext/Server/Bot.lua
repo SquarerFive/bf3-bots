@@ -96,7 +96,7 @@ function Bot:__init()
     self.spawned = false
     self.soldierBP = nil
     self.target_vehicle = nil
-    self.is_driving = false
+    self.is_driver = false
     self.vehicle_abstract_type = ''
     self.in_vehicle_turret = false
     self.target_vehicle_slot = 0
@@ -378,13 +378,14 @@ function Bot:StepPathVehicle()
         local front_probe = front_probe_entity.transform.trans + (front_probe_entity.transform.forward * 4)
         local back_probe = front_probe_entity.transform.trans + (front_probe_entity.transform.forward * -3)
         local front_probe_left = front_probe + (front_probe_entity.transform.left * 3)
+        local front_probe_right = front_probe + (front_probe_entity.transform.left * -3)
         -- get nearest path point
         local nearest_point, nearest_point_distance = self:GetClosestPathPoint(front_probe)
         local nearest_point_left, nearest_point_left_distance = self:GetClosestPathPoint(front_probe_left)
         local nearest_point_back, nearest_point_back_distance = self:GetClosestPathPoint(back_probe)
-        
+        local nearest_point_right, nearest_point_right_distance = self:GetClosestPathPoint(front_probe_right)
         local steady_momentum = 0.1
-        local steer_momentum = 10.0
+        local steer_momentum = 2.0
         local invert_steer = false
         
         local forwardLevelEnum = EntryInputActionEnum.EIAThrottle
@@ -392,7 +393,7 @@ function Bot:StepPathVehicle()
         if (nearest_point ~= nil and nearest_point_left ~= nil) then
             self.botVehicleController.moving = true
             -- print('nearest point valid. '..nearest_point_distance..' '..nearest_point_left_distance..' '..nearest_point_back_distance)
-            if nearest_point_back_distance  < nearest_point_distance and nearest_point_distance > 10 then
+            if (nearest_point_back_distance  < nearest_point_distance and nearest_point_distance > 10) or (SharedUtils:GetTime() - self.last_long_position_check_time) > 5.0 then
                 -- momentum = -1.0
                 -- steady_momentum = -0.8
                 reverse = true
@@ -400,11 +401,17 @@ function Bot:StepPathVehicle()
                 -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIAThrottle, 0)
                 forwardLevelEnum = EntryInputActionEnum.EIABrake
                 self.botVehicleController.reversing = true
+                self.last_long_position_check_time = SharedUtils:GetTime()
             else
                 -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIABrake, 0)
                 self.botVehicleController.reversing = false
             end
-            if nearest_point_distance < nearest_point_left_distance then
+            if nearest_point_distance < 1.9 then
+                -- self.player_controller.input:SetLevel(forwardLevelEnum, steady_momentum)
+                momentum = steady_momentum
+                --self.player_controller.input:SetLevel(EntryInputActionEnum.EIAYaw, 0)
+                yaw = 0
+            elseif nearest_point_distance > nearest_point_left_distance then
                 -- self.player_controller.input:SetLevel(forwardLevelEnum, momentum)
                 
                 if invert_steer then
@@ -414,12 +421,8 @@ function Bot:StepPathVehicle()
                     -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIAYaw, (nearest_point_distance/steer_momentum))
                     yaw = nearest_point_distance/steer_momentum
                 end
-            elseif nearest_point_distance < 0.6 then
-                -- self.player_controller.input:SetLevel(forwardLevelEnum, steady_momentum)
-                momentum = steady_momentum
-                --self.player_controller.input:SetLevel(EntryInputActionEnum.EIAYaw, 0)
-                yaw = 0
-            else
+            
+            elseif nearest_point_distance > nearest_point_right_distance then
                 -- self.player_controller.input:SetLevel(forwardLevelEnum, momentum)
                 if invert_steer then
                     -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIAYaw, (nearest_point_distance/steer_momentum))
@@ -428,26 +431,25 @@ function Bot:StepPathVehicle()
                     -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIAYaw, (nearest_point_distance/-steer_momentum))
                     yaw = nearest_point_distance/-steer_momentum
                 end
-            end
-            local y = VecLib:YawFromNormalizedAngle(
-                Vec3(front_probe - nearest_point):Normalize()
-            )   
-            if invert_steer then
-                yaw = -y
             else
-                yaw = y
+                momentum = steady_momentum
             end
-            yaw = yaw * 2
+            -- local y = VecLib:YawFromNormalizedAngle(
+            --     Vec3(front_probe - nearest_point):Normalize()
+            -- )
+            -- local yg = VecLib:YawFromNormalizedAngle(
+            --     Vec3(nearest_point - front_probe):Normalize()
+            -- )
+            -- if invert_steer then
+            --     yaw = y
+            -- else
+            --     yaw = yg
+            -- end
+            -- yaw = yaw*90
             
         else
             self.botVehicleController.moving = false
-            -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIAThrottle, 0)
-            -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIAYaw, 0)
-            -- self.player_controller.input:SetLevel(EntryInputActionEnum.EIABrake, 0)
         end
-
-        
-
     end
 
     if self.botVehicleController.moving == false then
@@ -662,7 +664,17 @@ function Bot:NewTick(delta_time, pass)
                         -- print('Focusing on: '..self.destination.x..' '..self.destination.y..' '..self.destination.z)
                     end
                 else
-                    self:StepPathVehicle()
+                    if self.is_driver then
+                        -- if self.player_controller.name == 'ImABot2' then
+                        --     print('ImaBot2 is driving '.. tostring(self.is_driving))
+                        -- end
+                        self:StepPathVehicle()
+                    -- else
+                    --     if self.player_controller.name == 'ImABot2' then
+                    --         print('ImaBot2 not is driving '.. tostring(self.is_driving))
+                    --     end
+                    end
+                    
                     if self.target ~= nil then
                         if self.in_vehicle_turret or (self.vehicle_abstract_type == 'Tank' and self.is_driving) then
                             if self.target.soldier ~= nil and self.target.alive then

@@ -4,7 +4,7 @@ from .models import Player, Bot, BasePlayer
 
 @admin.register(Bot)
 class BotAdmin(admin.ModelAdmin):
-    list_display = ("name", "player_id", "action", "order", "team", "in_vehicle", 'stuck', 'health_provider', 'ammo_provider', 'target_vehicle', 'in_vehicle_turret', 'target_vehicle_slot')
+    list_display = ("name", "player_id", "action", "order", "team", "in_vehicle", 'stuck', 'health_provider', 'ammo_provider', 'target_vehicle', 'in_vehicle_turret', 'target_vehicle_slot', 'is_driver', 'target')
 
 @admin.register(Player)
 class PlayerAdmin(admin.ModelAdmin):

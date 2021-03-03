@@ -53,6 +53,7 @@ def approximate_distance_fields(elevation_array : np.ndarray, distance_field_arr
         )
         print(np.max(distance_field_array[level]))
         print("Done level", level)
+        distance_field_array[level] = np.power(distance_field_array[level], 0.8)
         # distance_field_array[level] = 
 
 @njit(parallel=True)
@@ -177,6 +178,14 @@ def copy_into(a : np.ndarray, b : np.ndarray):
         for x in prange(a.shape[1]):
             for y in prange(a.shape[2]):
                 b[z][x][y] = a[z][x][y]
+
+# Replace array value with value where mask=threshold
+@njit(parallel=False, debug=True)
+def mask_replace_with(a : np.ndarray, mask: np.ndarray, threshold: int = 1, value: float = 0.0):
+    for x in prange(a.shape[0]):
+        for y in prange(a.shape[1]):
+            if mask[x][y] == threshold:
+                a[x][y] = value
 
 def get_world_array(transform : transformations.GridTransform, input_arr : np.ndarray) -> tuple:
     x_arr = np.zeros((input_arr.shape[1], input_arr.shape[2]), dtype=np.float32)

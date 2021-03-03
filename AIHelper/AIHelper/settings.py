@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "navigation",
     "bots",
     "manager",
+    "unreal_engine_interface",
     'corsheaders',
     'rest_framework',
     'rest_framework.authtoken'

@@ -142,7 +142,7 @@ class DFFinder:
             
             math.pow((key2[0]- key1[0]), 2)+
             math.pow((key2[1]- key1[1]), 2)+
-            math.pow(self._get_elevation(key2)-self._get_elevation(key1), 2)
+            math.pow(self._get_elevation(key2)-self._get_elevation(key1), 4)
         )
     
     def _cost(self, key1, key2, key3):
@@ -210,7 +210,7 @@ class DFFinder:
         current = start
         just_started=  True
         i = int32(0)
-        while (not queue.empty()) and i < 5000:
+        while (not queue.empty()) and i < 1000:
             current = queue.get()
 
             # if i % 10 == 0:
@@ -274,7 +274,7 @@ class DFFinder:
         current = start
         just_started=  True
         i = int32(0)
-        while (not queue.empty()) and i < 5000:
+        while (not queue.empty()) and i < 1000:
             current = queue.get()
 
             # if i % 10 == 0:
@@ -323,11 +323,12 @@ class DFFinder:
         )
 
     def get_direction_cost(self, start: Tuple[int32, int32, int32], end: Tuple[int32, int32, int32], max_length: int32 = 5):
+        
         start = (int32(start[0]), int32(start[1]), int32(start[2]))
         end = (int32(end[0]), int32(end[1]), int32(end[2]))
         d = self._sub(end, start)
         m = self._mag(d[0], d[1])
-
+        if m == 0: return 0.0
         nx = int32(math.floor(d[0]/m))
         ny = int32(math.floor(d[1]/m))
 

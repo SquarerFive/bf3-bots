@@ -231,7 +231,7 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
         current_level_model : navigation_models.Level = navigation_models.Level.objects.filter(level_id = current_level.model.level_id, project_id = current_level.model.project_id).first()
         closest_enemy, distance_to_enemy = get_nearest_enemy(bot, enemies)
         bot_grid_pos = current_level.transform.transform_to_grid((bot.transform['trans']['x'], bot.transform['trans']['z']))
-        d = random.randrange(-2.0, 2.0)
+        d = random.randrange(-10.0, 2.0)
         bot_forward_grid_pos = current_level.transform.transform_to_grid(
             (
                 bot.transform['trans']['x'] + (bot.transform['forward']['x']*d),
@@ -240,7 +240,7 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
         )
         nearest_vehicle, nearest_vehicle_distance, nearest_vehicle_slot = get_nearest_vehicle(bot)
         if bot.stuck:
-            back = [bot.transform['forward']['x']*-5, bot.transform['forward']['y']*-5, bot.transform['forward']['z']*-5]
+            back = [bot.transform['forward']['x']*-15, bot.transform['forward']['y']*-5, bot.transform['forward']['z']*-15]
             target = bot.transform['trans']['x'] + back[0], bot.transform['trans']['y'] + back[1], bot.transform['trans']['z'] + back[2]
             target_grid_pos = current_level.transform.transform_to_grid((target[0], target[2]))
             if False:#current_level.dffinder:
@@ -274,10 +274,10 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                 bot.target = -1
             bot.order = 2
             bot.action = 2
-            bot.stuck = False
+            # bot.stuck = False
 
         
-        elif bot.action == int(orders.BotActionEnum.PROVIDE_AMMO) or bot.action == int(orders.BotActionEnum.PROVIDE_HEALTH):
+        elif (bot.action == int(orders.BotActionEnum.PROVIDE_AMMO) or bot.action == int(orders.BotActionEnum.PROVIDE_HEALTH)) and not bot.in_vehicle:
             player_provider : models.Player = models.Player.objects.filter(player_id = bot.target).first()
             if player_provider:
                 player_grid_pos = current_level.transform.transform_to_grid((player_provider.transform['trans']['x'], player_provider.transform['trans']['z']))

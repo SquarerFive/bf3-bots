@@ -258,12 +258,11 @@ class Level:
             
             path = self.dffinder.find((int32(start[0]), int32(start[1]), int32(level)), (int32(end[0]), int32(end[1]), int32(target_level)), only_land)
             used_dffinder = True
-            p = np.array(path)
-            p_simplified_coords_idx = simplify_coords_idx(p, 100)
-           #  print(p_simplified_coords_idx)
-            p_simplified = p[p_simplified_coords_idx]
-            path = list(p_simplified)
-            # print(path)
+            if len(path) > 0:
+                p = np.array(path)
+                p_simplified_coords_idx = simplify_coords_idx(p, 100)
+                p_simplified = p[p_simplified_coords_idx]
+                path = list(p_simplified)
             
         if not self.dffinder:
             path = pyastar.astar_path(self.costs[level], start, end, allow_diagonal=True)
@@ -282,7 +281,7 @@ class Level:
         return 0.0
 
     def astar(self, start : tuple, end : tuple, safe=True , all : bool = False, elevation : Union[float, None] = None, target_elevation : Union[float, None] = 0.0, recurse_depth : int = 0,
-        only_land : bool = False) -> list:
+        only_land : bool = False, use_base_level: bool = False, return_raw_path: bool = False) -> list:
         # print("running astar  ", start, end)
         # print("size of data: ", self.data.shape)
         #path, cost = route_through_arrays(self.costs, start, end, fully_connected=False, geometric=True) # astar(self.data, start, end)
@@ -291,12 +290,17 @@ class Level:
         #else:
         # return []
         # print('finding path', start, end)
-        best_level =  self.get_best_navmesh_level((start[0], start[1], elevation))
-        target_best_level = self.get_best_navmesh_level((end[0], end[1], target_elevation))
+        if not use_base_level:
+            best_level =  self.get_best_navmesh_level((start[0], start[1], elevation))
+            target_best_level = self.get_best_navmesh_level((end[0], end[1], target_elevation))
+        else:
+            best_level = 0
+            target_best_level = 0
         # print('best navmesh level: ', best_level)
         if (start[0] > 0 and start[0] < self.costs.shape[1] and start[1] > 0 and start[1] < self.costs.shape[2]
             and end[0] > 0 and end[0] < self.costs.shape[1] and end[1] > 0 and end[1] < self.costs.shape[2]):
                 # print("Start elevation at {} - {}:".format(str(start), elevation), self.elevation[best_level][start[0]][start[1]])
+                print(start, end)
                 path, udffinder = self.find_path_safe(
                     self.get_valid_point_in_radius(self.costs, start[0], start[1], 5), 
                     self.get_valid_point_in_radius(self.costs, end[0], end[1], 5), best_level, target_best_level, only_land)
@@ -306,6 +310,8 @@ class Level:
         #print('got path')
         #path = astar(self.costs, start, end)
         # path_and_cost = [(p[0], p[1], self.costs[p[0]][p[1]] ) for p in path]
+        if return_raw_path:
+            return list(path)
         world_paths = []
         if type(path) != type(None):
             for idx, p in enumerate(path):

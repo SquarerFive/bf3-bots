@@ -33,7 +33,7 @@ def create_or_update_bot(bot : dict):
             ammo_provider = bot['ammo_provider']
             )
     else:
-        b.transform = bot['transform']
+        # b.transform = bot['transform']
         b.health = bot['health']
         b.in_vehicle = bot['in_vehicle']
         b.team = bot['team']
@@ -71,7 +71,7 @@ def create_or_update_bot_model(b : models.Bot, bot: dict):
         print("Creating bot as it does not exist")
         b.save()
     else:
-        b.transform = bot['transform']
+        # b.transform = bot['transform']
         b.health = bot['health']
         # b.in_vehicle = bot['in_vehicle']
         b.team = bot['team']
@@ -121,7 +121,7 @@ def create_or_update_player(player : dict):
         p.transform = player['transform']
         p.save()
     else:
-        p.transform = player['transform']
+        # p.transform = player['transform']
         p.player_id = player['player_id']
         p.name = player['name']
         p.online_id = player['online_id']
@@ -156,7 +156,7 @@ def create_or_update_player_model(p : models.Player, player : dict):
         p.transform = player['transform']
         p.save()
     else:
-        p.transform = player['transform']
+        # p.transform = player['transform']
         p.player_id = player['player_id']
         p.name = player['name']
         p.online_id = player['online_id']
@@ -229,7 +229,7 @@ def emit_and_propagate_action(instigator : int, order : int, action : int) -> bo
                 friend.action = action
                 friend.target = instigator.player_id
                 friend.save()
-        elif action == int(orders.BotActionEnum.PROVIDE_HEALTH) or action == int(orders.BotActionEnum.PROVIDE_AMMO):
+        elif (action == int(orders.BotActionEnum.PROVIDE_HEALTH) or action == int(orders.BotActionEnum.PROVIDE_AMMO)):
             # Get nearest_friend
             nearest_friend = None
             nearest_distance = math.inf
@@ -246,8 +246,9 @@ def emit_and_propagate_action(instigator : int, order : int, action : int) -> bo
                     nearest_distance = d
                     nearest_friend = friend
             if nearest_friend:
-                nearest_friend.order = order
-                nearest_friend.action = action
-                nearest_friend.target = instigator.player_id
-                nearest_friend.save()
+                if not nearest_friend.in_vehicle:
+                    nearest_friend.order = order
+                    nearest_friend.action = action
+                    nearest_friend.target = instigator.player_id
+                    nearest_friend.save()
     return True
