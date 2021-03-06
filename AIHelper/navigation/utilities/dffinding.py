@@ -431,7 +431,7 @@ class DFFinder:
                         break
                     # print(str(tries))
             tries += 1
-        print("Found valid point after: " + str(tries) + " tries.")
+        # print("Found valid point after: " + str(tries) + " tries.")
         return k
 
     def build_path(self, came_from :types.DictType(types.Tuple((int32, int32, int32)), types.Tuple((int32, int32, int32))), start : types.Tuple((int32, int32, int32)), end : types.Tuple((int32, int32, int32)), defcurrent : types.Tuple((int32,int32,int32))):
@@ -451,7 +451,7 @@ class DFFinder:
             
             current = came_from[current]
         path.append(start)
-        print("Build path")
+        # print("Build path")
         return path
 
     def build_costs(self, came_from :types.DictType(types.Tuple((int32, int32, int32)), types.Tuple((int32, int32, int32))), costs_so_far : types.DictType(*cmt), start : types.Tuple((int32, int32, int32)), end : types.Tuple((int32, int32, int32)), defcurrent : types.Tuple((int32,int32,int32))):

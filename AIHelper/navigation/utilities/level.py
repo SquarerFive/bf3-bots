@@ -269,7 +269,7 @@ class Level:
         if not self.dffinder:
             path = pyastar.astar_path(self.costs[level], start, end, allow_diagonal=True)
             used_dffinder = False
-        print("Finding at: ", (int32(start[0]), int32(start[1]), int32(level)), (int32(end[0]), int32(end[1]), int32(target_level)), used_dffinder)
+        # print("Finding at: ", (int32(start[0]), int32(start[1]), int32(level)), (int32(end[0]), int32(end[1]), int32(target_level)), used_dffinder)
         return path, used_dffinder
 
     def get_cost_to(self, start : Tuple[int, int, int], end : Tuple[int, int, int]):
@@ -305,7 +305,7 @@ class Level:
         if (start[0] > 0 and start[0] < self.costs.shape[1] and start[1] > 0 and start[1] < self.costs.shape[2]
             and end[0] > 0 and end[0] < self.costs.shape[1] and end[1] > 0 and end[1] < self.costs.shape[2]):
                 # print("Start elevation at {} - {}:".format(str(start), elevation), self.elevation[best_level][start[0]][start[1]])
-                print(start, end)
+                # print(start, end)
                 path, udffinder = self.find_path_safe(
                     self.get_valid_point_in_radius(self.costs, start[0], start[1], 5), 
                     self.get_valid_point_in_radius(self.costs, end[0], end[1], 5), best_level, target_best_level, only_land)

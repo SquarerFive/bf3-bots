@@ -75,11 +75,18 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser: CommandParser) -> None:
         parser.add_argument('--interval', '-i', type=float, action='store', default=2.0)
+        parser.add_argument('-g', '--grid', action='store_true', default = False)
+        parser.add_argument('-cs', '--chunk_size', type=int, action='store', default = 8)
+        parser.add_argument('-c', '--chunk', type=int, action='store', default = 0)
     
     def handle(self, *args: Any, **options: Any) -> Any:
         print("CTRL+C to Stop Task")
         global_cache = GlobalCache()
         thread_pool = ThreadPool()
+        grid = options['grid']
+        chunk_size = options['chunk_size']
+        chunk = options['chunk']
+        print(f"Use Grid: {grid}, Chunk Size: {chunk_size}, Chunk: {chunk}")
         # thread_pool.start()
         while True:
             
@@ -99,22 +106,28 @@ class Command(BaseCommand):
                 )
                 if level_object:
                     b_array = []
-                    # t = []
-                    for bot in bot_models.Bot.objects.all():
+                    t = []
+                    bots = list(bot_models.Bot.objects.all())
+                    
+                    if grid:
+                        end_size = ((chunk+1)*chunk_size) if ((chunk+1)*chunk_size)  < len(bots) else len(bots)-1
+                        bots = bots[chunk_size*chunk:end_size]
+                    for bot in bots:
                         print("Doing bot: ", bot.bot_index)
                         # thread_pool.enqueue(
                         #     # lambda : behaviour.compute(bot.bot_index, level_object, bot_models.Bot, bot_models.Player, navigation_models.Objective, True, bot.overidden_target)
                         #     lambda : behaviour.compute_model(bot, level_object, True, bot.overidden_target)
                         # )
                         try:
-                            behaviour.compute_model(bot, level_object, bot.overidden_target > -2, bot.overidden_target)
-                            # t.append(threading.Thread(target = lambda : behaviour.compute_model(bot, level_object, bot.overidden_target > -2, bot.overidden_target)))
-                            # t[-1].start()
+                            # behaviour.compute_model(bot, level_object, bot.overidden_target > -2, bot.overidden_target)
+                            t.append(threading.Thread(target = lambda : behaviour.compute_model(bot, level_object, bot.overidden_target > -2, bot.overidden_target)))
+                            t[-1].start()
                             b_array.append(bot)
                         except Exception as e:
                             print('Encountered Error: ', e)
                             raise(e)
-
+                    for tr in t:
+                        tr.join()
                     bot_models.Bot.objects.bulk_update(b_array, ['path', 'action', 'order', 'target', 'stuck', 'target_vehicle', 'target_vehicle_slot'])
                     # print(thread_pool.stats())
             else:
