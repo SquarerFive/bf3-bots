@@ -5,7 +5,7 @@ from .models import Level, Objective, Profile, Project, Vehicle, VehicleType
 @admin.register(Level)
 class LevelAdmin(admin.ModelAdmin):
     fields = ("name","transform", "project_id", "date_created", "date_modified", "level_id", "roads", "structures", "recorded_paths", "spawn_points_friendly", "spawn_points_enemy", "use_spawn_points",
-        "has_distance_field", "layers", "distance_field_threshold")
+        "has_distance_field", "layers", "distance_field_threshold", "only_use_static_paths")
 
 @admin.register(Objective)
 class ObjectiveAdmin(admin.ModelAdmin):

@@ -664,7 +664,17 @@ function Bot:NewTick(delta_time, pass)
             if self.action == Actions.ATTACK then
                 if not self.in_vehicle then
                     self:StepPathNew()
+                    -- when we are stuck
+                    
                     if self.destination ~= nil then
+                        if SharedUtils:GetTime() - self.last_position_check_time > 1 and self.player_controller.soldier.worldTransform.trans:Distance(self.last_position) < 1 then
+                            self.jumping = true
+                            self.knifing = true
+                            self.last_position_check_time = SharedUtils:GetTime()
+                        else
+                            self.jumping = false
+                            self.knifing = false
+                        end
                         self:SetFocusOn(self.destination)
                         -- print('Focusing on: '..self.destination.x..' '..self.destination.y..' '..self.destination.z)
                     end

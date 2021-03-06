@@ -387,7 +387,8 @@ class Level:
     
     def get_recorded_path(self): # -> List[Tuple[int, int, int]]:
         path = List()
-        path.append((-1, -1, -1))
+        if len(self.model.recorded_paths) == 0:
+            path.append((-1, -1, -1))
         for p in self.model.recorded_paths:
             path.append((
                 p['x'], p['y'], p['layer'] 

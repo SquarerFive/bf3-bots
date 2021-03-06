@@ -34,7 +34,8 @@ spec = [
     ('elevation', float32[:, :, :]),
     ('threshold', float32),
     ('feature', int32[:, :, :]),
-    ('recorded_paths', types.ListType(ptv))
+    ('recorded_paths', types.ListType(ptv)),
+    ('only_use_static_paths', types.Boolean(''))
     
 ]
 # Ref: https://www.redblobgames.com/pathfinding/a-star/implementation.html
@@ -60,7 +61,7 @@ class PriorityQueue:
         self.elements = typed.List(elem)
         return v
 
-@jitclass(spec)
+#@jitclass(spec)
 class DFFinder:
     def __init__(self, values : np.ndarray, elevation : np.ndarray, feature : np.ndarray, recorded_paths: pt, threshold : float32 = 3.0):
         self.values = values
@@ -68,6 +69,7 @@ class DFFinder:
         self.threshold = threshold
         self.feature = feature
         self.recorded_paths = typed.List.empty_list(ptv)
+        self.only_use_static_paths = True
         for p in recorded_paths:
             self.recorded_paths.append(
                 (
@@ -199,6 +201,18 @@ class DFFinder:
                 min_index=  index
         return nodes.pop(min_index)
 
+    def _findrnearest(self, key : Tuple[int32, int32, int32]):
+        index = 0
+        nearest_distance: float32 = float32(math.inf)
+        nearest_point = key
+        for idx, p in enumerate(self.recorded_paths):
+            d = math.sqrt(math.pow(p[0]-key[0],2)+ math.pow(p[1]-key[1], 2)+ math.pow(self._get_elevation(p)-self._get_elevation(key), 2))
+            if d < nearest_distance:
+                nearest_distance = d
+                index = idx
+                nearest_point = p
+        return nearest_point, index
+
     def find(self, start : Tuple[int, int, int], end : Tuple[int, int, int], only_land : bool = False) -> List[Tuple[int, int, int]]:
         queue = PriorityQueue()
         # print("Finding valid points")
@@ -218,13 +232,26 @@ class DFFinder:
         
         
         came_from = typed.Dict.empty(*pdt)
-        came_from[start] = null_ptv
-        costs_so_far = typed.Dict.empty(*cmt)
-        costs_so_far[start] = float32(math.inf)
         
-        queue.put(start, float32(0))
+        costs_so_far = typed.Dict.empty(*cmt)
+        
+        
+        
         current = start
+        current_index = 0
         just_started=  True
+        if self.only_use_static_paths:
+            current, current_index = self._findrnearest(current)
+            current = (int32(current[0]), int32(current[1]), int32(current[2]))
+            start = current
+            queue.put(current, float32(0))
+            came_from[current] = null_ptv
+            costs_so_far[current] = float32(math.inf)
+        else:
+            queue.put(start, float32(0))
+            came_from[start] = null_ptv
+            costs_so_far[start] = float32(math.inf)
+
         i = int32(0)
         while (not queue.empty()) and i < 1000:
             current = queue.get()
@@ -238,34 +265,57 @@ class DFFinder:
             x = current[0]
             y = current[1]
             level = current[2]
-            neighbours = [(int32(x-1), int32(y), int32(level)), (int32(x+1), int32(y), int32(level)), 
-                (int32(x), int32(y-1), int32(level)), (int32(x), int32(y+1), int32(level)), (int32(x), int32(y), int32(level-1)),
-                    (int32(x), int32(y), int32(level+1))]
+            
 
-            for next in neighbours:
-                if only_land:
-                    if self.feature[next[2]][next[0]][next[1]] == 1:
-                        continue
-                if not self._ingrid(next): continue
-                if not self._is_within_threshold(next): continue
-                in_path, next = self._inrpath(next)
-                # print("Sampling neighbours")
-                if costs_so_far[current] < float32(math.inf):
-                    new_cost = costs_so_far[current] + self._cost(current, next, end)
-                else:
-                    new_cost = self._cost(current, next, end)
-                 #self._hdistance(self.graph[current], self.graph[next])
-                # if next in self.recorded_paths:
-                #     print("Recorded path")
-                if (next not in costs_so_far or new_cost < costs_so_far[next]):
-                    
-                    costs_so_far[next] = new_cost
-                    priority = float32(self._hfdistance(next, end))#float32(self._hdistance(self.graph[next], self.graph[end]))
-                    #if next in self.recorded_paths:
-                    #    priority = float32(priority * 0.5)
-                    queue.put(next, priority)
-                    came_from[next] = current
+            if not self.only_use_static_paths:
+                neighbours = [(int32(x-1), int32(y), int32(level)), (int32(x+1), int32(y), int32(level)), 
+                    (int32(x), int32(y-1), int32(level)), (int32(x), int32(y+1), int32(level)), (int32(x), int32(y), int32(level-1)),
+                        (int32(x), int32(y), int32(level+1))]
+
+                for next in neighbours:
+                    if only_land:
+                        if self.feature[next[2]][next[0]][next[1]] == 1:
+                            continue
+                    if not self._ingrid(next): continue
+                    if not self._is_within_threshold(next): continue
+                    in_path, next = self._inrpath(next)
+                    # print("Sampling neighbours")
+                    if costs_so_far[current] < float32(math.inf):
+                        new_cost = costs_so_far[current] + self._cost(current, next, end)
+                    else:
+                        new_cost = self._cost(current, next, end)
+                     #self._hdistance(self.graph[current], self.graph[next])
+                    # if next in self.recorded_paths:
+                    #     print("Recorded path")
+                    if (next not in costs_so_far or new_cost < costs_so_far[next]):
+
+                        costs_so_far[next] = new_cost
+                        priority = float32(self._hfdistance(next, end))#float32(self._hdistance(self.graph[next], self.graph[end]))
+                        #if next in self.recorded_paths:
+                        #    priority = float32(priority * 0.5)
+                        queue.put(next, priority)
+                        came_from[next] = current
+                
+            else:
+                current_index = self._findrnearest(current)[1]
+                neighbours = [-1, 1]
+                for next_offset_index in neighbours:
+                    next_index = current_index + next_offset_index
+                    if not (next_index >= 0 and next_index < len(self.recorded_paths)): continue
+                    next = self.recorded_paths[next_index]
+                    next = (int32(next[0]), int32(next[1]), int32(next[2]))
+                    if costs_so_far[current] < float32(math.inf):
+                        new_cost = costs_so_far[current] + self._cost(current, next, end)
+                    else:
+                        new_cost = self._cost(current, next, end)
+                    if (next not in costs_so_far or new_cost < costs_so_far[next]):
+                        costs_so_far[next] = new_cost
+                        priority = float32(self._hfdistance(next, end))
+                        # print(next)
+                        queue.put(next, priority)
+                        came_from[next] = current
             i += 1
+
         # print("Done after: "+str(i))
         return self.build_path(came_from, start, end, current)
 

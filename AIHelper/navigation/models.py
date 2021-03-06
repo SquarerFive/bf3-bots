@@ -35,6 +35,7 @@ class Level(models.Model):
     friendly_kit = models.ForeignKey(SoldierKitCollection, on_delete=models.CASCADE, related_name='friendly_kit', null=True)
     enemy_kit = models.ForeignKey(SoldierKitCollection, on_delete=models.CASCADE, related_name='enemy_kit', null=True)
     recorded_paths = models.JSONField(default=list, null=True, blank=True)
+    only_use_static_paths = models.BooleanField(default = False)
 
     spawn_points_friendly = models.JSONField(default = list, null = True, blank = True) # f0
     spawn_points_enemy = models.JSONField(default = list, null = True, blank = True) # f1
