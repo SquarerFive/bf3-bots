@@ -61,7 +61,7 @@ class PriorityQueue:
         self.elements = typed.List(elem)
         return v
 
-#@jitclass(spec)
+@jitclass(spec)
 class DFFinder:
     def __init__(self, values : np.ndarray, elevation : np.ndarray, feature : np.ndarray, recorded_paths: pt, threshold : float32 = 3.0):
         self.values = values
@@ -244,6 +244,9 @@ class DFFinder:
             current, current_index = self._findrnearest(current)
             current = (int32(current[0]), int32(current[1]), int32(current[2]))
             start = current
+
+            end, _ = self._findrnearest(end)
+            end = (int32(end[0]), int32(end[1]), int32(end[2]))
             queue.put(current, float32(0))
             came_from[current] = null_ptv
             costs_so_far[current] = float32(math.inf)
@@ -298,23 +301,26 @@ class DFFinder:
                 
             else:
                 current_index = self._findrnearest(current)[1]
-                neighbours = [-1, 1]
-                for next_offset_index in neighbours:
+                #neighbours = [-len(self.recorded_paths), len(self.recorded_paths)]
+                for next_offset_index in range(-len(self.recorded_paths), len(self.recorded_paths)):
                     next_index = current_index + next_offset_index
+                    if next_index == current_index: continue
                     if not (next_index >= 0 and next_index < len(self.recorded_paths)): continue
                     next = self.recorded_paths[next_index]
                     next = (int32(next[0]), int32(next[1]), int32(next[2]))
+                    d = math.sqrt(math.pow(next[0]-current[0], 2)+math.pow(next[1]-current[1], 2)+math.pow(self._get_elevation(next)-self._get_elevation(current), 2))
                     if costs_so_far[current] < float32(math.inf):
-                        new_cost = costs_so_far[current] + self._cost(current, next, end)
+                        new_cost = costs_so_far[current] + self._cost(current, next, end)+d
                     else:
-                        new_cost = self._cost(current, next, end)
-                    if (next not in costs_so_far or new_cost < costs_so_far[next]):
+                        new_cost = self._cost(current, next, end)+d
+                    
+                    if (next not in costs_so_far or new_cost < costs_so_far[next]) and d < 10:
                         costs_so_far[next] = new_cost
-                        priority = float32(self._hfdistance(next, end))
+                        priority = float32(self._hfdistance(next, end)+d)
                         # print(next)
                         queue.put(next, priority)
                         came_from[next] = current
-            i += 1
+            # i += 1
 
         # print("Done after: "+str(i))
         return self.build_path(came_from, start, end, current)
