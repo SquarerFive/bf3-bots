@@ -308,7 +308,7 @@ class DFFinder:
                     if not (next_index >= 0 and next_index < len(self.recorded_paths)): continue
                     next = self.recorded_paths[next_index]
                     next = (int32(next[0]), int32(next[1]), int32(next[2]))
-                    d = math.sqrt(math.pow(next[0]-current[0], 2)+math.pow(next[1]-current[1], 2)+math.pow(self._get_elevation(next)-self._get_elevation(current), 2))
+                    d = math.sqrt(math.pow(next[0]-current[0], 2)+math.pow(next[1]-current[1], 2)+math.pow(self._get_elevation(next)-self._get_elevation(current), 4))
                     if costs_so_far[current] < float32(math.inf):
                         new_cost = costs_so_far[current] + self._cost(current, next, end)+d
                     else:
