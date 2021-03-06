@@ -29,7 +29,7 @@ import datetime
 from numba import int32, float32
 from numba.typed import List
 class Level:
-    def __init__(self, name, transform : Union[tuple, None] = None, data: list = [], model : Union[None, models.Level] = None):
+    def __init__(self, name, transform : Union[tuple, None] = None, data: list = [], model : Union[None, models.Level] = None, gamemode: str = ""):
         self.raw_data = data
         if transform:
             self.transform = transformations.GridTransform(transform[0], transform[1], transform[2], transform[3])
@@ -50,7 +50,7 @@ class Level:
         self.dffinder = None
         self.mdf = None
         self.feature = None
-
+        self.gamemode = gamemode
     @property
     def model(self) -> models.Level:
         # print(self.name, self.project_id)

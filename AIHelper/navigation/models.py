@@ -46,6 +46,8 @@ class Level(models.Model):
 
     distance_field_threshold = models.FloatField(default = 32)
 
+    gamemode = models.TextField(default="")
+
 class Project(models.Model):
     project_id = models.IntegerField(default = 0)
     name = models.TextField(default = "no-map-name")

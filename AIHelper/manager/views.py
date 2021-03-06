@@ -328,10 +328,11 @@ def manager_add_level_block(request : Request, project_id : int):
     if global_cache.level_model:
         use_df = str(request.headers['Has-DF']).lower().strip() == 'true'
         layers = int(float(request.headers['Layers']))
-        if not global_cache.level_model.layers == layers:
-            global_cache.level_model.layers = layers
-            global_cache.level_model.has_distance_field = use_df
-            global_cache.level_model.save()
+        model = global_cache.level_model
+        if not model.layers == layers:
+            model.layers = layers
+            model.has_distance_field = use_df
+            model.save()
 
 
     levelModel = navigation_query.models.Level.objects.filter(project_id=project_id, name=level_name).first()
