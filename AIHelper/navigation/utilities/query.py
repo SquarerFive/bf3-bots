@@ -64,7 +64,7 @@ def encode_level(in_level : level.Level) -> None:
     l.transform = in_level.transform.as_dict()
     l.save()
 
-def decode_level(in_data : models.Level, low_memory_mode : bool = False) -> Union[level.Level, None]:
+def decode_level(in_data : models.Level, low_memory_mode : bool = True) -> Union[level.Level, None]:
     if not in_data: return None
     path = in_data.relative_path
     failed_to_import = False

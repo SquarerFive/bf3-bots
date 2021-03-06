@@ -54,7 +54,7 @@ class GlobalCache:
         self.tasks = []
         self.project_id = 0
         self.level_id = 0
-        self.low_memory_mode = False
+        self.low_memory_mode = True
     
     @property
     def level_model(self):

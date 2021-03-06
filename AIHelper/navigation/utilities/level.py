@@ -33,10 +33,13 @@ class Level:
         self.raw_data = data
         if transform:
             self.transform = transformations.GridTransform(transform[0], transform[1], transform[2], transform[3])
-        self.data = None
-        self.elevation = None
-        self.costs = None
-        self.df = None
+
+        self._data = None
+        self._elevation = None
+        self._costs = None
+        self._df = None
+        self._feature = None
+
         self.costs_canvas = None
         self.costs_preview = None
         self.name = name
@@ -49,14 +52,104 @@ class Level:
         # self.model = model
         self.dffinder = None
         self.mdf = None
-        self.feature = None
+        
         self.gamemode = gamemode
+    
+        # self.loaded_resources = False
+    
+    def array_loaded(self, array: Union[np.ndarray, None]) -> bool:
+        return not isinstance(array, type(None))
+
     @property
     def model(self) -> models.Level:
         # print(self.name, self.project_id)
         # levels = models.Level.objects.filter(name = self.name)
         # print(levels)
         return models.Level.objects.filter(name = self.name, project_id = self.project_id).first()
+
+    def load_resources(self, data_type: int = 0):
+        path = self.model.relative_path
+        if data_type == 0:
+            with open(f'{path}/data.npy', 'rb') as f:
+                self._data = np.load(f)
+            print("Succesfully imported costs with shape: ", self._costs.shape)
+        elif data_type == 2:
+            with open(f'{path}/costs.npy', 'rb') as f:
+                self._costs = np.load(f)
+                self._costs = self._costs.astype(np.float32)
+        elif data_type == 1:
+            with open(f'{path}/elevation.npy', 'rb') as f:
+                self._elevation = np.load(f)
+        elif data_type == 3:
+            if self.model.has_distance_field:
+                with open(f'{path}/df.npy', 'rb') as f:
+                    self._df = np.load(f)
+        elif data_type == 4:
+            try:
+                with open(f'{path}/feature.npy', 'rb') as f:
+                    self._feature = np.load(f)
+            except:
+                self._feature = np.zeros(self._elevation.shape, dtype=np.int32)
+
+    @property
+    def data(self):
+        if self.array_loaded(self._data):
+            return self._data
+        else:
+            self.load_resources(0)
+            return self._data
+
+    @data.setter
+    def data(self, new_data_array: np.ndarray):
+        self._data = new_data_array
+    
+    @property
+    def elevation(self):
+        if self.array_loaded(self._elevation):
+            return self._elevation
+        else:
+            self.load_resources(1)
+            return self._elevation
+    
+    @elevation.setter
+    def elevation(self, new_elevation_array: np.ndarray):
+        self._elevation = new_elevation_array
+
+    @property
+    def costs(self):
+        if self.array_loaded(self._costs):
+            return self._costs
+        else:
+            self.load_resources(2)
+            return self._costs
+
+    @costs.setter
+    def costs(self, new_costs_array: np.ndarray):
+        self._costs = new_costs_array
+
+    @property
+    def df(self):
+        if self.array_loaded(self._df):
+            return self._df
+        else:
+            self.load_resources(3)
+            return self._df
+    
+    @df.setter
+    def df(self, new_df_array: np.ndarray):
+        self._df = new_df_array
+
+    @property
+    def feature(self):
+        if self.array_loaded(self._feature):
+            return self._feature
+        else:
+            self.load_resources(4)
+            return self._feature
+
+    @feature.setter
+    def feature(self, new_feature_array: np.ndarray):
+        self._feature = new_feature_array
 
     def create_dffinder(self):
         # self.mdf = np.power(self.df, 0.2)
@@ -256,6 +349,8 @@ class Level:
     def find_path_safe(self, start: tuple, end: tuple, level : int = 0, target_level : int = 0, only_land = False) -> list:
         path = []
         used_dffinder = False
+        if not self.dffinder:
+            self.create_dffinder()
         if self.dffinder:
             
             path = self.dffinder.find((int32(start[0]), int32(start[1]), int32(level)), (int32(end[0]), int32(end[1]), int32(target_level)), only_land)
