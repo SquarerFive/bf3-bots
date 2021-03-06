@@ -347,12 +347,12 @@ export default class MapEditor extends Vue {
             this.manager.evaluatePath(
               String(this.level.project_id), String(this.level.level_id),
               this.manager.projectToGrid({ z: this.pathStart[1], x: this.pathStart[0], y: 0.0 }, this.level),
-              this.manager.projectToGrid({ z: this.pathEnd[1], x: this.pathEnd[0], y: 0.0 }, this.level)).then(
+              this.manager.projectToGrid({ z: this.pathEnd[1], x: this.pathEnd[0], y: 0.0 }, this.level), this.levelZ).then(
               res => {
                 const data: number[][] = <number[][]>res.data
                 if (this.map) {
                   const latLongs: LatLng[] = []
-                  const v = data[0][0]
+                  // const v = data[0][0]
                   data.forEach(d => {
                     latLongs.push(new LatLng(this.level.transform.height - d[0], d[1]))
                   })

@@ -473,6 +473,11 @@ function Bot:StepPathVehicle()
 
 end
 
+function Bot:StepPathVehicleNew()
+    local front_probe_entity = self.player_controller.controlledControllable
+    
+end
+
 function Bot:GetAvailableSlotsForVehicle(_VehicleEntity) 
     -- cast
     local controllable = ControllableEntity(_VehicleEntity)

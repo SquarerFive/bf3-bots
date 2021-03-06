@@ -4,4 +4,5 @@ from . import views
 
 urlpatterns = [
     path('project/<int:project_id>/level/<int:level_id>/uei-gtm/', views.uei_gtm, name='uei-gtm'),
+    path('project/<int:project_id>/level/<int:level_id>/uei-gtp/', views.uei_gtp, name='uei-gtp'),
 ]

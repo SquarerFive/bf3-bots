@@ -7,7 +7,7 @@ This mod is currently in development, some features may not function as intended
 
 ## ✨ Released: [Version 0.0.4](https://github.com/SquarerFive/bf3-bots/releases/tag/0.0.4)
 
-## ✨ Main: [Version 0.0.4dev](https://github.com/SquarerFive/bf3-bots/tree/main)
+## ✨ Main: [Version 0.0.45dev](https://github.com/SquarerFive/bf3-bots/tree/main)
 
 ## ✨ Master Branch: Features
 - AI Teamwork

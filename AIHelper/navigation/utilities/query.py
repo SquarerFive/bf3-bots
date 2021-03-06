@@ -87,7 +87,8 @@ def decode_level(in_data : models.Level, low_memory_mode : bool = False) -> Unio
                     feature = np.load(f)
                     has_feature = True
             except:
-                has_feature = False
+                has_feature = True
+                feature = np.zeros(elevation.shape, dtype=np.int32)
 
 
         except:

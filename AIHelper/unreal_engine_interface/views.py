@@ -16,6 +16,7 @@ from navigation.utilities import query as navigation_query
 from navigation.utilities import scorecard as navigation_scorecard
 
 from PIL import Image
+import imageio
 import numpy as np
 
 
@@ -49,7 +50,46 @@ def uei_gtm(request: Request, project_id: int, level_id: int) -> Response:
     navigation_scorecard.mask_replace_with(
         lm, level.feature[0], 1, 0.0
     )
-    image = Image.fromarray(((lm*255) / np.nanmax(lm[lm != np.inf])).astype(np.uint8), mode="L")
+    r = ((lm*255) / np.nanmax(lm[lm != np.inf]))
+    
+    # image = Image.fromarray(((lm*255) / np.nanmax(lm[lm != np.inf])).astype(np.uint32), mode="L")
+    image = Image.fromarray(r, mode="I")
     response = HttpResponse(content_type='image/png')
+    image.save('../rasters/test.tif')
+    imageio.imwrite('../rasters/test.png', r.astype(np.uint16))
     image.save(response, "PNG")
     return response
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([TokenAuthentication, SessionAuthentication])
+def uei_gtp(request: Request, project_id: int, level_id: int) -> Response:
+    global UEDataIFace
+    level = UEDataIFace.get_level(project_id, level_id)
+    data = request.data
+    print(data)
+    start_grid_pos = level.transform.transform_to_grid(
+        (
+            data['start'][0]/100, data['start'][1]/100
+        )
+    )
+    end_grid_pos = level.transform.transform_to_grid(
+        (
+            data['end'][0]/100, data['end'][1]/100
+        )
+    )
+
+    print(start_grid_pos, end_grid_pos)
+
+    path = list(level.find_path_safe(start_grid_pos, end_grid_pos, 0, 0, True)[0])
+
+    new_path = []
+    for p in path:
+        print(p)
+        w = level.transform.transform_to_world((int(p[1]), int(p[0])))
+        new_path.append(
+            (w[0], w[1])
+        )
+    new_path.reverse()
+    data = {'path': new_path}
+    return Response(data, content_type='application/json')

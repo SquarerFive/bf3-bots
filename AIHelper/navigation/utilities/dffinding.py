@@ -33,7 +33,8 @@ spec = [
     ('values', float32[:, :, :]),
     ('elevation', float32[:, :, :]),
     ('threshold', float32),
-    ('feature', int32[:, :, :])
+    ('feature', int32[:, :, :]),
+    ('recorded_paths', types.ListType(ptv))
     
 ]
 # Ref: https://www.redblobgames.com/pathfinding/a-star/implementation.html
@@ -61,12 +62,18 @@ class PriorityQueue:
 
 @jitclass(spec)
 class DFFinder:
-    def __init__(self, values : np.ndarray, elevation : np.ndarray, feature : np.ndarray, threshold : float32 = 3.0):
+    def __init__(self, values : np.ndarray, elevation : np.ndarray, feature : np.ndarray, recorded_paths: pt, threshold : float32 = 3.0):
         self.values = values
         self.elevation = elevation
         self.threshold = threshold
         self.feature = feature
-        
+        self.recorded_paths = typed.List.empty_list(ptv)
+        for p in recorded_paths:
+            self.recorded_paths.append(
+                (
+                    int32(p[0]), int32(p[1]), int32(p[2])
+                )
+            )
     
     def _haskey(self, key) -> bool:
         return key in self.keys
@@ -84,6 +91,13 @@ class DFFinder:
         return key[0] >= 0 and key[0] < self.elevation.shape[1] \
             and key[1] >= 0 and key[1] < self.elevation.shape[2] \
                 and key[2] >= 0 and key[2] < self.elevation.shape[0]
+
+    def _inrpath(self, key) -> bool:
+        for p in self.recorded_paths:
+            d = math.sqrt(math.pow(p[0]-key[0],2)+ math.pow(p[1]-key[1], 2)+ math.pow(self._get_elevation(p)-self._get_elevation(key), 2))
+            if d < 6:
+                return True, p
+        return False, key
 
     def _sort_node(self, in_nodes : List[Tuple[Tuple[int32, int32, int32], int32]], goal : Tuple[int32, int32, int32]):
         sorted_nodes = typed.List.empty_list(ptvp)
@@ -126,6 +140,8 @@ class DFFinder:
         return self.elevation[key[2]][key[0]][key[1]]
 
     def _is_within_threshold(self, key):
+       # if key in self.recorded_paths:
+       #     return True
         if self._ingrid(key):
             if self.feature[key[2]][key[0]][key[1]] == 1:
                 if key[2] == 0:
@@ -232,15 +248,21 @@ class DFFinder:
                         continue
                 if not self._ingrid(next): continue
                 if not self._is_within_threshold(next): continue
+                in_path, next = self._inrpath(next)
                 # print("Sampling neighbours")
                 if costs_so_far[current] < float32(math.inf):
                     new_cost = costs_so_far[current] + self._cost(current, next, end)
                 else:
                     new_cost = self._cost(current, next, end)
                  #self._hdistance(self.graph[current], self.graph[next])
-                if next not in costs_so_far or new_cost < costs_so_far[next]:
+                # if next in self.recorded_paths:
+                #     print("Recorded path")
+                if (next not in costs_so_far or new_cost < costs_so_far[next]):
+                    
                     costs_so_far[next] = new_cost
                     priority = float32(self._hfdistance(next, end))#float32(self._hdistance(self.graph[next], self.graph[end]))
+                    #if next in self.recorded_paths:
+                    #    priority = float32(priority * 0.5)
                     queue.put(next, priority)
                     came_from[next] = current
             i += 1

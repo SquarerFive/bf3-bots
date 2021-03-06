@@ -1175,6 +1175,7 @@ def manager_on_recorded_path(request : Request, project_id : int) -> Response:
         level_object = global_cache.get_object(active_state.active_project_id, active_state.active_level_id)
         if level_object:
             # do something here
+            print("Saving recorded paths")
             for task in models.ProjectTaskJSON.objects.filter(name='RecordPathTask').all():
                 task : models.ProjectTaskJSON = task
                 x = task.data['x']
@@ -1182,20 +1183,25 @@ def manager_on_recorded_path(request : Request, project_id : int) -> Response:
                 z = task.data['z']
                 grid_pos = level_object.transform.transform_to_grid((x, z))
                 best_layer = level_object.get_best_navmesh_level((grid_pos[0], grid_pos[1], elevation))
-                if isinstance(global_cache.level_model.recorded_paths, list):
-                    global_cache.level_model.recorded_paths.append({
+                model = global_cache.level_model
+                if isinstance(model.recorded_paths, list):
+                    print("Adding path")
+                    
+                    model.recorded_paths.append({
                         'x': grid_pos[0], 'y': grid_pos[1], 'elevation': elevation, 'layer': best_layer
                     })
-                    global_cache.level_model.save()
+                    level_object.set_elevation_at(elevation, grid_pos[0], grid_pos[1], best_layer)
+                    model.save()
                 else:
-                    global_cache.level_model.recorded_paths = []
-                    global_cache.level_model.save()
+                    print("Wiping paths")
+                    model.recorded_paths = []
+                    model.save()
 
             models.ProjectTaskJSON.objects.filter(name='RecordPathTask').delete()
-            with connection.cursor() as cursor:
-                cursor.execute('vacuum;')
+           # with connection.cursor() as cursor:
+           #     cursor.execute('vacuum;')
             print("Rasterizing")
-            level_object.classify_costs(just_paths=True, elevation_based = True, elevation_alpha_power=2.0, elevation_alpha_beta=1.5, elevation_alpha_beta_power=1.0)
+            # level_object.classify_costs(just_paths=True, elevation_based = True, elevation_alpha_power=2.0, elevation_alpha_beta=1.5, elevation_alpha_beta_power=1.0)
             global_cache.save_object()
             return Response("Success")
     return Response("Could not find active state or level", status=404)
@@ -1384,7 +1390,7 @@ def manager_get_path(request: Request, project_id: int, level_id: int) -> Respon
     if level_object:
         data = request.data
         path = level_object.astar(
-            (int(data['start'][0]), int(data['start'][1])), (int(data['end'][0]), int(data['end'][1])), use_base_level=True, return_raw_path=True
+            (int(data['start'][0]), int(data['start'][1])), (int(data['end'][0]), int(data['end'][1])), use_base_level=True, return_raw_path=True, use_single_level=True, single_level=data['layer']
         )
         return Response(path)
     return Response("Error! Level not found!!", status = 404)

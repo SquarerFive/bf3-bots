@@ -8,6 +8,7 @@ from skimage.graph import route_through_array, shortest_path
 import math
 import simplification
 from simplification.cutil import simplify_coords_idx
+
 # from pathfinding.core.diagonal_movement import DiagonalMovement
 # from pathfinding.core.grid import Grid
 # from pathfinding.finder.a_star import AStarFinder
@@ -19,14 +20,14 @@ from simplification.cutil import simplify_coords_idx
 from . import astar
 from . import dffinding
 
-from typing import Tuple, Union
+from typing import List, Tuple, Union
 import copy
 import pyastar
 
 import datetime
 
 from numba import int32, float32
-
+from numba.typed import List
 class Level:
     def __init__(self, name, transform : Union[tuple, None] = None, data: list = [], model : Union[None, models.Level] = None):
         self.raw_data = data
@@ -64,7 +65,7 @@ class Level:
         # self.mdf = self.mdf.astype(np.float32)
         elevation = self.elevation.astype(np.float32)
         print(self.model)
-        self.dffinder = dffinding.DFFinder(self.costs, elevation, self.feature, self.model.distance_field_threshold)
+        self.dffinder = dffinding.DFFinder(self.costs, elevation, self.feature, self.get_recorded_path(), self.model.distance_field_threshold)
     
     def generate_distance_fields(self):
         if type(self.df) == type(None) :
@@ -207,6 +208,7 @@ class Level:
     
 
     def get_valid_point_in_radius(self, arr : np.ndarray, x: int, y : int, radius: float = 10.0, level = 0) -> list:
+        return [x, y]
         if type(self.mdf)!=type(None) and self.dffinder:
            
             pos = (int32(x), int32(y), int32(level))
@@ -281,7 +283,7 @@ class Level:
         return 0.0
 
     def astar(self, start : tuple, end : tuple, safe=True , all : bool = False, elevation : Union[float, None] = None, target_elevation : Union[float, None] = 0.0, recurse_depth : int = 0,
-        only_land : bool = False, use_base_level: bool = False, return_raw_path: bool = False) -> list:
+        only_land : bool = False, use_base_level: bool = False, return_raw_path: bool = False, use_single_level = False, single_level = 0) -> list:
         # print("running astar  ", start, end)
         # print("size of data: ", self.data.shape)
         #path, cost = route_through_arrays(self.costs, start, end, fully_connected=False, geometric=True) # astar(self.data, start, end)
@@ -296,6 +298,9 @@ class Level:
         else:
             best_level = 0
             target_best_level = 0
+        if use_single_level:
+            best_level = single_level
+            target_best_level = single_level
         # print('best navmesh level: ', best_level)
         if (start[0] > 0 and start[0] < self.costs.shape[1] and start[1] > 0 and start[1] < self.costs.shape[2]
             and end[0] > 0 and end[0] < self.costs.shape[1] and end[1] > 0 and end[1] < self.costs.shape[2]):
@@ -380,7 +385,14 @@ class Level:
         np.save(file_name.replace("<context>", "data"), self.data)
         np.save(file_name.replace("<context>", "elevation"), self.elevation)
     
-    
+    def get_recorded_path(self): # -> List[Tuple[int, int, int]]:
+        path = List()
+        path.append((-1, -1, -1))
+        for p in self.model.recorded_paths:
+            path.append((
+                p['x'], p['y'], p['layer'] 
+            ))
+        return path
 
     def import_data(self, data_name: str, data_type: str):
         with open(f"./exports/{data_name}", "rb") as f:

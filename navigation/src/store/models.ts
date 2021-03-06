@@ -724,8 +724,8 @@ export class Manager {
     return response
   }
 
-  async evaluatePath (project_id : string, level_id: string, start : [number, number], end: [number, number]) {
-    const response = await this.post(`/v1/project/${project_id}/level/${level_id}/get-path/`, { start: start, end: end })
+  async evaluatePath (project_id : string, level_id: string, start : [number, number], end: [number, number], layer: number) {
+    const response = await this.post(`/v1/project/${project_id}/level/${level_id}/get-path/`, { start: start, end: end, layer: layer })
     return response
   }
 }
