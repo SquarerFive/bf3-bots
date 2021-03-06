@@ -100,6 +100,10 @@ function Bot:__init()
     self.vehicle_abstract_type = ''
     self.in_vehicle_turret = false
     self.target_vehicle_slot = 0
+    --
+    self.recorded_path = {}
+    self.last_record_path_time = 0.0
+    self.record_path_interval = 0.5
 end
 
 function Bot:UpdateAimSettings(newFiringOffset, newFiringBaseOffset, newAimWhenFire)
@@ -663,20 +667,85 @@ function Bot:NewTick(delta_time, pass)
         if self.alive and self.player_controller.alive and self.player_controller.soldier ~= nil then
             if self.action == Actions.ATTACK then
                 if not self.in_vehicle then
-                    self:StepPathNew()
-                    -- when we are stuck
-                    
-                    if self.destination ~= nil then
-                        if SharedUtils:GetTime() - self.last_position_check_time > 1 and self.player_controller.soldier.worldTransform.trans:Distance(self.last_position) < 1 then
-                            self.jumping = true
-                            self.knifing = true
-                            self.last_position_check_time = SharedUtils:GetTime()
-                        else
-                            self.jumping = false
-                            self.knifing = false
+                    if self.target == nil then
+                        self:StepPathNew()
+                        if self.destination ~= nil then
+                            if (SharedUtils:GetTimeMS() - self.last_record_path_time > self.record_path_interval*1000) then
+                                if self.player_controller.soldier.transform.trans:Distance(self.last_position) > 2 then
+                                    table.insert(self.recorded_path, self.player_controller.soldier.worldTransform.trans:Clone())
+                                    self.last_record_path_time = SharedUtils:GetTimeMS()
+                                    if #self.recorded_path > 500 then
+                                        self.recorded_path = {}
+                                    end
+                                end
+                            end
+                            if (SharedUtils:GetTime() - self.last_position_check_time) > 1 and self.player_controller.soldier ~= nil then
+                                -- when we are stuck
+                                if self.player_controller.soldier.transform.trans:Distance(self.last_position) < 1 then
+                                    self.jumping = true
+                                    if math.random(0, 50) > 25 then
+                                        self.knifing = true
+                                        self.firing = false
+                                    else
+                                        self.knifing = false
+                                        self.firing = true
+                                    end
+                                end
+                                self.last_position_check_time = SharedUtils:GetTime()
+                                self.last_position = self.player_controller.soldier.worldTransform.trans:Clone()
+                            else
+                                self.jumping = false
+                                self.knifing = false
+                            end
+                            
+                            if (SharedUtils:GetTime() - self.last_long_position_check_time > 5) then
+                                if self.player_controller.soldier.transform.trans:Distance(self.last_position) < 2 then
+                                    self.path = self.recorded_path
+                                end
+                                self.last_long_position_check_time = SharedUtils:GetTime()
+                            end
+
+                            self:SetFocusOn(self.destination)
+                            -- print('Focusing on: '..self.destination.x..' '..self.destination.y..' '..self.destination.z)
                         end
-                        self:SetFocusOn(self.destination)
-                        -- print('Focusing on: '..self.destination.x..' '..self.destination.y..' '..self.destination.z)
+                    else
+                        if self.target.teamId ~= self.player_controller.teamId then
+                            if self.target.soldier ~= nil and self.target.alive then
+                                local shouldStop = self.player_controller.soldier.transform.trans:Distance(self.target.soldier.transform.trans:Clone()) > 3 and math.random(0, 100) > 90
+                                if not shouldStop then
+                                    self.crouching = false
+                                    self:StepPathNew()
+                                    if self.destination ~= nil then
+                                        local leftDistance = (self.soldier.transform.trans + (self.soldier.transform.left * 2)):Distance(self.destination)
+                                        local rightDistance = (self.soldier.transform.trans + (self.soldier.transform.left * -2)):Distance(self.destination)
+                                        if leftDistance < rightDistance then
+                                            self.player_controller.input:SetLevel(EntryInputActionEnum.EIAStrafe, -1)
+                                        else
+                                            self.player_controller.input:SetLevel(EntryInputActionEnum.EIAStrafe, 1)
+                                        end
+                                        -- self:SetFocusOn(self.destination)
+                                    end
+                                    
+                                else
+                                    self.player_controller.input:SetLevel(EntryInputActionEnum.EIAStrafe, 0)
+                                    self.crouching = true
+                                    self.throttle = false
+                                    self.sprinting = false
+                                end
+                                self:SetFocusOn(self:GetLocalOffsetTransform(self.target.soldier.transform).trans)
+                                self.firing = true
+
+                            else
+                                self.firing = false
+                                self.target = nil
+                                self.crouching = false
+                                self.player_controller.input:SetLevel(EntryInputActionEnum.EIAStrafe, 0)
+                            end
+                        else
+                            self.firing = false
+                            self.crouching = false
+                            self.player_controller.input:SetLevel(EntryInputActionEnum.EIAStrafe, 0)
+                        end
                     end
                 else
                     if self.is_driver then
@@ -704,6 +773,13 @@ function Bot:NewTick(delta_time, pass)
                             self.firing = false
                         end
                     end
+                end
+            elseif self.action == Actions.PROVIDE or self.action == Actions.PROVIDE_HEALTH or self.action == Actions.PROVIDE_AMMO then
+                local isAtLocation = self:StepPathNew()
+                if isAtLocation then
+                    self:DropProvider()
+                    self.requested_order = 2
+                    self.requested_action = 2
                 end
             elseif self.action == Actions.VEHICLE_DISCOVERY then
                 local atDestination = self:StepPathNew()

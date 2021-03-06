@@ -299,7 +299,7 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                     )
 
         elif bot.action == int(orders.BotActionEnum.ATTACK):
-            if (closest_enemy and distance_to_enemy < 30) and (
+            if (closest_enemy and distance_to_enemy < 30) or (
                 (bot.in_vehicle and (bot.vehicle_abstract_type == "Tank" or bot.in_vehicle_turret))
                 ): # TODO: change this to x within viewing angle of y 
                 # enemy_grid_pos =  current_level.transform.transform_to_grid((float(closest_enemy.transform['trans']['x']) , float(closest_enemy.transform['trans']['z'])))
@@ -349,10 +349,10 @@ def compute_model(bot : models.Bot, current_level : Level, override_target = Fal
                     (*bot_grid_pos, bot_best_level),
                     (*enemy_grid_pos, enemy_best_level)
                 )
-                print("Cost: ", cost)
-                if cost > current_level_model.distance_field_threshold*0.8:
-                    bot.target = -1
-                    print(f"Cost is {cost}, not attacking until at path")
+               # print("Cost: ", cost)
+               # if cost > current_level_model.distance_field_threshold*0.8:
+               #     bot.target = -1
+               #     print(f"Cost is {cost}, not attacking until at path")
 
                 bot.path = current_level.astar(
                     bot_forward_grid_pos,
